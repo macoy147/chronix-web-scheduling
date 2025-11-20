@@ -25,10 +25,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Use either MONGODB_URI or MONGO_URI (fallback to local for development)
 
 const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/chronix';
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect(MONGODB_URI);
 
 const db = mongoose.connection;
 db.on('error', (error) => console.error('MongoDB connection error:', error));
@@ -961,21 +958,23 @@ app.delete('/schedules/:id', async (req, res) => {
 // --------------------- SERVER START ---------------------
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-    console.log('🚀 Server running on http://localhost:' + PORT);
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
     console.log('🔧 Debug endpoints available:');
-    console.log('   - http://localhost:' + PORT + '/test');
-    console.log('   - http://localhost:' + PORT + '/test-users');
+    console.log('   - http://localhost:' + `${PORT}` + '/test');
+    console.log('   - http://localhost:' + `${PORT}` + '/test-users');
     console.log('📧 Default admin credentials:');
     console.log('   - Email: admin@gmail.com');
     console.log('   - Password: admin');
     console.log('📁 File uploads directory: ' + uploadsDir);
     console.log('🎓 Student endpoints:');
-    console.log('   - http://localhost:' + PORT + '/users/students');
-    console.log('   - http://localhost:' + PORT + '/users/students/section/:section');
-    console.log('   - http://localhost:' + PORT + '/users/students/year-level/:yearLevel');
+    console.log('   - http://localhost:' + `${PORT}` + '/users/students');
+    console.log('   - http://localhost:' + `${PORT}` + '/users/students/section/:section');
+    console.log('   - http://localhost:' + `${PORT}` + '/users/students/year-level/:yearLevel');
     console.log('📊 Dashboard endpoints:');
-    console.log('   - http://localhost:' + PORT + '/dashboard-counts');
-    console.log('   - http://localhost:' + PORT + '/room-stats');
-    console.log('   - http://localhost:' + PORT + '/students-per-section');
-    console.log('   - http://localhost:' + PORT + '/students-per-room');
+    console.log('   - http://localhost:' + `${PORT}` + '/dashboard-counts');
+    console.log('   - http://localhost:' + `${PORT}` + '/room-stats');
+    console.log('   - http://localhost:' + `${PORT}` + '/students-per-section');
+    console.log('   - http://localhost:' + `${PORT}` + '/students-per-room');
 });
+
