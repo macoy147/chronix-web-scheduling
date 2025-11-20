@@ -1,0 +1,8 @@
+[build]
+  publish = "build" # change to "dist" or "" or "." if your publish dir is different
+  command = "npm run build" # remove if no build step
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

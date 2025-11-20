@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHRONIX - CTU Scheduling</title>
+
+    <link rel="stylesheet" href="/css/style.css" />
+    <!-- Font for modern aesthetics -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="ctu-header">
+      <div class="container">
+        <span class="logo-text">CHRONIX</span>
+        <nav>
+          <!-- use root-relative for consistency -->
+          <a href="/auth.html?mode=signin" class="nav-link">Sign In</a>
+          <a href="/auth.html?mode=signup" class="nav-link register-btn">Sign Up</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="ctu-main-content">
+      <div class="hero-section">
+        <!-- Glassmorphism hero text container -->
+        <div class="hero-text-glass">
+          <div class="hero-logos-container">
+            <!-- Use absolute paths that match public/img/img/... in your tree -->
+            <img
+              src="/img/img/CTU_new_logo-removebg-preview.png"
+              alt="CTU Logo"
+              class="hero-logo ctu-logo"
+            />
+            <img
+              src="/img/img/CHRONIX_LOGO.png"
+              alt="Chronix Logo"
+              class="hero-logo chronix-logo"
+            />
+          </div>
+          <h1>Class Scheduling System</h1>
+          <p>
+            Intelligently plan and organize your academic schedule with our
+            automated system. Eliminate conflicts and save time with smart
+            scheduling designed for educational excellence.
+          </p>
+          <button
+            class="cta-button"
+            onclick="window.location.href='/auth.html?mode=signup'"
+          >
+            Get Started
+          </button>
+        </div>
+      </div>
+
+      <section class="features-section">
+        <div class="container">
+          <div class="feature-card card-blue">
+            <h3>Smart Scheduling</h3>
+            <p>
+              Our algorithm automatically creates conflict-free schedules based
+              on your preferences and constraints.
+            </p>
+          </div>
+          <div class="feature-card card-gold">
+            <h3>Real-time Updates</h3>
+            <p>
+              Get instant notifications about schedule changes and room
+              assignments.
+            </p>
+          </div>
+          <div class="feature-card card-red">
+            <h3>Easy Management</h3>
+            <p>
+              Simple interface for administrators to manage courses, rooms, and
+              faculty assignments.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ctu-footer">
+      <div class="container">
+        &copy; 2025 CHRONIX.
+      </div>
+    </footer>
+
+    <script src="/js/script.js"></script>
+  </body>
+</html>

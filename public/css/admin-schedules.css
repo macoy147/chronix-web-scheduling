@@ -1,0 +1,971 @@
+:root {
+    --ctu-soft-gold: #F2D283;
+    --ctu-light-blue: #3E8EDE;
+    --ctu-deep-blue: #002D62;
+    --ctu-red-accent: #A3000C;
+    --ctu-white: #FFFFFF;
+    --ctu-lightest-gray: #F4F7F9;
+    --ctu-text-primary: #333333;
+    --ctu-text-secondary: #555555;
+    --tint-blue-bg: #EAF3FF;
+    --tint-gold-bg: #FFFBF0;
+    --tint-red-bg: #FFF0F0;
+    --nav-bg: var(--ctu-deep-blue);
+    --nav-active: var(--ctu-soft-gold);
+    --card-border: #ececec;
+    --profile-dropdown-bg: #fff;
+    --profile-dropdown-hover: #f2d28333;
+    
+    /* Schedule specific colors */
+    --day-bg: #fffbf0;
+    --night-bg: #eaf3ff;
+    --schedule-lecture: #4BB543;
+    --schedule-lab: #FF6B35;
+    --schedule-conflict: #D8000C;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    background: var(--ctu-lightest-gray);
+    color: var(--ctu-text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Navigation Bar (reuse from other admin pages) */
+.admin-nav {
+    display: flex;
+    align-items: center;
+    background: var(--nav-bg);
+    height: 56px;
+    padding: 0 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    margin-right: 80px;
+}
+
+.admin-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    margin-right: 10px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--ctu-soft-gold);
+    box-shadow: 0 2px 8px #f2d28344;
+}
+
+.admin-app-title {
+    color: var(--ctu-soft-gold);
+    font-weight: 800;
+    font-size: 1.08em;
+    letter-spacing: 0.5px;
+    margin: 0 18px 0 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.nav-links {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+}
+
+.nav-links li {
+    margin: 0 2px;
+}
+
+.nav-links a {
+    display: flex;
+    align-items: center;
+    color: var(--ctu-white);
+    font-weight: 600;
+    font-size: 0.99em;
+    text-decoration: none;
+    padding: 7px 10px;
+    border-radius: 6px;
+    transition: background .18s, color .18s, box-shadow .18s;
+    position: relative;
+}
+
+.nav-links li.active a,
+.nav-links a:hover {
+    background: var(--ctu-soft-gold);
+    color: var(--ctu-deep-blue);
+    box-shadow: 0 2px 8px var(--ctu-soft-gold);
+}
+
+.nav-links a i {
+    margin-right: 6px;
+    font-size: 1.07em;
+}
+
+.nav-right {
+    margin-left: 14px;
+    position: relative;
+}
+
+.admin-profile-dropdown {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.profile-img {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-right: 5px;
+    border: 2px solid var(--ctu-soft-gold);
+    background: #fff;
+}
+
+.profile-name {
+    color: var(--ctu-white);
+    font-weight: 600;
+    font-size: 0.97em;
+    display: flex;
+    align-items: center;
+}
+.profile-name i {
+    margin-left: 5px;
+    font-size: 0.78em;
+}
+
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    top: 40px;
+    right: 0;
+    background: var(--profile-dropdown-bg);
+    min-width: 120px;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    z-index: 200;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.admin-profile-dropdown.open .profile-dropdown {
+    display: flex;
+}
+
+.profile-dropdown a {
+    color: var(--ctu-deep-blue);
+    padding: 10px 14px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background .16s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.99em;
+}
+.profile-dropdown a:hover {
+    background: var(--profile-dropdown-hover);
+    color: var(--ctu-red-accent);
+}
+
+/* Main Content */
+.admin-schedules-main {
+    background: var(--ctu-lightest-gray);
+    padding: 0;
+    min-height: calc(100vh - 56px);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.admin-center-container {
+    max-width: 1400px;
+    width: 97%;
+    margin: 0 auto;
+    background: transparent;
+    padding: 18px 0 0 0;
+}
+
+/* View Toggle */
+.view-toggle-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+/* Year Level Selector */
+.year-level-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ctu-white);
+    padding: 12px 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.year-level-selector label {
+    font-weight: 600;
+    color: var(--ctu-deep-blue);
+    font-size: 0.95em;
+    margin: 0;
+}
+
+.year-level-dropdown {
+    padding: 10px 12px;
+    border: 2px solid #e5e8eb;
+    border-radius: 8px;
+    font-size: 0.95em;
+    background: white;
+    min-width: 140px;
+    cursor: pointer;
+}
+
+.year-level-dropdown:focus {
+    outline: none;
+    border-color: var(--ctu-light-blue);
+}
+
+.shift-toggle {
+    display: flex;
+    background: var(--ctu-white);
+    border-radius: 12px;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.shift-btn {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ctu-text-secondary);
+}
+
+.shift-btn.active {
+    background: var(--ctu-soft-gold);
+    color: var(--ctu-deep-blue);
+}
+
+/* Create Schedule Container - Positioned below shift toggle */
+.create-schedule-container {
+    display: flex;
+    justify-content: flex-start;
+    margin: 20px 0;
+    width: 100%;
+}
+
+.schedule-create-btn {
+    background: var(--ctu-light-blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.schedule-create-btn:hover {
+    background: var(--ctu-deep-blue);
+    transform: translateY(-2px);
+}
+
+/* Calendar Header */
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.nav-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+    background: #f0f0f0;
+}
+
+.calendar-title {
+    text-align: center;
+}
+
+.calendar-title h2 {
+    margin: 0;
+    font-size: 1.4em;
+    color: var(--ctu-deep-blue);
+}
+
+.current-view {
+    display: block;
+    font-size: 0.9em;
+    color: var(--ctu-text-secondary);
+    margin-top: 4px;
+}
+
+/* Calendar Container */
+.calendar-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1px;
+    background: #e5e8eb;
+}
+
+.calendar-day {
+    background: white;
+    padding: 12px;
+    min-height: 150px;
+    position: relative;
+}
+
+.calendar-day h4 {
+    margin: 0 0 10px 0;
+    font-size: 1em;
+    color: var(--ctu-deep-blue);
+}
+
+.schedule-item {
+    background: var(--schedule-lecture);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.schedule-item.lab {
+    background: var(--schedule-lab);
+}
+
+.schedule-item.conflict {
+    background: var(--schedule-conflict);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.schedule-item:hover {
+    transform: translateX(4px);
+}
+
+/* Subject Assignment Container */
+.subject-assignment-container {
+    margin-top: 30px;
+    width: 100%;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-content h3 {
+    margin: 0 0 20px 0;
+    color: var(--ctu-deep-blue);
+    border-bottom: 2px solid #e5e8eb;
+    padding-bottom: 10px;
+}
+
+/* Conflict Alert */
+.conflict-alert {
+    background: var(--tint-red-bg);
+    border: 1px solid var(--schedule-conflict);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--schedule-conflict);
+}
+
+.conflict-message strong {
+    display: block;
+}
+
+.recommendations {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(216,0,12,0.2);
+}
+
+.recommendation-item {
+    background: white;
+    border: 1px solid #e5e8eb;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.recommendation-item:hover {
+    border-color: var(--ctu-light-blue);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Form Grid - COMPACT */
+.form-grid.compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-row label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+    color: var(--ctu-text-primary);
+}
+
+.form-row select,
+.form-row input {
+    padding: 10px 12px;
+    border: 2px solid #e5e8eb;
+    border-radius: 6px;
+    font-size: 0.95em;
+    background: white;
+}
+
+.form-row select:focus,
+.form-row input:focus {
+    border-color: var(--ctu-light-blue);
+    outline: none;
+}
+
+.time-input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.time-input-group input {
+    flex: 2;
+}
+
+.time-input-group select {
+    flex: 1;
+}
+
+/* Schedule Type Toggle - COMPACT */
+.schedule-type-toggle {
+    display: flex;
+    background: #f0f0f0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.type-option {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.type-option input {
+    display: none;
+}
+
+.type-option span {
+    padding: 10px 20px;
+    width: 100%;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.type-option input:checked + span {
+    background: var(--ctu-light-blue);
+    color: white;
+}
+
+/* Subject Hours Info */
+.subject-hours-info {
+    background: #f8f9fb;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+}
+
+.hours-breakdown {
+    font-size: 0.95em;
+    margin-bottom: 8px;
+    color: var(--ctu-text-secondary);
+}
+
+.hours-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-bar {
+    flex: 1;
+    background: #e5e8eb;
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: var(--ctu-light-blue);
+    height: 100%;
+    width: 0;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--ctu-deep-blue);
+    min-width: 60px;
+    text-align: right;
+}
+
+/* Schedule Details */
+.schedule-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e8eb;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--ctu-text-secondary);
+}
+
+.detail-value {
+    color: var(--ctu-text-primary);
+}
+
+/* Modal Actions - COMPACT */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 2px solid #e5e8eb;
+}
+
+.modal-cancel, .modal-submit, .modal-delete {
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 0.92em;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-cancel {
+    background: #e5e8eb;
+    color: #555;
+}
+
+.modal-submit {
+    background: var(--ctu-light-blue);
+    color: white;
+}
+
+.modal-delete {
+    background: var(--ctu-red-accent);
+    color: white;
+}
+
+.modal-cancel:hover {
+    background: #d5d8db;
+}
+
+.modal-submit:hover {
+    background: var(--ctu-deep-blue);
+}
+
+.modal-delete:hover {
+    background: #7a0009;
+}
+
+/* Bubble Message */
+.section-bubble-message {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    z-index: 2000;
+    transform: translateX(150%);
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.section-bubble-message.show {
+    transform: translateX(0);
+}
+
+.section-bubble-message.success {
+    background: var(--schedule-lecture);
+}
+
+.section-bubble-message.error {
+    background: var(--schedule-conflict);
+}
+
+/* Compact form styles for schedule modal */
+.form-row.compact {
+    max-width: 100%;
+}
+
+.form-row.compact select,
+.form-row.compact input {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Ellipsis for long text in dropdowns */
+.form-row select option {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Compact dropdown styling */
+.compact-dropdown {
+    max-width: 100%;
+}
+
+.compact-dropdown option {
+    padding: 8px 12px;
+    font-size: 0.9em;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Shorter form fields */
+.compact-input {
+    max-width: 200px;
+}
+
+.time-input-group.compact {
+    max-width: 200px;
+}
+
+.time-input-group.compact input {
+    max-width: 80px;
+}
+
+.time-input-group.compact select {
+    max-width: 70px;
+}
+
+/* Make the modal form more compact */
+.form-grid.compact {
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.form-grid.compact .form-row {
+    margin-bottom: 5px;
+}
+
+.form-grid.compact label {
+    font-size: 0.85em;
+    margin-bottom: 3px;
+}
+
+.form-grid.compact input,
+.form-grid.compact select {
+    padding: 8px 10px;
+    font-size: 0.88em;
+    height: 38px;
+}
+
+/* Compact schedule type toggle */
+.schedule-type-toggle.compact {
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.schedule-type-toggle.compact .type-option span {
+    padding: 8px 12px;
+    font-size: 0.85em;
+}
+
+/* Make modal content more compact */
+.modal-content.compact {
+    padding: 18px;
+}
+
+.modal-content.compact h3 {
+    font-size: 1.3em;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .calendar-day {
+        min-height: 100px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .schedule-modal {
+        max-width: 90%;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .view-toggle-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .year-level-selector {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .shift-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .create-schedule-container {
+        justify-content: center;
+    }
+    
+    .calendar-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .subject-assignment-container {
+        max-width: 100%;
+    }
+    
+    .modal-content {
+        margin: 10px;
+        padding: 16px;
+    }
+    
+    .schedule-modal {
+        max-width: 95%;
+        min-width: auto;
+        padding: 16px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .modal-content h3 {
+        font-size: 1.3em;
+        margin-bottom: 14px;
+    }
+    
+    .subject-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .section-assignment {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .hours-progress-section {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-day {
+        min-height: 80px;
+        padding: 5px;
+    }
+    
+    .schedule-item {
+        font-size: 0.7em;
+        padding: 2px 4px;
+    }
+    
+    .shift-btn {
+        padding: 8px 12px;
+        font-size: 0.85em;
+    }
+    
+    .schedule-create-btn {
+        padding: 10px 20px;
+        font-size: 0.9em;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .create-schedule-container {
+        margin: 15px 0;
+    }
+    
+    .subject-assignment-card {
+        padding: 15px;
+    }
+    
+    .schedule-modal {
+        padding: 14px;
+        min-width: auto;
+    }
+    
+    .form-row input,
+    .form-row select {
+        padding: 9px 10px;
+        font-size: 0.88em;
+    }
+    
+    .form-row label {
+        font-size: 0.85em;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-cancel, .modal-submit, .modal-delete {
+        width: 100%;
+        padding: 10px 20px;
+    }
+    
+    .modal-content h3 {
+        font-size: 1.2em;
+    }
+    
+    .conflict-alert {
+        padding: 10px;
+        font-size: 0.85em;
+    }       
+    
+    .subject-hours-info {
+        padding: 10px;
+        font-size: 0.85em;
+    }
+}
+
+/* New styles for subject assignment display */
+.sections-progress {
+    font-size: 0.9em;
+    color: var(--ctu-text-secondary);
+    margin-top: 8px;
+    white-space: nowrap;
+    overflow: auto;
+}
+
+.subject-assignment-card {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.no-selection {
+    color: #777;
+    text-align: center;
+    padding: 20px;
+}   

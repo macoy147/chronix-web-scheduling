@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONIX - Manage Subjects</title>
+    <link rel="stylesheet" href="/css/admin-subjects.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="admin-nav">
+        <div class="nav-left">
+            <img src="./img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
+            <span class="admin-app-title">CHRONIX</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li class="active"><a href="admin-subjects.html"><i class="bi bi-book"></i> Subjects</a></li>
+            <li><a href="admin-sections.html"><i class="bi bi-layers"></i> Sections</a></li>
+            <li><a href="admin-rooms.html"><i class="bi bi-door-open"></i> Rooms</a></li>
+            <li><a href="admin-schedules.html"><i class="bi bi-calendar-event"></i> Schedules</a></li>
+            <li><a href="admin-students.html"><i class="bi bi-mortarboard"></i> Students</a></li>
+            <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i> Teachers</a></li>
+        </ul>
+        <div class="nav-right">
+            <div class="admin-profile-dropdown">
+                <img id="profileAvatar" src="./img/default_admin_avatar.png" alt="Admin Avatar" class="profile-img">
+                <span class="profile-name" id="profileName">Admin <i class="bi bi-chevron-down"></i></span>
+                <div class="profile-dropdown">
+                    <a href="admin-profile.html"><i class="bi bi-person"></i> Profile</a>
+                    <a href="#" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page content -->
+    <main class="admin-dashboard-main">
+        <div class="admin-center-container subjects-container">
+            <h2 class="dashboard-title">Manage Subjects</h2>
+            
+            <div id="subjectBubbleMessage" class="subject-bubble-message"></div>
+            <div class="subjects-table-wrapper">
+                <button class="subject-create-btn" id="openSubjectModal"><i class="bi bi-plus"></i> Create New Subject</button>
+                <table class="subjects-table">
+                    <thead>
+                        <tr>
+                            <th>COURSE CODE</th>
+                            <th>DESCRIPTIVE TITLE</th>
+                            <th>YEAR LEVEL</th>
+                            <th>CO-PREREQUISITE</th>
+                            <th>UNITS</th>
+                            <th>LEC HOURS</th>
+                            <th>LAB HOURS</th>
+                            <th>TOTAL HOURS</th>
+                            <th>REMARKS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subjectsTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Creating/Editing Subject (horizontal layout) -->
+    <div id="subjectModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content horizontal-modal">
+            <h3 id="subjectModalTitle">Create New Subject</h3>
+            <form id="subjectForm">
+                <div class="horizontal-grid">
+                    <div class="form-row">
+                        <input type="text" name="courseCode" placeholder="Course Code (e.g. OOP121)" required />
+                    </div>
+                    <div class="form-row">
+                        <input type="text" name="descriptiveTitle" placeholder="Descriptive Title" required />
+                    </div>
+                    <div class="form-row">
+                        <select name="yearLevel" required>
+                            <option value="" disabled selected>Select Year Level</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" name="coPrerequisite" placeholder="Co/Prerequisite" />
+                    </div>
+                    <div class="form-row">
+                        <input type="text" name="units" placeholder="Units" />
+                    </div>
+                    <div class="form-row">
+                        <input type="number" name="lecHours" id="lecHoursInput" min="0" placeholder="Lec Hours" />
+                    </div>
+                    <div class="form-row">
+                        <input type="number" name="labHours" id="labHoursInput" min="0" placeholder="Lab Hours" />
+                    </div>
+                    <div class="form-row">
+                        <input type="number" name="totalHours" id="totalHoursInput" min="0" placeholder="Total Hours" readonly />
+                    </div>
+                    <div class="form-row">
+                        <input type="text" name="remarks" placeholder="Remarks" />
+                    </div>
+                </div>
+                <div class="form-row" style="grid-column: 1 / -1;">
+                    <textarea name="description" placeholder="Description" rows="2"></textarea>
+                </div>
+                <div class="modal-actions" style="grid-column: 1 / -1;">
+                    <button type="button" class="modal-cancel" id="closeSubjectModal">Cancel</button>
+                    <button type="submit" class="modal-submit" id="submitSubjectBtn">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteSubjectModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width:340px;">
+            <h3 style="margin-bottom:16px;">Delete Subject</h3>
+            <div id="deleteModalText" style="font-size:1em;margin-bottom:24px;">
+                Are you sure you want to delete this subject?
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel" id="cancelDeleteSubjectBtn">Cancel</button>
+                <button type="button" class="modal-submit" id="confirmDeleteSubjectBtn" style="background:#d8000c;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Description Modal -->
+    <div id="descSubjectModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width:380px;">
+            <h3 style="margin-bottom:16px;">Subject Description</h3>
+            <div id="descModalText" style="font-size:1em;white-space:pre-line;margin-bottom:10px;">
+                <!-- Filled by JS -->
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel" id="closeDescSubjectBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth-guard.js"></script>
+    <script src="/js/admin-subjects.js"></script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONIX - Login / Register</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/auth.css">
+</head>
+<body>
+
+<!-- Return to Home Button -->
+<div class="return-home-btn">
+    <button onclick="window.location.href='index.html'" class="home-button">
+        <i class="fas fa-arrow-left"></i> Back to Home
+    </button>
+</div>
+
+<div class="auth-container" id="authContainer">
+    
+    <!-- Sign Up Form -->
+    <div class="form-container sign-up-container">
+        <form action="#" id="registerForm" autocomplete="off">
+            <div class="auth-logos-container">
+                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="auth-logo">
+                <img src="/img/img/CHRONIX_LOGO.png" alt="Chronix Logo" class="auth-logo chronix-logo">
+            </div>
+            <h1>Sign Up</h1>
+            <input type="text" placeholder="Full Name e.g. Marco Castillo Montellano" name="fullname" required />
+            <input type="email" placeholder="Email Address" name="email" required />
+            <!-- Gender + Birthdate in one row -->
+            <div class="row-two-fields">
+                <select name="gender" required>
+                    <option value="" disabled selected>Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+                <div class="birthdate-input-wrapper">
+                    <input type="date" name="birthdate" required placeholder="Birthdate" />
+                    <span class="calendar-icon"><i class="fas fa-calendar-alt"></i></span>
+                </div>
+            </div>
+            <!-- User Role + Room in one row -->
+            <div class="row-two-fields">
+                <select name="userrole" required id="userRoleSelect">
+                    <option value="" disabled selected>User Role</option>
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                </select>
+                <select name="room" id="roomSelect">
+                    <option value="" selected>Select Room</option>
+                    <!-- Rooms will be populated dynamically -->
+                </select>
+            </div>
+            <!-- CTU ID + Section in one row -->
+            <div class="row-two-fields">
+                <input type="text" placeholder="Student/Faculty ID" name="ctuid" required />
+                <select name="section" id="sectionSelect">
+                    <option value="" selected>Select Section</option>
+                    <!-- Sections will be populated dynamically -->
+                </select>
+            </div>
+            <div class="password-wrapper">
+                <input type="password" placeholder="Password" name="password" id="signupPassword" required />
+                <span class="toggle-password" data-target="signupPassword"><i class="fas fa-eye"></i></span>
+            </div>
+            <div class="password-wrapper">
+                <input type="password" placeholder="Confirm Password" name="confirmpassword" id="signupConfirmPassword" required />
+                <span class="toggle-password" data-target="signupConfirmPassword"><i class="fas fa-eye"></i></span>
+            </div>
+            <button type="submit" class="auth-button">Sign Up</button>
+        </form>
+    </div>
+
+    <!-- Sign In Form -->
+    <div class="form-container sign-in-container">
+        <form action="#" id="loginForm">
+            <div class="auth-logos-container">
+                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="auth-logo">
+                <img src="/img/img/CHRONIX_LOGO.png" alt="Chronix Logo" class="auth-logo chronix-logo">
+            </div>
+            <h1>Sign In</h1>
+            <!-- Added name attributes to make the inputs more robust -->
+            <input type="email" name="email" placeholder="Email" required />
+            <div class="password-wrapper">
+                <input type="password" name="password" placeholder="Password" required id="loginPassword" />
+                <span class="toggle-password" data-target="loginPassword"><i class="fas fa-eye"></i></span>
+            </div>
+            <a href="#" class="forgot-link">Forgot your password?</a>
+            <button type="submit" class="auth-button">Sign In</button>
+            <button class="auth-button ghost" id="signUpMobile">Don't have an account? Sign Up</button>
+        </form>
+    </div>
+
+    <!-- The Sliding Overlay -->
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-panel overlay-left">
+                <h1>Hello, CTU!</h1>
+                <p>Enter your details and start your journey with CHRONIX smart scheduling.</p>
+                <button class="auth-button ghost" id="signIn">Sign In</button>
+            </div>
+            <div class="overlay-panel overlay-right">
+                <h1>Welcome Back!</h1>
+                <p>To keep connected with your schedule, please log in with your personal info.</p>
+                <button class="auth-button ghost" id="signUp">Sign Up</button>
+                <button class="auth-button ghost" id="signInMobile">Already have an account? Sign In</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load auth-guard first so AuthGuard is available to auth.js -->
+<script src="/js/auth-guard.js"></script>
+<script src="/js/auth.js"></script>
+</body>
+</html>

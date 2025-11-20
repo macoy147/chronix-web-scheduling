@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONIX - Student Dashboard</title>
+    <link rel="stylesheet" href="/css/student-dashboard.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="student-nav">
+        <div class="nav-left">
+            <img src="./img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="student-logo">
+            <span class="student-app-title">CHRONIX</span>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><a href="#" id="dashboardLink"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="#" id="scheduleLink"><i class="bi bi-calendar-event"></i> My Schedule</a></li>
+            <li><a href="#" id="profileLink"><i class="bi bi-person"></i> Profile</a></li>
+        </ul>
+        <div class="nav-right">
+            <div class="student-profile-dropdown">
+                <img id="studentProfileAvatar" src="./img/default_student_avatar.png" alt="Student Avatar" class="profile-img">
+                <span class="profile-name" id="studentProfileName">Student <i class="bi bi-chevron-down"></i></span>
+                <div class="profile-dropdown">
+                    <a href="#" id="studentProfileBtn"><i class="bi bi-person"></i> My Profile</a>
+                    <a href="#" id="studentLogoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="student-main">
+        <!-- Dashboard View -->
+        <div id="dashboardView" class="view-section active">
+            <div class="student-center-container">
+                <!-- Welcome Header -->
+                <div class="welcome-header">
+                    <h1>Welcome back, <span id="studentGreetingName">Student</span>!</h1>
+                    <p>Here's your class schedule and upcoming activities</p>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon total-classes">
+                            <i class="bi bi-book"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="totalSubjects">0</span>
+                            <span class="stat-label">Total Subjects</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon lecture-hours">
+                            <i class="bi bi-mortarboard"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="lectureHours">0</span>
+                            <span class="stat-label">Lecture Hours</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon lab-hours">
+                            <i class="bi bi-laptop"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="labHours">0</span>
+                            <span class="stat-label">Lab Hours</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon class-section">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="studentSection">-</span>
+                            <span class="stat-label">Class Section</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Schedule -->
+                <div class="today-schedule">
+                    <div class="section-header">
+                        <h2>Today's Classes</h2>
+                        <span id="currentDateDisplay"></span>
+                    </div>
+                    <div class="schedule-list" id="todayScheduleList">
+                        <!-- Today's classes will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Weekly Schedule Preview -->
+                <div class="weekly-preview">
+                    <div class="section-header">
+                        <h2>Weekly Schedule</h2>
+                        <button class="view-all-btn" id="viewFullScheduleBtn">View Full Schedule</button>
+                    </div>
+                    <div class="weekly-grid-preview" id="weeklyPreview">
+                        <!-- Weekly preview will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule View -->
+        <div id="scheduleView" class="view-section">
+            <div class="student-center-container">
+                <div class="schedule-header">
+                    <h1>My Class Schedule</h1>
+                    <p>View your complete weekly class schedule</p>
+                </div>
+
+                <!-- Schedule Filters -->
+                <div class="schedule-filters">
+                    <div class="filter-group">
+                        <label>View:</label>
+                        <select id="scheduleViewSelect">
+                            <option value="weekly">Weekly View</option>
+                            <option value="daily">Daily View</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Shift:</label>
+                        <div class="shift-toggle-small">
+                            <button class="shift-btn-small active" data-shift="all">All</button>
+                            <button class="shift-btn-small" data-shift="day">Day</button>
+                            <button class="shift-btn-small" data-shift="night">Night</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly Schedule View -->
+                <div id="weeklyScheduleView" class="schedule-view">
+                    <div class="weekly-calendar">
+                        <div class="calendar-header-small">
+                            <h4>Weekly Class Schedule</h4>
+                        </div>
+                        <div class="weekly-grid" id="weeklyGrid">
+                            <!-- Weekly schedule will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Schedule View -->
+                <div id="dailyScheduleView" class="schedule-view" style="display: none;">
+                    <div class="daily-calendar">
+                        <div class="daily-header">
+                            <button class="nav-btn-small" id="prevDayBtn">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <h4 id="currentDayDisplay">Monday</h4>
+                            <button class="nav-btn-small" id="nextDayBtn">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="daily-schedule" id="dailySchedule">
+                            <!-- Daily schedule will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Statistics -->
+                <div class="schedule-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon lecture">
+                            <i class="bi bi-book"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="scheduleLectureCount">0</span>
+                            <span class="stat-label">Lecture Hours/Week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon lab">
+                            <i class="bi bi-laptop"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="scheduleLabCount">0</span>
+                            <span class="stat-label">Lab Hours/Week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon total">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="scheduleTotalHours">0</span>
+                            <span class="stat-label">Total Hours/Week</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile View -->
+        <div id="profileView" class="view-section">
+            <div class="student-center-container">
+                <div class="profile-header">
+                    <h1>My Profile</h1>
+                    <p>Manage your personal information and account settings</p>
+                </div>
+
+                <div class="profile-content">
+                    <!-- Profile Card -->
+                    <div class="profile-card">
+                        <div class="profile-avatar-section">
+                            <div class="avatar-container">
+                                <img id="profileViewAvatar" src="./img/default_student_avatar.png" alt="Profile Avatar" class="profile-picture">
+                                <div class="avatar-overlay">
+                                    <label for="profilePictureInput" class="avatar-upload-btn">
+                                        <i class="bi bi-camera"></i>
+                                        Change Photo
+                                    </label>
+                                    <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
+                                </div>
+                            </div>
+                            <div class="avatar-info">
+                                <h3 id="profileViewName">Loading...</h3>
+                                <p id="profileViewRole">Student</p>
+                                <p id="profileViewEmail">Loading...</p>
+                            </div>
+                        </div>
+
+                        <div class="profile-actions">
+                            <button class="btn-primary" id="saveProfileBtn">
+                                <i class="bi bi-check-lg"></i> Save Changes
+                            </button>
+                            <button class="btn-secondary" id="cancelBtn">
+                                <i class="bi bi-x-lg"></i> Cancel
+                            </button>
+                        </div>
+
+                        <div class="profile-details">
+                            <div class="detail-section">
+                                <h4>Personal Information</h4>
+                                <div class="detail-grid">
+                                    <div class="info-item">
+                                        <label>Full Name</label>
+                                        <input type="text" id="profileFullName" class="editable-field" placeholder="Enter your full name">
+                                    </div>
+                                    <div class="info-item">
+                                        <label>CTU ID</label>
+                                        <input type="text" id="profileCtuid" class="editable-field" placeholder="CTU ID" readonly>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Email</label>
+                                        <input type="email" id="profileEmail" class="editable-field" placeholder="Enter your email">
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Birthdate</label>
+                                        <input type="date" id="profileBirthdate" class="editable-field">
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Gender</label>
+                                        <select id="profileGender" class="editable-field">
+                                            <option value="">Select Gender</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-section">
+                                <h4>Academic Information</h4>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Class Section</span>
+                                        <span class="detail-value" id="profileClassSection">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Assigned Room</span>
+                                        <span class="detail-value" id="profileAssignedRoom">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Total Subjects</span>
+                                        <span class="detail-value" id="profileTotalSubjects">0</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Weekly Hours</span>
+                                        <span class="detail-value" id="profileWeeklyHours">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-section">
+                                <h4>Account Information</h4>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">User Role</span>
+                                        <span class="detail-value" id="profileUserRole">Student</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Last Login</span>
+                                        <span class="detail-value" id="profileLastLogin">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Account Created</span>
+                                        <span class="detail-value" id="profileAccountCreated">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notification -->
+    <div id="studentNotification" class="notification"></div>
+
+    <script src="/js/auth-guard.js"></script>
+    <script src="/js/student-dashboard.js"></script>
+</body>
+</html>

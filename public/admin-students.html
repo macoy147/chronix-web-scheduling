@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONIX - Manage Students</title>
+    <link rel="stylesheet" href="/css/admin-students.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="admin-nav">
+        <div class="nav-left">
+            <img src="./img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
+            <span class="admin-app-title">CHRONIX</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="admin-subjects.html"><i class="bi bi-book"></i> Subjects</a></li>
+            <li><a href="admin-sections.html"><i class="bi bi-layers"></i> Sections</a></li>
+            <li><a href="admin-rooms.html"><i class="bi bi-door-open"></i> Rooms</a></li>
+            <li><a href="admin-schedules.html"><i class="bi bi-calendar-event"></i> Schedules</a></li>
+            <li class="active"><a href="admin-students.html"><i class="bi bi-mortarboard"></i> Students</a></li>
+            <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i> Teachers</a></li>
+        </ul>
+        <div class="nav-right">
+            <div class="admin-profile-dropdown">
+                <img id="profileAvatar" src="./img/default_admin_avatar.png" alt="Admin Avatar" class="profile-img">
+                <span class="profile-name" id="profileName">Admin <i class="bi bi-chevron-down"></i></span>
+                <div class="profile-dropdown">
+                    <a href="admin-profile.html"><i class="bi bi-person"></i> Profile</a>
+                    <a href="#" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="admin-students-main">
+        <div class="admin-center-container">
+            <!-- Header Section -->
+            <div class="students-header">
+                <h1>Student Management</h1>
+                <p>View and manage all students and their class schedules</p>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="students-controls">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="studentSearch" placeholder="Search students by name, email, or ID...">
+                </div>
+                <div class="filter-controls">
+                    <select id="yearLevelFilter">
+                        <option value="">All Year Levels</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
+                    <select id="sectionFilter">
+                        <option value="">All Sections</option>
+                    </select>
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Student Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalStudents">0</span>
+                        <span class="stat-label">Total Students</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="activeStudents">0</span>
+                        <span class="stat-label">Active Students</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">
+                        <i class="bi bi-calendar-week"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="enrolledSections">0</span>
+                        <span class="stat-label">Enrolled Sections</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Table -->
+            <div class="students-table-container">
+                <table class="students-table">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Email</th>
+                            <th>CTU ID</th>
+                            <th>Section</th>
+                            <th>Year Level</th>
+                            <th>Gender</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody">
+                        <!-- Students will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state">
+                <i class="bi bi-arrow-repeat"></i>
+                <span>Loading students...</span>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="bi bi-person-x"></i>
+                <h3>No Students Found</h3>
+                <p>There are no students in the system yet.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Student Schedule Modal -->
+    <div id="studentScheduleModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content student-schedule-modal">
+            <div class="modal-header">
+                <h3 id="studentScheduleTitle">Student Schedule</h3>
+                <button class="modal-close" id="closeStudentScheduleModal">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            
+            <div class="student-info">
+                <div class="student-avatar">
+                    <img id="modalStudentAvatar" src="./img/default_student_avatar.png" alt="Student Avatar">
+                </div>
+                <div class="student-details">
+                    <h4 id="modalStudentName">Loading...</h4>
+                    <p id="modalStudentEmail">Loading...</p>
+                    <p id="modalStudentId">Loading...</p>
+                    <p id="modalStudentSection">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Schedule Filters -->
+            <div class="schedule-filters">
+                <div class="filter-group">
+                    <label>View:</label>
+                    <select id="scheduleViewSelect">
+                        <option value="weekly">Weekly View</option>
+                        <option value="daily">Daily View</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Shift:</label>
+                    <div class="shift-toggle-small">
+                        <button class="shift-btn-small active" data-shift="all">All</button>
+                        <button class="shift-btn-small" data-shift="day">Day</button>
+                        <button class="shift-btn-small" data-shift="night">Night</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Schedule View -->
+            <div id="weeklyScheduleView" class="schedule-view">
+                <div class="weekly-calendar">
+                    <div class="calendar-header-small">
+                        <h4>Weekly Class Schedule</h4>
+                    </div>
+                    <div class="weekly-grid" id="weeklyGrid">
+                        <!-- Weekly schedule will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Schedule View -->
+            <div id="dailyScheduleView" class="schedule-view" style="display: none;">
+                <div class="daily-calendar">
+                    <div class="daily-header">
+                        <button class="nav-btn-small" id="prevDayBtn">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <h4 id="currentDayDisplay">Monday</h4>
+                        <button class="nav-btn-small" id="nextDayBtn">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="daily-schedule" id="dailySchedule">
+                        <!-- Daily schedule will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Statistics -->
+            <div class="schedule-stats">
+                <div class="stat-card">
+                    <div class="stat-icon lecture">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="lectureCount">0</span>
+                        <span class="stat-label">Lecture Hours</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon lab">
+                        <i class="bi bi-laptop"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="labCount">0</span>
+                        <span class="stat-label">Lab Hours</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon total">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalHours">0</span>
+                        <span class="stat-label">Total Hours/Week</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div id="editStudentModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="editStudentModalTitle">Edit Student</h3>
+                <button class="modal-close" id="closeEditStudentModal">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            
+            <form id="editStudentForm">
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="editFullName">Full Name *</label>
+                        <input type="text" id="editFullName" name="fullname" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="editEmail">Email *</label>
+                        <input type="email" id="editEmail" name="email" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="editCtuid">CTU ID *</label>
+                        <input type="text" id="editCtuid" name="ctuid" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="editBirthdate">Birthdate</label>
+                        <input type="date" id="editBirthdate" name="birthdate">
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="editGender">Gender</label>
+                        <select id="editGender" name="gender">
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="editSection">Section</label>
+                        <input type="text" id="editSection" name="section" placeholder="e.g., BSIT 3A">
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="editRoom">Room</label>
+                        <input type="text" id="editRoom" name="room" placeholder="Optional">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="modal-cancel" id="cancelEditStudent">Cancel</button>
+                    <button type="submit" class="modal-submit" id="submitEditStudent">Update Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteStudentModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Delete Student</h3>
+                <button class="modal-close" id="closeDeleteStudentModal">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            
+            <div class="delete-confirmation">
+                <div class="warning-icon">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <p id="deleteConfirmationText">Are you sure you want to delete this student? This action cannot be undone.</p>
+                
+                <div class="student-warning-info">
+                    <strong>Note:</strong> All student records and associated data will be permanently removed.
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel" id="cancelDeleteStudent">Cancel</button>
+                <button type="button" class="modal-delete" id="confirmDeleteStudent">Delete Student</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bubble Notification -->
+    <div id="studentBubbleMessage" class="section-bubble-message"></div>
+
+    <script src="/js/auth-guard.js"></script>
+    <script src="/js/admin-students.js"></script>
+</body>
+</html>

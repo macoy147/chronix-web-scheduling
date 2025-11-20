@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONIX - Admin Profile</title>
+    <link rel="stylesheet" href="/css/admin-profile.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="admin-nav">
+        <div class="nav-left">
+            <img src="./img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
+            <span class="admin-app-title">CHRONIX</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="admin-subjects.html"><i class="bi bi-book"></i> Subjects</a></li>
+            <li><a href="admin-sections.html"><i class="bi bi-layers"></i> Sections</a></li>
+            <li><a href="admin-rooms.html"><i class="bi bi-door-open"></i> Rooms</a></li>
+            <li><a href="admin-schedules.html"><i class="bi bi-calendar-event"></i> Schedules</a></li>
+            <li><a href="admin-students.html"><i class="bi bi-mortarboard"></i> Students</a></li>
+            <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i> Teachers</a></li>
+        </ul>
+        <div class="nav-right">
+            <div class="admin-profile-dropdown">
+                <img id="profileAvatar" src="./img/default_admin_avatar.png" alt="Admin Avatar" class="profile-img">
+                <span class="profile-name" id="profileName">Admin <i class="bi bi-chevron-down"></i></span>
+                <div class="profile-dropdown">
+                    <a href="admin-profile.html"><i class="bi bi-person"></i> Profile</a>
+                    <a href="#" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="admin-profile-main">
+        <div class="admin-center-container">
+            <h2 class="profile-title">My Profile</h2>
+            
+            <div class="profile-container">
+                <div class="profile-header">
+                    <div class="profile-avatar-section">
+                        <div class="avatar-container">
+                            <img id="profilePicture" src="./img/default_admin_avatar.png" alt="Profile Picture" class="profile-picture">
+                            <div class="avatar-overlay">
+                                <label for="profilePictureInput" class="avatar-upload-btn">
+                                    <i class="bi bi-camera"></i>
+                                    Change Photo
+                                </label>
+                                <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="profile-actions">
+                            <button class="btn-primary" id="saveProfileBtn">
+                                <i class="bi bi-check-lg"></i> Save Changes
+                            </button>
+                            <button class="btn-secondary" id="cancelBtn">
+                                <i class="bi bi-x-lg"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-info">
+                        <div class="info-item">
+                            <label>Full Name</label>
+                            <input type="text" id="fullName" class="editable-field" placeholder="Enter your full name">
+                        </div>
+                        <div class="info-item">
+                            <label>Email Address</label>
+                            <input type="email" id="email" class="editable-field" placeholder="Enter your email">
+                        </div>
+                        <div class="info-item">
+                            <label>Role</label>
+                            <div class="role-badge" id="userRole">Administrator</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Last Login</label>
+                            <div class="last-login" id="lastLogin">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-details">
+                    <div class="detail-section">
+                        <h3>Account Information</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">User ID</span>
+                                <span class="detail-value" id="userId">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">CTU ID</span>
+                                <span class="detail-value" id="ctuid">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Gender</span>
+                                <span class="detail-value" id="gender">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Birthdate</span>
+                                <span class="detail-value" id="birthdate">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="/js/auth-guard.js"></script>
+    <script src="/js/admin-profile.js"></script>
+</body>
+</html>
