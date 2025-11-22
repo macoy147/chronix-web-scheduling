@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const profileAvatar = document.getElementById('profileAvatar');
             if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = `http://localhost:3001${currentUser.profilePicture}`;
+                profileAvatar.src = `${currentUser.profilePicture}`;
             }
         }
     }
@@ -108,41 +108,41 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load all data from MongoDB with proper error handling
     async function loadAllData() {
         try {
-            console.log('Starting data load from MongoDB...');
+            console.log('Starting data load from server...');
             
-            // Load students
-            const studentsResponse = await fetch('http://localhost:3001/users/students');
+            // Load students - CHANGED from http://localhost:3001/users/students
+            const studentsResponse = await fetch('/users/students');
             if (!studentsResponse.ok) throw new Error('Failed to fetch students');
             const studentsData = await studentsResponse.json();
             const students = Array.isArray(studentsData) ? studentsData : (studentsData.students || []);
             console.log(`Loaded ${students.length} students`);
 
-            // Load teachers
-            const teachersResponse = await fetch('http://localhost:3001/teachers');
+            // Load teachers - CHANGED from http://localhost:3001/teachers
+            const teachersResponse = await fetch('/teachers');
             if (!teachersResponse.ok) throw new Error('Failed to fetch teachers');
             const teachers = await teachersResponse.json();
             console.log(`Loaded ${teachers.length} teachers`);
 
-            // Load rooms
-            const roomsResponse = await fetch('http://localhost:3001/rooms');
+            // Load rooms - CHANGED from http://localhost:3001/rooms
+            const roomsResponse = await fetch('/rooms');
             if (!roomsResponse.ok) throw new Error('Failed to fetch rooms');
             const rooms = await roomsResponse.json();
             console.log(`Loaded ${rooms.length} rooms`);
 
-            // Load schedules
-            const schedulesResponse = await fetch('http://localhost:3001/schedules');
+            // Load schedules - CHANGED from http://localhost:3001/schedules
+            const schedulesResponse = await fetch('/schedules');
             if (!schedulesResponse.ok) throw new Error('Failed to fetch schedules');
             const schedules = await schedulesResponse.json();
             console.log(`Loaded ${schedules.length} schedules`);
 
-            // Load subjects
-            const subjectsResponse = await fetch('http://localhost:3001/subjects');
+            // Load subjects - CHANGED from http://localhost:3001/subjects
+            const subjectsResponse = await fetch('/subjects');
             if (!subjectsResponse.ok) throw new Error('Failed to fetch subjects');
             const subjects = await subjectsResponse.json();
             console.log(`Loaded ${subjects.length} subjects`);
 
-            // Load sections
-            const sectionsResponse = await fetch('http://localhost:3001/sections');
+            // Load sections - CHANGED from http://localhost:3001/sections
+            const sectionsResponse = await fetch('/sections');
             if (!sectionsResponse.ok) throw new Error('Failed to fetch sections');
             const sections = await sectionsResponse.json();
             console.log(`Loaded ${sections.length} sections`);
@@ -880,12 +880,12 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification(message, 'error');
     }
 
-    // Fetch user data for profile
+    // Fetch user data for profile - CHANGED from http://localhost:3001/user/${userId}
     async function fetchUserData() {
         try {
             const userId = AuthGuard.getUserId();
             if (userId) {
-                const res = await fetch(`http://localhost:3001/user/${userId}`);
+                const res = await fetch(`/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
                     AuthGuard.storeUserSession(userData);

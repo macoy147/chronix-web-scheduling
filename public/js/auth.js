@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     const signUpButton = document.getElementById('signUp');
     const signInButton = document.getElementById('signIn');
@@ -22,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load rooms and sections from server
     async function loadRoomsAndSections() {
         try {
-            // Load rooms
-            const roomsResponse = await fetch('http://localhost:3001/rooms');
+            // Load rooms - CHANGED from http://localhost:3001/rooms
+            const roomsResponse = await fetch('/rooms');
             if (roomsResponse.ok) {
                 const rooms = await roomsResponse.json();
                 const roomSelect = document.getElementById('roomSelect');
@@ -37,8 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Load sections
-            const sectionsResponse = await fetch('http://localhost:3001/sections');
+            // Load sections - CHANGED from http://localhost:3001/sections
+            const sectionsResponse = await fetch('/sections');
             if (sectionsResponse.ok) {
                 const sections = await sectionsResponse.json();
                 const sectionSelect = document.getElementById('sectionSelect');
@@ -159,7 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const res = await fetch('http://localhost:3001/register', {
+            // CHANGED from http://localhost:3001/register
+            const res = await fetch('/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -229,7 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             console.log('📤 Sending login request to server...');
             
-            const res = await fetch('http://localhost:3001/login', {
+            // CHANGED from http://localhost:3001/login
+            const res = await fetch('/login', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -298,16 +299,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('💥 Network error during login:', error);
             
-            // Test if server is reachable
+            // Test if server is reachable - CHANGED from http://localhost:3001/test
             try {
-                const testRes = await fetch('http://localhost:3001/test');
+                const testRes = await fetch('/test');
                 if (testRes.ok) {
                     showNotification("Login failed. Please check your credentials.", "error");
                 } else {
                     showNotification("Cannot connect to server. Please check if the server is running.", "error");
                 }
             } catch (testError) {
-                showNotification("Cannot connect to server. Please check if the server is running on port 3001.", "error");
+                showNotification("Cannot connect to server. Please check if the backend is deployed.", "error");
             }
         }
     });
@@ -329,6 +330,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-
-

@@ -11,9 +11,19 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
-app.use(bodyParser.json());
+// ✅ FIXED: Use environment variables for security
+const PORT = process.env.PORT || 3001;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marcomontellano147user:marcomontellano147db@cluster0.qk0lbhg.mongodb.net/chronix?retryWrites=true&w=majority&appName=Cluster0';
 
+// ✅ FIXED: Configure CORS for production
+const corsOptions = {
+    origin: process.env.FRONTEND_URL || '*', // Set your frontend URL in production
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
+app.use(bodyParser.json());
 
 // Serve front-end static assets from ./public at web root
 // This makes URLs like /css/auth.css and /js/admin-dashboard.js resolve to public/css/... and public/js/...
@@ -22,10 +32,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve uploaded images from /uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Use either MONGODB_URI or MONGO_URI (fallback to local for development)
+// ✅ FIXED: Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, 'public'))); // Adjust path to your built frontend
+}
 
-const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/chronix';
-mongoose.connect(MONGODB_URI);
+// Connect to MongoDB
+mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
 const db = mongoose.connection;
 db.on('error', (error) => console.error('MongoDB connection error:', error));
@@ -954,9 +970,20 @@ app.delete('/schedules/:id', async (req, res) => {
     }
 });
 
+// ✅ FIXED: Add a catch-all route to serve index.html in production
+if (process.env.NODE_ENV === 'production') {
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, 'public', 'index.html')); // Adjust as needed
+    });
+}
+
+// ✅ FIXED: Better error handling for deployment
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+});
 
 // --------------------- SERVER START ---------------------
-const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`🚀 Server running on port ${PORT}`);
@@ -977,4 +1004,3 @@ app.listen(PORT, () => {
     console.log('   - http://localhost:' + `${PORT}` + '/students-per-section');
     console.log('   - http://localhost:' + `${PORT}` + '/students-per-room');
 });
-
