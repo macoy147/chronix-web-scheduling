@@ -1,0 +1,20 @@
+{"level":"info","message":"🚀 Server running on port 3001","service":"chronix-backend"}
+{"level":"info","message":"🔧 Debug endpoints available:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3001/test","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3001/test-users","service":"chronix-backend"}
+{"level":"info","message":"📧 Default admin credentials:","service":"chronix-backend"}
+{"level":"info","message":"   - Email: admin@gmail.com","service":"chronix-backend"}
+{"level":"info","message":"   - Password: admin","service":"chronix-backend"}
+{"level":"info","message":"📁 File uploads directory: C:\\CHRONIX\\uploads","service":"chronix-backend"}
+{"level":"info","message":"🎓 Student endpoints:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3001/users/students","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3001/users/students/section/:section","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3001/users/students/year-level/:yearLevel","service":"chronix-backend"}
+{"level":"info","message":"📊 Dashboard endpoints:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3001/dashboard-counts","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3001/room-stats","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3001/students-per-section","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3001/students-per-room","service":"chronix-backend"}
+{"level":"info","message":"✅ Connected to MongoDB!","service":"chronix-backend"}
+{"level":"info","message":"✅ Admin user already exists","service":"chronix-backend"}
+{"level":"info","message":"✅ Subject indexes synchronized.","service":"chronix-backend"}

@@ -1,14 +1,20 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const path = require('path');
-const fs = require('fs');
-const multer = require('multer');
-const dotenv = require('dotenv');
-const logger = require('./logger.js');
+// server.js
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+import multer from 'multer';
+import dotenv from 'dotenv';
+import logger from './logger.js';
 
-dotenv.config();
+// ✅ IMPROVEMENT: Define __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: '.env' });
 
 const app = express();
 
@@ -29,7 +35,7 @@ app.use(bodyParser.json());
 // ✅ IMPROVEMENT: Add a request logger for debugging
 // This will log every incoming request's method, path, and body, which is extremely useful for debugging on Render.
 app.use((req, res, next) => {
-    console.log(`🔗 ${req.method} ${req.path}`, req.body);
+    logger.info(`${req.method} ${req.path}`, { body: req.body });
     next();
 });
 
@@ -52,23 +58,23 @@ mongoose.connect(MONGODB_URI, {
 });
 
 const db = mongoose.connection;
-db.on('error', (error) => console.error('MongoDB connection error:', error));
+db.on('error', (error) => logger.error('MongoDB connection error:', error));
 db.once('open', async () => {
-    console.log("✅ Connected to MongoDB!");
+    logger.info("✅ Connected to MongoDB!");
     try {
         // Drop old index if it exists (the one causing duplicate key error)
         const indexes = await db.collection('subjects').indexes();
         const badIndex = indexes.find(idx => idx.name === 'code_1');
         if (badIndex) {
-            console.log("⚠️ Found old index 'code_1' — dropping it...");
+            logger.warn("⚠️ Found old index 'code_1' — dropping it...");
             await db.collection('subjects').dropIndex('code_1');
-            console.log("✅ Dropped old 'code_1' index successfully.");
+            logger.info("✅ Dropped old 'code_1' index successfully.");
         }
 
         // Check if admin user exists, if not create one
         await ensureAdminUser();
     } catch (err) {
-        console.error("Error checking/dropping old index:", err);
+        logger.error("Error checking/dropping old index:", err);
     }
 });
 
@@ -178,7 +184,7 @@ const ScheduleSchema = new mongoose.Schema({
 const Schedule = mongoose.model('Schedule', ScheduleSchema);
 
 // Ensure indexes match schema
-Subject.syncIndexes().then(() => console.log("✅ Subject indexes synchronized.")).catch(console.error);
+Subject.syncIndexes().then(() => logger.info("✅ Subject indexes synchronized.")).catch(err => logger.error(err));
 
 // --------------------- MULTER CONFIGURATION ---------------------
 // Create uploads directory if it doesn't exist
@@ -229,14 +235,14 @@ async function ensureAdminUser() {
                 gender: 'male'
             });
             await newAdmin.save();
-            console.log('✅ Admin user created successfully');
-            console.log('📧 Email: admin@gmail.com');
-            console.log('🔑 Password: admin');
+            logger.info('✅ Admin user created successfully');
+            logger.info('📧 Email: admin@gmail.com');
+            logger.info('🔑 Password: admin');
         } else {
-            console.log('✅ Admin user already exists');
+            logger.info('✅ Admin user already exists');
         }
     } catch (error) {
-        console.error('Error ensuring admin user:', error);
+        logger.error('Error ensuring admin user:', error);
     }
 }
 
@@ -293,7 +299,7 @@ app.post('/register', async (req, res) => {
         await user.save();
         res.json({ message: 'User registered!' });
     } catch (error) {
-        console.error('Error registering user:', error);
+        logger.error('Error registering user:', error);
         res.status(500).json({ error: 'Error registering user' });
     }
 });
@@ -303,31 +309,31 @@ app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        console.log('🔐 Login attempt received:', {
+        logger.info('🔐 Login attempt received:', {
             email: email,
             password: password ? '***' : 'missing',
             timestamp: new Date().toISOString()
         });
         // Basic validation
         if (!email || !password) {
-            console.log('❌ Missing email or password');
+            logger.warn('❌ Missing email or password');
             return res.status(400).json({
                 error: 'Email and password are required'
             });
         }
         // Clean email
         const cleanEmail = email.trim().toLowerCase();
-        console.log('📧 Searching for user with email:', cleanEmail);
+        logger.info('📧 Searching for user with email:', cleanEmail);
         // Find user by email
         const user = await User.findOne({ email: cleanEmail });
 
         if (!user) {
-            console.log('❌ User not found with email:', cleanEmail);
+            logger.warn('❌ User not found with email:', cleanEmail);
             return res.status(400).json({
                 error: 'Invalid email or password'
             });
         }
-        console.log('✅ User found:', {
+        logger.info('✅ User found:', {
             id: user._id,
             email: user.email,
             storedPassword: user.password,
@@ -335,12 +341,12 @@ app.post('/login', async (req, res) => {
         });
         // Simple password comparison (since we're storing plain text for now)
         if (user.password !== password) {
-            console.log('❌ Password mismatch');
+            logger.warn('❌ Password mismatch');
             return res.status(400).json({
                 error: 'Invalid email or password'
             });
         }
-        console.log('✅ Password matches!');
+        logger.info('✅ Password matches!');
         // Update last login
         user.lastLogin = new Date();
         await user.save();
@@ -358,14 +364,14 @@ app.post('/login', async (req, res) => {
             section: user.section,
             room: user.room
         };
-        console.log('🎉 Login successful for:', user.email);
+        logger.info('🎉 Login successful for:', user.email);
 
         res.json({
             message: 'Login successful!',
             user: userResponse
         });
     } catch (error) {
-        console.error('💥 Login error:', error);
+        logger.error('💥 Login error:', error);
         res.status(500).json({
             error: 'Server error during login'
         });
@@ -379,7 +385,7 @@ app.get('/user/:id', async (req, res) => {
         if (!user) return res.status(404).json({ error: 'User not found' });
         res.json(user);
     } catch (error) {
-        console.error('Error fetching user:', error);
+        logger.error('Error fetching user:', error);
         res.status(500).json({ error: 'Error fetching user' });
     }
 });
@@ -407,10 +413,10 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
         // If file was uploaded, update profile picture path
         if (req.file) {
             updateFields.profilePicture = '/uploads/' + req.file.filename;
-            console.log('✅ Profile picture uploaded:', req.file.filename);
+            logger.info('✅ Profile picture uploaded:', req.file.filename);
         }
 
-        console.log('🔄 Updating user with fields:', updateFields);
+        logger.info('🔄 Updating user with fields:', updateFields);
 
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
@@ -420,11 +426,11 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
 
         if (!updatedUser) return res.status(404).json({ error: 'User not found' });
 
-        console.log('✅ Profile updated successfully for user:', updatedUser.email);
+        logger.info('✅ Profile updated successfully for user:', updatedUser.email);
         res.json(updatedUser);
 
     } catch (error) {
-        console.error('❌ Error updating user:', error);
+        logger.error('❌ Error updating user:', error);
         res.status(500).json({ error: 'Error updating user: ' + error.message });
     }
 });
@@ -446,10 +452,10 @@ app.delete('/user/:id', async (req, res) => {
         await Schedule.deleteMany({ teacher: userId });
         // Delete user
         await User.findByIdAndDelete(userId);
-        console.log('✅ User deleted successfully:', user.email);
+        logger.info('✅ User deleted successfully:', user.email);
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
-        console.error('Error deleting user:', error);
+        logger.error('Error deleting user:', error);
         res.status(500).json({ error: 'Error deleting user: ' + error.message });
     }
 });
@@ -476,7 +482,7 @@ app.post('/upload-profile-picture/:id', upload.single('profilePicture'), async (
         });
 
     } catch (error) {
-        console.error('Error uploading profile picture:', error);
+        logger.error('Error uploading profile picture:', error);
         res.status(500).json({ error: 'Error uploading profile picture: ' + error.message });
     }
 });
@@ -489,10 +495,10 @@ app.get('/users/students', async (req, res) => {
             .select('_id fullname email ctuid userrole section room birthdate gender profilePicture lastLogin')
             .sort({ fullname: 1 });
         
-        console.log(`✅ Fetched ${students.length} students`);
+        logger.info(`✅ Fetched ${students.length} students`);
         res.json(students);
     } catch (error) {
-        console.error('Error fetching students:', error);
+        logger.error('Error fetching students:', error);
         res.status(500).json({ error: 'Error fetching students' });
     }
 });
@@ -508,7 +514,7 @@ app.get('/users/students/section/:section', async (req, res) => {
         
         res.json(students);
     } catch (error) {
-        console.error('Error fetching students by section:', error);
+        logger.error('Error fetching students by section:', error);
         res.status(500).json({ error: 'Error fetching students by section' });
     }
 });
@@ -528,7 +534,7 @@ app.get('/users/students/year-level/:yearLevel', async (req, res) => {
         
         res.json(students);
     } catch (error) {
-        console.error('Error fetching students by year level:', error);
+        logger.error('Error fetching students by year level:', error);
         res.status(500).json({ error: 'Error fetching students by year level' });
     }
 });
@@ -546,7 +552,7 @@ app.get('/dashboard-counts', async (req, res) => {
             availableRooms: availableRoomCount
         });
     } catch (error) {
-        console.error('Error fetching dashboard counts:', error);
+        logger.error('Error fetching dashboard counts:', error);
         res.status(500).json({ error: 'Failed to fetch dashboard counts.' });
     }
 });
@@ -582,7 +588,7 @@ app.get('/room-stats', async (req, res) => {
         });
         res.json(stats);
     } catch (error) {
-        console.error('Error fetching room stats:', error);
+        logger.error('Error fetching room stats:', error);
         res.status(500).json({ error: 'Error fetching room statistics' });
     }
 });
@@ -601,7 +607,7 @@ app.get('/students-per-section', async (req, res) => {
         }));
         res.json(result);
     } catch (error) {
-        console.error('Error fetching students per section:', error);
+        logger.error('Error fetching students per section:', error);
         res.status(500).json({ error: 'Failed to fetch students per section.' });
     }
 });
@@ -620,7 +626,7 @@ app.get('/students-per-room', async (req, res) => {
         }));
         res.json(result);
     } catch (error) {
-        console.error('Error fetching students per room:', error);
+        logger.error('Error fetching students per room:', error);
         res.status(500).json({ error: 'Failed to fetch students per room.' });
     }
 });
@@ -639,14 +645,14 @@ app.get('/subjects', async (req, res) => {
         const subjects = await Subject.find(query).sort({ descriptiveTitle: 1 });
         res.json(subjects);
     } catch (error) {
-        console.error('Error fetching subjects:', error);
+        logger.error('Error fetching subjects:', error);
         res.status(500).json({ error: 'Error fetching subjects' });
     }
 });
 
 app.post('/subjects', async (req, res) => {
     try {
-        console.log('Received request to create subject:', req.body);
+        logger.info('Received request to create subject:', req.body);
         const {
             courseCode, descriptiveTitle, yearLevel, coPrerequisite, units,
             lecHours, labHours, totalHours, remarks, description
@@ -681,10 +687,10 @@ app.post('/subjects', async (req, res) => {
             description: description?.trim() || ''
         });
         await newSubject.save();
-        console.log('✅ Subject created successfully:', newSubject);
+        logger.info('✅ Subject created successfully:', newSubject);
         res.json({ message: 'Subject created successfully', subject: newSubject });
     } catch (error) {
-        console.error('Error creating subject:', error);
+        logger.error('Error creating subject:', error);
         res.status(500).json({ error: `Error creating subject: ${error.message}` });
     }
 });
@@ -732,7 +738,7 @@ app.put('/subjects/:id', async (req, res) => {
         if (!updated) return res.status(404).json({ error: 'Subject not found' });
         res.json({ message: 'Subject updated successfully', subject: updated });
     } catch (error) {
-        console.error('Error updating subject:', error);
+        logger.error('Error updating subject:', error);
         res.status(500).json({ error: `Error updating subject: ${error.message}` });
     }
 });
@@ -743,7 +749,7 @@ app.delete('/subjects/:id', async (req, res) => {
         if (!deleted) return res.status(404).json({ error: 'Subject not found' });
         res.json({ message: 'Subject deleted successfully' });
     } catch (error) {
-        console.error('Error deleting subject:', error);
+        logger.error('Error deleting subject:', error);
         res.status(500).json({ error: `Error deleting subject: ${error.message}` });
     }
 });
@@ -813,7 +819,7 @@ app.get('/teachers', async (req, res) => {
         const teachers = await User.find({ userrole: 'teacher' }).select('_id fullname email ctuid profilePicture userrole birthdate gender section room lastLogin');
         res.json(teachers);
     } catch (error) {
-        console.error('Error fetching teachers:', error);
+        logger.error('Error fetching teachers:', error);
         res.status(500).json({ error: 'Failed to fetch teachers' });
     }
 });
@@ -824,7 +830,7 @@ app.get('/rooms', async (req, res) => {
         const rooms = await Room.find().sort({ roomName: 1 });
         res.json(rooms);
     } catch (error) {
-        console.error('Error fetching rooms:', error);
+        logger.error('Error fetching rooms:', error);
         res.status(500).json({ error: 'Error fetching rooms' });
     }
 });
@@ -835,7 +841,7 @@ app.get('/rooms/:id', async (req, res) => {
         if (!room) return res.status(404).json({ error: 'Room not found' });
         res.json(room);
     } catch (error) {
-        console.error('Error fetching room:', error);
+        logger.error('Error fetching room:', error);
         res.status(500).json({ error: 'Error fetching room' });
     }
 });
@@ -863,11 +869,11 @@ app.post('/rooms', async (req, res) => {
             status: status || 'Available'
         });
         await room.save();
-        console.log('✅ Room created successfully:', room.roomName);
+        logger.info('✅ Room created successfully:', room.roomName);
         res.json({ message: 'Room created successfully', room });
 
     } catch (error) {
-        console.error('Error creating room:', error);
+        logger.error('Error creating room:', error);
         res.status(500).json({ error: `Error creating room: ${error.message}` });
     }
 });
@@ -903,11 +909,11 @@ app.put('/rooms/:id', async (req, res) => {
         );
         if (!updatedRoom) return res.status(404).json({ error: 'Room not found' });
 
-        console.log('✅ Room updated successfully:', updatedRoom.roomName);
+        logger.info('✅ Room updated successfully:', updatedRoom.roomName);
         res.json({ message: 'Room updated successfully', room: updatedRoom });
 
     } catch (error) {
-        console.error('Error updating room:', error);
+        logger.error('Error updating room:', error);
         res.status(500).json({ error: `Error updating room: ${error.message}` });
     }
 });
@@ -917,11 +923,11 @@ app.delete('/rooms/:id', async (req, res) => {
         const deletedRoom = await Room.findByIdAndDelete(req.params.id);
         if (!deletedRoom) return res.status(404).json({ error: 'Room not found' });
 
-        console.log('✅ Room deleted successfully:', deletedRoom.roomName);
+        logger.info('✅ Room deleted successfully:', deletedRoom.roomName);
         res.json({ message: 'Room deleted successfully' });
 
     } catch (error) {
-        console.error('Error deleting room:', error);
+        logger.error('Error deleting room:', error);
         res.status(500).json({ error: `Error deleting room: ${error.message}` });
     }
 });
@@ -995,28 +1001,27 @@ if (process.env.NODE_ENV === 'production') {
 
 // ✅ FIXED: Better error handling for deployment
 app.use((err, req, res, next) => {
-    console.error('Server error:', err);
+    logger.error('Server error:', err);
     res.status(500).json({ error: 'Internal server error' });
 });
 
 // --------------------- SERVER START ---------------------
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log('🔧 Debug endpoints available:');
-    console.log('   - http://localhost:' + `${PORT}` + '/test');
-    console.log('   - http://localhost:' + `${PORT}` + '/test-users');
-    console.log('📧 Default admin credentials:');
-    console.log('   - Email: admin@gmail.com');
-    console.log('   - Password: admin');
-    console.log('📁 File uploads directory: ' + uploadsDir);
-    console.log('🎓 Student endpoints:');
-    console.log('   - http://localhost:' + `${PORT}` + '/users/students');
-    console.log('   - http://localhost:' + `${PORT}` + '/users/students/section/:section');
-    console.log('   - http://localhost:' + `${PORT}` + '/users/students/year-level/:yearLevel');
-    console.log('📊 Dashboard endpoints:');
-    console.log('   - http://localhost:' + `${PORT}` + '/dashboard-counts');
-    console.log('   - http://localhost:' + `${PORT}` + '/room-stats');
-    console.log('   - http://localhost:' + `${PORT}` + '/students-per-section');
-    console.log('   - http://localhost:' + `${PORT}` + '/students-per-room');
+    logger.info(`🚀 Server running on port ${PORT}`);
+    logger.info(`🔧 Debug endpoints available:`);
+    logger.info(`   - http://localhost:${PORT}/test`);
+    logger.info(`   - http://localhost:${PORT}/test-users`);
+    logger.info(`📧 Default admin credentials:`);
+    logger.info(`   - Email: admin@gmail.com`);
+    logger.info(`   - Password: admin`);
+    logger.info(`📁 File uploads directory: ${uploadsDir}`);
+    logger.info(`🎓 Student endpoints:`);
+    logger.info(`   - http://localhost:${PORT}/users/students`);
+    logger.info(`   - http://localhost:${PORT}/users/students/section/:section`);
+    logger.info(`   - http://localhost:${PORT}/users/students/year-level/:yearLevel`);
+    logger.info(`📊 Dashboard endpoints:`);
+    logger.info(`   - http://localhost:${PORT}/dashboard-counts`);
+    logger.info(`   - http://localhost:${PORT}/room-stats`);
+    logger.info(`   - http://localhost:${PORT}/students-per-section`);
+    logger.info(`   - http://localhost:${PORT}/students-per-room`);
 });
