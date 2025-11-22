@@ -46,6 +46,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve uploaded images from /uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.use('/img', express.static(path.join(__dirname, 'public', 'img')));
+
 // ✅ FIXED: Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'public'))); // Adjust path to your built frontend

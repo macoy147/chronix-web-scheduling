@@ -1,11 +1,64 @@
-// Fixed Admin Dashboard with Accurate Data and Proper Chronological Order
-// In admin-dashboard.js, admin-profile.js, etc.
+// public/js/admin-dashboard.js - FIXED VERSION
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
+// Simple auth helper since AuthGuard might not be loading properly
+const AuthHelper = {
+    checkAuthentication(requiredRole = null) {
+        const isAuthenticated = sessionStorage.getItem('isAuthenticated');
+        const userRole = sessionStorage.getItem('userRole');
+        
+        console.log('Auth check:', { isAuthenticated, userRole, requiredRole });
+        
+        if (!isAuthenticated || isAuthenticated !== 'true') {
+            this.redirectToLogin();
+            return false;
+        }
+        
+        if (requiredRole && userRole !== requiredRole) {
+            this.redirectToLogin('Unauthorized access.');
+            return false;
+        }
+        
+        return true;
+    },
+    
+    redirectToLogin(message = 'Please sign in') {
+        sessionStorage.setItem('loginRedirectMessage', message);
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    getCurrentUser() {
+        const userData = sessionStorage.getItem('currentUser');
+        return userData ? JSON.parse(userData) : null;
+    },
+    
+    getUserId() {
+        const user = this.getCurrentUser();
+        return user ? user._id : null;
+    },
+    
+    logout() {
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('isAuthenticated');
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('userId');
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    storeUserSession(userData) {
+        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+        sessionStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('userRole', userData.userrole);
+        sessionStorage.setItem('userId', userData._id);
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin Dashboard loaded');
+    
     // Check authentication first
-    if (!AuthGuard.checkAuthentication('admin')) {
+    if (!AuthHelper.checkAuthentication('admin')) {
         return;
     }
 
@@ -49,35 +102,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Logout functionality
-    document.getElementById('logoutBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        AuthGuard.logout();
-    });
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            AuthHelper.logout();
+        });
+    }
 
     // Refresh button functionality
-    document.getElementById('refreshBtn').addEventListener('click', function() {
-        refreshDashboardData();
-    });
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            refreshDashboardData();
+        });
+    }
 
     // Filter event listeners
-    document.getElementById('studentDistributionType').addEventListener('change', function() {
-        dashboardState.filters.studentDistributionType = this.value;
-        renderStudentDistributionChart();
-    });
+    const studentDistributionType = document.getElementById('studentDistributionType');
+    if (studentDistributionType) {
+        studentDistributionType.addEventListener('change', function() {
+            dashboardState.filters.studentDistributionType = this.value;
+            renderStudentDistributionChart();
+        });
+    }
 
-    document.getElementById('roomChartType').addEventListener('change', function() {
-        dashboardState.filters.roomChartType = this.value;
-        renderRoomUtilizationChart();
-    });
+    const roomChartType = document.getElementById('roomChartType');
+    if (roomChartType) {
+        roomChartType.addEventListener('change', function() {
+            dashboardState.filters.roomChartType = this.value;
+            renderRoomUtilizationChart();
+        });
+    }
 
-    document.getElementById('scheduleDensityType').addEventListener('change', function() {
-        dashboardState.filters.scheduleDensityType = this.value;
-        renderScheduleDensityChart();
-    });
+    const scheduleDensityType = document.getElementById('scheduleDensityType');
+    if (scheduleDensityType) {
+        scheduleDensityType.addEventListener('change', function() {
+            dashboardState.filters.scheduleDensityType = this.value;
+            renderScheduleDensityChart();
+        });
+    }
 
     // Update profile info
     function updateProfileInfo() {
-        const currentUser = AuthGuard.getCurrentUser();
+        const currentUser = AuthHelper.getCurrentUser();
         if (currentUser) {
             const firstName = currentUser.fullname.split(' ')[0];
             const profileName = document.getElementById('profileName');
@@ -86,8 +154,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const profileAvatar = document.getElementById('profileAvatar');
-            if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = `${currentUser.profilePicture}`;
+            if (profileAvatar) {
+                if (currentUser.profilePicture) {
+                    profileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                        ? currentUser.profilePicture 
+                        : currentUser.profilePicture;
+                } else {
+                    profileAvatar.src = '/img/default_admin_avatar.png';
+                }
             }
         }
     }
@@ -109,43 +183,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Load all data from MongoDB with proper error handling
+    // Load all data from MongoDB
     async function loadAllData() {
         try {
             console.log('Starting data load from server...');
             
-            // Load students - CHANGED from http://localhost:3001/users/students
+            // Load students
             const studentsResponse = await fetch('/users/students');
             if (!studentsResponse.ok) throw new Error('Failed to fetch students');
             const studentsData = await studentsResponse.json();
-            const students = Array.isArray(studentsData) ? studentsData : (studentsData.students || []);
+            const students = Array.isArray(studentsData) ? studentsData : [];
             console.log(`Loaded ${students.length} students`);
 
-            // Load teachers - CHANGED from http://localhost:3001/teachers
+            // Load teachers
             const teachersResponse = await fetch('/teachers');
             if (!teachersResponse.ok) throw new Error('Failed to fetch teachers');
             const teachers = await teachersResponse.json();
             console.log(`Loaded ${teachers.length} teachers`);
 
-            // Load rooms - CHANGED from http://localhost:3001/rooms
+            // Load rooms
             const roomsResponse = await fetch('/rooms');
             if (!roomsResponse.ok) throw new Error('Failed to fetch rooms');
             const rooms = await roomsResponse.json();
             console.log(`Loaded ${rooms.length} rooms`);
 
-            // Load schedules - CHANGED from http://localhost:3001/schedules
+            // Load schedules
             const schedulesResponse = await fetch('/schedules');
             if (!schedulesResponse.ok) throw new Error('Failed to fetch schedules');
             const schedules = await schedulesResponse.json();
             console.log(`Loaded ${schedules.length} schedules`);
 
-            // Load subjects - CHANGED from http://localhost:3001/subjects
+            // Load subjects
             const subjectsResponse = await fetch('/subjects');
             if (!subjectsResponse.ok) throw new Error('Failed to fetch subjects');
             const subjects = await subjectsResponse.json();
             console.log(`Loaded ${subjects.length} subjects`);
 
-            // Load sections - CHANGED from http://localhost:3001/sections
+            // Load sections
             const sectionsResponse = await fetch('/sections');
             if (!sectionsResponse.ok) throw new Error('Failed to fetch sections');
             const sections = await sectionsResponse.json();
@@ -182,28 +256,35 @@ document.addEventListener('DOMContentLoaded', function() {
         const { students, teachers, rooms, schedules } = dashboardState.data;
 
         // Total Students
-        document.getElementById('totalStudents').textContent = students.length;
+        const totalStudentsEl = document.getElementById('totalStudents');
+        if (totalStudentsEl) totalStudentsEl.textContent = students.length;
         updateTrend('studentsTrend', students.length, 0);
 
         // Total Teachers
-        document.getElementById('totalTeachers').textContent = teachers.length;
+        const totalTeachersEl = document.getElementById('totalTeachers');
+        if (totalTeachersEl) totalTeachersEl.textContent = teachers.length;
         updateTrend('teachersTrend', teachers.length, 0);
 
         // Available Rooms
         const availableRooms = rooms.filter(room => room.status === 'Available').length;
         const totalRooms = rooms.length;
-        document.getElementById('availableRooms').textContent = availableRooms;
-        document.getElementById('totalRooms').textContent = totalRooms;
+        const availableRoomsEl = document.getElementById('availableRooms');
+        if (availableRoomsEl) availableRoomsEl.textContent = availableRooms;
+        const totalRoomsEl = document.getElementById('totalRooms');
+        if (totalRoomsEl) totalRoomsEl.textContent = totalRooms;
         updateTrend('roomsTrend', availableRooms, 0);
 
         // Active Schedules
-        document.getElementById('activeSchedules').textContent = schedules.length;
+        const activeSchedulesEl = document.getElementById('activeSchedules');
+        if (activeSchedulesEl) activeSchedulesEl.textContent = schedules.length;
         updateTrend('schedulesTrend', schedules.length, 0);
     }
 
     // Update trend indicators
     function updateTrend(elementId, currentValue, previousValue) {
         const trendElement = document.getElementById(elementId);
+        if (!trendElement) return;
+        
         const difference = currentValue - previousValue;
         
         if (difference > 0) {
@@ -218,16 +299,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Render all charts
-    function renderAllCharts() {
-        renderStudentDistributionChart();
-        renderRoomUtilizationChart();
-        renderScheduleDensityChart();
-    }
-
-    // Student Distribution Chart - FIXED Year Level Data
+    // [Keep all the chart rendering functions the same as before...]
+    // Student Distribution Chart
     function renderStudentDistributionChart() {
-        const ctx = document.getElementById('studentDistributionChart').getContext('2d');
+        const ctx = document.getElementById('studentDistributionChart');
+        if (!ctx) return;
+        
+        const context = ctx.getContext('2d');
         const type = dashboardState.filters.studentDistributionType;
         
         // Destroy existing chart
@@ -260,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
 
-        dashboardState.charts.studentDistribution = new Chart(ctx, {
+        dashboardState.charts.studentDistribution = new Chart(context, {
             type: 'bar',
             data: {
                 labels: labels,
@@ -308,7 +386,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Room Utilization Chart
     function renderRoomUtilizationChart() {
-        const ctx = document.getElementById('roomUtilizationChart').getContext('2d');
+        const ctx = document.getElementById('roomUtilizationChart');
+        if (!ctx) return;
+        
+        const context = ctx.getContext('2d');
         const type = dashboardState.filters.roomChartType;
         
         if (dashboardState.charts.roomUtilization) {
@@ -340,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
 
-        dashboardState.charts.roomUtilization = new Chart(ctx, {
+        dashboardState.charts.roomUtilization = new Chart(context, {
             type: 'doughnut',
             data: {
                 labels: labels,
@@ -372,9 +453,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Schedule Density Chart - FIXED Schedule Type Data
+    // Schedule Density Chart
     function renderScheduleDensityChart() {
-        const ctx = document.getElementById('scheduleDensityChart').getContext('2d');
+        const ctx = document.getElementById('scheduleDensityChart');
+        if (!ctx) return;
+        
+        const context = ctx.getContext('2d');
         const type = dashboardState.filters.scheduleDensityType;
         
         if (dashboardState.charts.scheduleDensity) {
@@ -399,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
 
-        dashboardState.charts.scheduleDensity = new Chart(ctx, {
+        dashboardState.charts.scheduleDensity = new Chart(context, {
             type: 'bar',
             data: {
                 labels: labels,
@@ -444,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Data aggregation functions
+    // [Keep all the data aggregation functions the same...]
     function aggregateStudentsBySection() {
         const sectionCounts = {};
         dashboardState.data.students.forEach(student => {
@@ -462,7 +546,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // FIXED: Student Year Level Aggregation
     function aggregateStudentsByYear() {
         const yearCounts = { 
             '1st Year': 0, 
@@ -475,7 +558,6 @@ document.addEventListener('DOMContentLoaded', function() {
         dashboardState.data.students.forEach(student => {
             let yearLevel = 'Unassigned';
             
-            // Try to get year level from section
             if (student.section) {
                 const section = dashboardState.data.sections.find(s => s.sectionName === student.section);
                 if (section && section.yearLevel) {
@@ -483,29 +565,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Fallback: try to extract from CTU ID or other fields
-            if (yearLevel === 'Unassigned' && student.ctuid) {
-                // Assuming CTU ID format might contain year information
-                // This is a fallback - adjust based on your actual ID format
-                const idString = student.ctuid.toString();
-                if (idString.length >= 2) {
-                    const possibleYear = idString.substring(0, 2);
-                    if (['23', '24', '25', '26'].includes(possibleYear)) {
-                        yearLevel = '1st Year';
-                    } else if (['22', '21'].includes(possibleYear)) {
-                        yearLevel = '2nd Year';
-                    } else if (['20', '19'].includes(possibleYear)) {
-                        yearLevel = '3rd Year';
-                    } else if (['18', '17'].includes(possibleYear)) {
-                        yearLevel = '4th Year';
-                    }
-                }
-            }
-            
             yearCounts[yearLevel] = (yearCounts[yearLevel] || 0) + 1;
         });
 
-        // Remove Unassigned if 0
         if (yearCounts['Unassigned'] === 0) {
             delete yearCounts['Unassigned'];
         }
@@ -598,7 +660,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // FIXED: Schedule Type Aggregation
     function aggregateSchedulesByType() {
         const typeCounts = { 
             'Lecture': 0, 
@@ -613,14 +674,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (schedule.scheduleType) {
                     scheduleType = schedule.scheduleType;
                 } else if (schedule.subject) {
-                    // Try to infer from subject data if available
                     const subject = dashboardState.data.subjects.find(s => s._id === schedule.subject._id || s._id === schedule.subject);
                     if (subject && subject.lecHours && subject.labHours) {
                         scheduleType = parseInt(subject.labHours) > 0 ? 'Lab' : 'Lecture';
                     }
                 }
                 
-                // Capitalize first letter for consistency
                 scheduleType = scheduleType.charAt(0).toUpperCase() + scheduleType.slice(1).toLowerCase();
                 
                 if (scheduleType === 'Lecture' || scheduleType === 'Lab') {
@@ -631,7 +690,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Remove Unknown if 0
         if (typeCounts['Unknown'] === 0) {
             delete typeCounts['Unknown'];
         }
@@ -642,9 +700,11 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // FIXED: Update recent activity with proper chronological order (newest first)
+    // Update recent activity
     function updateRecentActivity() {
         const activityContainer = document.getElementById('recentActivity');
+        if (!activityContainer) return;
+        
         const { students, teachers, rooms, schedules, sections, subjects } = dashboardState.data;
 
         const activities = [];
@@ -660,7 +720,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         };
 
-        // Student activities (registration and last login)
+        // Student activities
         students.forEach(student => {
             if (student.lastLogin) {
                 activities.push(createActivity(
@@ -671,7 +731,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 ));
             }
             
-            // Use createdAt or registration date if available
             const registrationDate = student.createdAt || student.registrationDate;
             if (registrationDate) {
                 activities.push(createActivity(
@@ -695,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Room activities (status changes and maintenance)
+        // Room activities
         rooms.forEach(room => {
             if (room.updatedAt && room.status === 'Under Maintenance') {
                 activities.push(createActivity(
@@ -808,14 +867,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update last updated timestamp
     function updateLastUpdated() {
         const lastUpdatedElement = document.getElementById('lastUpdated');
-        if (dashboardState.data.lastUpdate) {
+        if (lastUpdatedElement && dashboardState.data.lastUpdate) {
             lastUpdatedElement.textContent = `Last updated: ${dashboardState.data.lastUpdate.toLocaleTimeString()}`;
         }
     }
 
     async function refreshDashboardData() {
         const refreshBtn = document.getElementById('refreshBtn');
-        refreshBtn.classList.add('loading');
+        if (refreshBtn) {
+            refreshBtn.classList.add('loading');
+        }
         
         try {
             await loadAllData();
@@ -825,7 +886,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error refreshing dashboard:', error);
             showNotification('Failed to refresh dashboard data', 'error');
         } finally {
-            refreshBtn.classList.remove('loading');
+            if (refreshBtn) {
+                refreshBtn.classList.remove('loading');
+            }
         }
     }
 
@@ -856,19 +919,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // UI Utility Functions
     function showLoadingOverlay() {
-        document.getElementById('loadingOverlay').style.display = 'flex';
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'flex';
+        }
     }
 
     function hideLoadingOverlay() {
-        document.getElementById('loadingOverlay').style.display = 'none';
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
     }
 
     function showNotification(message, type = 'info') {
         // Create notification element
         const notification = document.createElement('div');
-        notification.className = `${type === 'success' ? 'success-message' : 'error-message'}`;
+        notification.className = `notification ${type}`;
         notification.textContent = message;
-        notification.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 10000;';
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            z-index: 10000;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-family: 'Inter', sans-serif;
+        `;
+        
+        if (type === 'success') {
+            notification.style.backgroundColor = '#4BB543';
+        } else {
+            notification.style.backgroundColor = '#D8000C';
+        }
 
         document.body.appendChild(notification);
 
@@ -884,23 +970,10 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification(message, 'error');
     }
 
-    // Fetch user data for profile - CHANGED from http://localhost:3001/user/${userId}
-    async function fetchUserData() {
-        try {
-            const userId = AuthGuard.getUserId();
-            if (userId) {
-                const res = await fetch(`/user/${userId}`);
-                if (res.ok) {
-                    const userData = await res.json();
-                    AuthGuard.storeUserSession(userData);
-                    updateProfileInfo();
-                }
-            }
-        } catch (error) {
-            console.error('Error fetching user data:', error);
-        }
+    // Render all charts
+    function renderAllCharts() {
+        renderStudentDistributionChart();
+        renderRoomUtilizationChart();
+        renderScheduleDensityChart();
     }
-
-    // Initial user data fetch
-    fetchUserData();
 });
