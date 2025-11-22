@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const userId = AuthGuard.getUserId();
             if (userId) {
-                const res = await fetch(`http://localhost:3001/user/${userId}`);
+                const res = await fetch(`${API_BASE_URL}/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
                     AuthGuard.storeUserSession(userData);
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const res = await fetch(`http://localhost:3001/user/${currentStudentId}`, {
+            const res = await fetch(`${API_BASE_URL}/user/${currentStudentId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -535,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!studentToDelete) return;
 
         try {
-            const res = await fetch(`http://localhost:3001/user/${studentToDelete._id}`, {
+            const res = await fetch(`${API_BASE_URL}/user/${studentToDelete._id}`, {
                 method: 'DELETE'
             });
 

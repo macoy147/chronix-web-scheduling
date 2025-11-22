@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const response = await fetch(`http://localhost:3001/user/${userId}`);
+            const response = await fetch(`${API_BASE_URL}/user/${userId}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch user data');
             }
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('profilePicture', selectedFile);
             }
 
-            const response = await fetch(`http://localhost:3001/user/${userId}`, {
+            const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
                 method: 'PUT',
                 body: formData
             });
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('Server did not return profilePicture, reloading user data...'); // Debug log
                     setTimeout(async () => {
                         try {
-                            const userResponse = await fetch(`http://localhost:3001/user/${userId}`);
+                            const userResponse = await fetch(`${API_BASE_URL}/user/${userId}`);
                             if (userResponse.ok) {
                                 const userData = await userResponse.json();
                                 if (userData.profilePicture) {

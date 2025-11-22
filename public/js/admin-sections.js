@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const userId = AuthGuard.getUserId();
             if (userId) {
-                const res = await fetch(`http://localhost:3001/user/${userId}`);
+                const res = await fetch(`${API_BASE_URL}/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
                     AuthGuard.storeUserSession(userData);
@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!editingSectionId) return;
 
         try {
-            const res = await fetch(`http://localhost:3001/sections/${editingSectionId}`, {
+            const res = await fetch(`${API_BASE_URL}/sections/${editingSectionId}`, {
                 method: 'DELETE'
             });
 

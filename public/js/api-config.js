@@ -1,5 +1,3 @@
-import API_BASE_URL from './api-config.js';
-import { handleApiError } from './error-handler.js';
 
 // Centralized API configuration
 

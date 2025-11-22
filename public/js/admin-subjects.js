@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const userId = AuthGuard.getUserId();
             if (userId) {
-                const res = await fetch(`http://localhost:3001/user/${userId}`);
+                const res = await fetch(`${API_BASE_URL}/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
                     // Update session storage with fresh data
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmDeleteBtn.onclick = async () => {
         if (!deleteSubjectId) return;
         try {
-            const res = await fetch(`http://localhost:3001/subjects/${deleteSubjectId}`, {
+            const res = await fetch(`${API_BASE_URL}/subjects/${deleteSubjectId}`, {
                 method: 'DELETE'
             });
             const result = await res.json();

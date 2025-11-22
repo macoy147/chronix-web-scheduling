@@ -18,9 +18,9 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marcomontellano147
 
 // ✅ FIXED: Configure CORS for production
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || '*', // Set your frontend URL in production
-    credentials: true,
-    optionsSuccessStatus: 200
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Use your production URL
+  credentials: true, // Allow cookies to be sent
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 };
 app.use(cors(corsOptions));
 

@@ -1,5 +1,3 @@
-import API_BASE_URL from './api-config.js';
-import { handleApiError } from './error-handler.js';
 
 // auth-guard.js - Authentication guard for protected pages
 
