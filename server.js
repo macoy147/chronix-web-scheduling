@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const dotenv = require('dotenv');
+const logger = require('./logger.js');
 
 dotenv.config();
 

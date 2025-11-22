@@ -1,4 +1,8 @@
 // Fixed Admin Dashboard with Accurate Data and Proper Chronological Order
+// In admin-dashboard.js, admin-profile.js, etc.
+import API_BASE_URL from './api-config.js';
+import { handleApiError } from './error-handler.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
     if (!AuthGuard.checkAuthentication('admin')) {

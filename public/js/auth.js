@@ -1,3 +1,7 @@
+import API_BASE_URL from './api-config.js';
+import { handleApiError } from './error-handler.js';
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const signUpButton = document.getElementById('signUp');
     const signInButton = document.getElementById('signIn');

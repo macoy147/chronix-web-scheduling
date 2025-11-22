@@ -1,3 +1,6 @@
+import API_BASE_URL from './api-config.js';
+import { handleApiError } from './error-handler.js';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
     if (!AuthGuard.checkAuthentication('student')) {
