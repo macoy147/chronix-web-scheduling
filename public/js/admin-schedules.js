@@ -1,9 +1,61 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
+// Simple auth helper
+const AuthHelper = {
+    checkAuthentication(requiredRole = null) {
+        const isAuthenticated = sessionStorage.getItem('isAuthenticated');
+        const userRole = sessionStorage.getItem('userRole');
+        
+        console.log('Auth check:', { isAuthenticated, userRole, requiredRole });
+        
+        if (!isAuthenticated || isAuthenticated !== 'true') {
+            this.redirectToLogin();
+            return false;
+        }
+        
+        if (requiredRole && userRole !== requiredRole) {
+            this.redirectToLogin('Unauthorized access.');
+            return false;
+        }
+        
+        return true;
+    },
+    
+    redirectToLogin(message = 'Please sign in') {
+        sessionStorage.setItem('loginRedirectMessage', message);
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    getCurrentUser() {
+        const userData = sessionStorage.getItem('currentUser');
+        return userData ? JSON.parse(userData) : null;
+    },
+    
+    getUserId() {
+        const user = this.getCurrentUser();
+        return user ? user._id : null;
+    },
+    
+    logout() {
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('isAuthenticated');
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('userId');
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    storeUserSession(userData) {
+        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+        sessionStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('userRole', userData.userrole);
+        sessionStorage.setItem('userId', userData._id);
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
-    if (!AuthGuard.checkAuthentication('admin')) {
+    if (!AuthHelper.checkAuthentication('admin')) {
         return;
     }
 
@@ -32,14 +84,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Logout functionality
-    document.getElementById('logoutBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        AuthGuard.logout();
-    });
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            AuthHelper.logout();
+        });
+    }
 
     // Update profile info
     function updateProfileInfo() {
-        const currentUser = AuthGuard.getCurrentUser();
+        const currentUser = AuthHelper.getCurrentUser();
         if (currentUser) {
             const firstName = currentUser.fullname.split(' ')[0];
             const profileName = document.getElementById('profileName');
@@ -48,7 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const profileAvatar = document.getElementById('profileAvatar');
             if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = `http://localhost:3001${currentUser.profilePicture}`;
+                profileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                    ? currentUser.profilePicture 
+                    : currentUser.profilePicture;
             }
         }
     }
@@ -56,12 +113,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data
     async function fetchUserData() {
         try {
-            const userId = AuthGuard.getUserId();
+            const userId = AuthHelper.getUserId();
             if (userId) {
-                const res = await fetch(`${API_BASE_URL}/user/${userId}`);
+                const res = await fetch(`/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
-                    AuthGuard.storeUserSession(userData);
+                    AuthHelper.storeUserSession(userData);
                     updateProfileInfo();
                 }
             }
@@ -75,49 +132,68 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchUserData();
 
     // Year Level Selector
-    document.getElementById('yearLevelSelect').addEventListener('change', function() {
-        currentYearLevel = this.value;
-        if (currentYearLevel) {
-            renderSubjectAssignments();
-            renderCalendar();
-        } else {
-            clearSubjectAssignments();
-            renderCalendar(); // Clear calendar
-        }
-    });
+    const yearLevelSelect = document.getElementById('yearLevelSelect');
+    if (yearLevelSelect) {
+        yearLevelSelect.addEventListener('change', function() {
+            currentYearLevel = this.value;
+            if (currentYearLevel) {
+                renderSubjectAssignments();
+                renderCalendar();
+            } else {
+                clearSubjectAssignments();
+                renderCalendar(); // Clear calendar
+            }
+        });
+    }
 
     // Shift Toggle
-    document.getElementById('dayShiftBtn').addEventListener('click', function() {
-        currentShift = 'day';
-        updateShiftToggle();
-        renderCalendar();
-        renderSubjectAssignments();
-    });
+    const dayShiftBtn = document.getElementById('dayShiftBtn');
+    if (dayShiftBtn) {
+        dayShiftBtn.addEventListener('click', function() {
+            currentShift = 'day';
+            updateShiftToggle();
+            renderCalendar();
+            renderSubjectAssignments();
+        });
+    }
 
-    document.getElementById('nightShiftBtn').addEventListener('click', function() {
-        currentShift = 'night';
-        updateShiftToggle();
-        renderCalendar();
-        renderSubjectAssignments();
-    });
+    const nightShiftBtn = document.getElementById('nightShiftBtn');
+    if (nightShiftBtn) {
+        nightShiftBtn.addEventListener('click', function() {
+            currentShift = 'night';
+            updateShiftToggle();
+            renderCalendar();
+            renderSubjectAssignments();
+        });
+    }
 
     function updateShiftToggle() {
         document.querySelectorAll('.shift-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(currentShift + 'ShiftBtn').classList.add('active');
-        document.querySelector('.calendar-container').className = 
-            `calendar-container ${currentShift}-shift`;
+        const activeBtn = document.getElementById(currentShift + 'ShiftBtn');
+        if (activeBtn) activeBtn.classList.add('active');
+        
+        const calendarContainer = document.querySelector('.calendar-container');
+        if (calendarContainer) {
+            calendarContainer.className = `calendar-container ${currentShift}-shift`;
+        }
     }
 
     // Calendar Navigation
-    document.getElementById('prevMonthBtn').addEventListener('click', function() {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        renderCalendar();
-    });
+    const prevMonthBtn = document.getElementById('prevMonthBtn');
+    if (prevMonthBtn) {
+        prevMonthBtn.addEventListener('click', function() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+    }
 
-    document.getElementById('nextMonthBtn').addEventListener('click', function() {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        renderCalendar();
-    });
+    const nextMonthBtn = document.getElementById('nextMonthBtn');
+    if (nextMonthBtn) {
+        nextMonthBtn.addEventListener('click', function() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+    }
 
     // Load all necessary data
     async function loadAllData() {
@@ -145,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadSchedules() {
         try {
-            const res = await fetch('http://localhost:3001/schedules');
+            const res = await fetch('/schedules');
             if (res.ok) {
                 schedules = await res.json();
                 console.log('Loaded schedules:', schedules);
@@ -161,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadSubjects() {
         try {
-            const res = await fetch('http://localhost:3001/subjects');
+            const res = await fetch('/subjects');
             if (res.ok) {
                 subjects = await res.json();
             }
@@ -173,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadTeachers() {
         try {
-            const res = await fetch('http://localhost:3001/teachers');
+            const res = await fetch('/teachers');
             if (res.ok) {
                 teachers = await res.json();
             }
@@ -185,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadSections() {
         try {
-            const res = await fetch('http://localhost:3001/sections');
+            const res = await fetch('/sections');
             if (res.ok) {
                 sections = await res.json();
             }
@@ -197,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadRooms() {
         try {
-            const res = await fetch('http://localhost:3001/rooms');
+            const res = await fetch('/rooms');
             if (res.ok) {
                 rooms = await res.json();
             }
@@ -210,6 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Populate dropdowns (now with year filter)
     function populateSubjectDropdown(yearLevel = null) {
         const select = document.getElementById('subjectSelect');
+        if (!select) return;
+        
         select.innerHTML = '<option value="">Select Subject</option>';
         subjects.filter(subject => !yearLevel || subject.yearLevel === parseInt(yearLevel))
             .forEach(subject => {
@@ -228,6 +306,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function populateTeacherDropdown() {
         const select = document.getElementById('teacherSelect');
+        if (!select) return;
+        
         select.innerHTML = '<option value="">Select Teacher</option>';
         teachers.forEach(teacher => {
             const option = document.createElement('option');
@@ -243,6 +323,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function populateSectionDropdown(yearLevel = null) {
         const select = document.getElementById('sectionSelect');
+        if (!select) return;
+        
         select.innerHTML = '<option value="">Select Section</option>';
         sections.filter(section => !yearLevel || section.yearLevel === parseInt(yearLevel))
             .forEach(section => {
@@ -255,11 +337,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 option.title = section.sectionName;
                 option.dataset.shift = section.shift; // Add shift data if needed
                 select.appendChild(option);
-            });
+        });
     }
 
     function populateRoomDropdown() {
         const select = document.getElementById('roomSelect');
+        if (!select) return;
+        
         select.innerHTML = '<option value="">Select Room</option>';
         rooms.forEach(room => {
             const option = document.createElement('option');
@@ -311,6 +395,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render subject assignments with per-section progress
     function renderSubjectAssignments() {
         const container = document.getElementById('subjectAssignmentContainer');
+        if (!container) return;
+        
         container.innerHTML = '';
         if (!currentYearLevel) {
             container.innerHTML = '<div class="no-selection">Select a year level to see subjects.</div>';
@@ -345,16 +431,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function clearSubjectAssignments() {
-        document.getElementById('subjectAssignmentContainer').innerHTML = '';
+        const container = document.getElementById('subjectAssignmentContainer');
+        if (container) container.innerHTML = '';
     }
 
     // Render calendar with filters for year level and shift
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
+        if (!grid) return;
+
         grid.innerHTML = '';
 
         // Always update month/year
-        document.getElementById('currentMonthYear').textContent = currentDate.toLocaleString('default', { month: 'long' }) + ' ' + currentDate.getFullYear();
+        const currentMonthYear = document.getElementById('currentMonthYear');
+        if (currentMonthYear) {
+            currentMonthYear.textContent = currentDate.toLocaleString('default', { month: 'long' }) + ' ' + currentDate.getFullYear();
+        }
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         days.forEach(day => {
@@ -401,38 +493,56 @@ document.addEventListener('DOMContentLoaded', function() {
     const sectionSelect = document.getElementById('sectionSelect');
     const subjectHoursInfo = document.getElementById('subjectHoursInfo');
 
-    openBtn.onclick = () => {
-        editMode = false;
-        editingScheduleId = null;
-        form.reset();
-        populateSubjectDropdown(currentYearLevel);
-        populateSectionDropdown(currentYearLevel);
-        populateTeacherDropdown();
-        populateRoomDropdown();
-        document.getElementById('scheduleModalTitle').textContent = 'Create New Schedule';
-        document.getElementById('submitScheduleBtn').textContent = 'Create Schedule';
-        scheduleModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        subjectHoursInfo.style.display = 'none';
-    };
+    if (openBtn) {
+        openBtn.onclick = () => {
+            editMode = false;
+            editingScheduleId = null;
+            if (form) form.reset();
+            populateSubjectDropdown(currentYearLevel);
+            populateSectionDropdown(currentYearLevel);
+            populateTeacherDropdown();
+            populateRoomDropdown();
+            
+            const modalTitle = document.getElementById('scheduleModalTitle');
+            if (modalTitle) modalTitle.textContent = 'Create New Schedule';
+            
+            const submitBtn = document.getElementById('submitScheduleBtn');
+            if (submitBtn) submitBtn.textContent = 'Create Schedule';
+            
+            if (scheduleModal) scheduleModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            
+            if (subjectHoursInfo) subjectHoursInfo.style.display = 'none';
+        };
+    }
 
-    closeBtn.onclick = () => {
-        scheduleModal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    };
-
-    scheduleModal.addEventListener('click', function(e) {
-        if (e.target === scheduleModal) {
-            scheduleModal.style.display = 'none';
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            if (scheduleModal) scheduleModal.style.display = 'none';
             document.body.style.overflow = 'auto';
-        }
-    });
+        };
+    }
+
+    if (scheduleModal) {
+        scheduleModal.addEventListener('click', function(e) {
+            if (e.target === scheduleModal) {
+                scheduleModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
     // Update hours info when subject or section changes
-    subjectSelect.addEventListener('change', updateHoursInfo);
-    sectionSelect.addEventListener('change', updateHoursInfo);
+    if (subjectSelect) {
+        subjectSelect.addEventListener('change', updateHoursInfo);
+    }
+    if (sectionSelect) {
+        sectionSelect.addEventListener('change', updateHoursInfo);
+    }
 
     function updateHoursInfo() {
+        if (!subjectSelect || !sectionSelect || !subjectHoursInfo) return;
+        
         const subjId = subjectSelect.value;
         const sectId = sectionSelect.value;
         if (!subjId || !sectId) {
@@ -446,77 +556,84 @@ document.addEventListener('DOMContentLoaded', function() {
         const lecTotal = parseFloat(subject.lecHours) || 0;
         const labTotal = parseFloat(subject.labHours) || 0;
         const total = lecTotal + labTotal;
-        document.getElementById('lecHours').textContent = `${lec}/${lecTotal}`;
-        document.getElementById('labHours').textContent = `${lab}/${labTotal}`;
-        document.getElementById('totalHours').textContent = `${totalAllocated}/${total}`;
+        
+        const lecHoursEl = document.getElementById('lecHours');
+        const labHoursEl = document.getElementById('labHours');
+        const totalHoursEl = document.getElementById('totalHours');
+        const hoursProgressEl = document.getElementById('hoursProgress');
+        const progressTextEl = document.getElementById('progressText');
+        
+        if (lecHoursEl) lecHoursEl.textContent = `${lec}/${lecTotal}`;
+        if (labHoursEl) labHoursEl.textContent = `${lab}/${labTotal}`;
+        if (totalHoursEl) totalHoursEl.textContent = `${totalAllocated}/${total}`;
+        
         const progress = total > 0 ? (totalAllocated / total * 100) : 0;
-        document.getElementById('hoursProgress').style.width = `${progress}%`;
-        document.getElementById('progressText').textContent = `${Math.round(progress)}% scheduled`;
+        if (hoursProgressEl) hoursProgressEl.style.width = `${progress}%`;
+        if (progressTextEl) progressTextEl.textContent = `${Math.round(progress)}% scheduled`;
+        
         subjectHoursInfo.style.display = 'block';
     }
 
     // Form submit
-    form.onsubmit = async (e) => {
-        e.preventDefault();
-        const formData = {
-            subject: document.getElementById('subjectSelect').value,
-            teacher: document.getElementById('teacherSelect').value,
-            section: document.getElementById('sectionSelect').value,
-            room: document.getElementById('roomSelect').value,
-            day: document.getElementById('daySelect').value,
-            startTime: document.getElementById('startTime').value,
-            endTime: document.getElementById('endTime').value,
-            startPeriod: document.getElementById('startPeriod').value,
-            endPeriod: document.getElementById('endPeriod').value,
-            scheduleType: document.querySelector('input[name="scheduleType"]:checked').value
+    if (form) {
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = {
+                subject: document.getElementById('subjectSelect').value,
+                teacher: document.getElementById('teacherSelect').value,
+                section: document.getElementById('sectionSelect').value,
+                room: document.getElementById('roomSelect').value,
+                day: document.getElementById('daySelect').value,
+                startTime: document.getElementById('startTime').value,
+                endTime: document.getElementById('endTime').value,
+                startPeriod: document.getElementById('startPeriod').value,
+                endPeriod: document.getElementById('endPeriod').value,
+                scheduleType: document.querySelector('input[name="scheduleType"]:checked').value
+            };
+
+            // Basic validation
+            if (!formData.subject || !formData.teacher || !formData.section || !formData.room || !formData.day || !formData.startTime || !formData.endTime) {
+                showBubbleMessage('Please fill all required fields.', 'error');
+                return;
+            }
+
+            try {
+                let url = '/schedules';
+                let method = 'POST';
+                if (editMode) {
+                    url += `/${editingScheduleId}`;
+                    method = 'PUT';
+                }
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await res.json();
+
+                if (res.ok) {
+                    showBubbleMessage(editMode ? 'Schedule updated successfully!' : 'Schedule created successfully!', 'success');
+                    if (scheduleModal) scheduleModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    await loadAllData(); // Reload data to update views
+                } else {
+                    showBubbleMessage(result.error || 'Failed to save schedule.', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving schedule:', error);
+                showBubbleMessage('Failed to save schedule.', 'error');
+            }
         };
-
-        // Basic validation
-        if (!formData.subject || !formData.teacher || !formData.section || !formData.room || !formData.day || !formData.startTime || !formData.endTime) {
-            showBubbleMessage('Please fill all required fields.', 'error');
-            return;
-        }
-
-        // Conflict check (assume you have this logic; for now, placeholder)
-        // if (hasConflict(formData)) {
-        //     showConflictAlert();
-        //     return;
-        // }
-
-        try {
-            let url = 'http://localhost:3001/schedules';
-            let method = 'POST';
-            if (editMode) {
-                url += `/${editingScheduleId}`;
-                method = 'PUT';
-            }
-
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-
-            const result = await res.json();
-
-            if (res.ok) {
-                showBubbleMessage(editMode ? 'Schedule updated successfully!' : 'Schedule created successfully!', 'success');
-                scheduleModal.style.display = 'none';
-                document.body.style.overflow = 'auto';
-                await loadAllData(); // Reload data to update views
-            } else {
-                showBubbleMessage(result.error || 'Failed to save schedule.', 'error');
-            }
-        } catch (error) {
-            console.error('Error saving schedule:', error);
-            showBubbleMessage('Failed to save schedule.', 'error');
-        }
-    };
+    }
 
     // Schedule Details Modal
     function showScheduleDetails(schedule) {
         const modal = document.getElementById('scheduleDetailsModal');
         const details = document.getElementById('scheduleDetails');
+        
+        if (!modal || !details) return;
         
         details.innerHTML = `
             <div class="detail-item">
@@ -549,26 +666,36 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        document.getElementById('editScheduleBtn').onclick = () => {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-            openEditModal(schedule._id);
-        };
+        const editBtn = document.getElementById('editScheduleBtn');
+        if (editBtn) {
+            editBtn.onclick = () => {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                openEditModal(schedule._id);
+            };
+        }
         
-        document.getElementById('deleteScheduleBtn').onclick = () => {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-            handleDeleteSchedule(schedule._id);
-        };
+        const deleteBtn = document.getElementById('deleteScheduleBtn');
+        if (deleteBtn) {
+            deleteBtn.onclick = () => {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                handleDeleteSchedule(schedule._id);
+            };
+        }
         
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
 
-    document.getElementById('closeDetailsModal').addEventListener('click', function() {
-        document.getElementById('scheduleDetailsModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const closeDetailsModal = document.getElementById('closeDetailsModal');
+    if (closeDetailsModal) {
+        closeDetailsModal.addEventListener('click', function() {
+            const modal = document.getElementById('scheduleDetailsModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
     // Edit modal
     async function openEditModal(scheduleId) {
@@ -587,20 +714,26 @@ document.addEventListener('DOMContentLoaded', function() {
             populateTeacherDropdown();
             populateRoomDropdown();
 
-            document.getElementById('subjectSelect').value = schedule.subject._id;
-            document.getElementById('teacherSelect').value = schedule.teacher._id;
-            document.getElementById('sectionSelect').value = schedule.section._id;
-            document.getElementById('roomSelect').value = schedule.room._id;
-            document.getElementById('daySelect').value = schedule.day;
-            document.getElementById('startTime').value = schedule.startTime;
-            document.getElementById('endTime').value = schedule.endTime;
-            document.getElementById('startPeriod').value = schedule.startPeriod;
-            document.getElementById('endPeriod').value = schedule.endPeriod;
-            document.querySelector(`input[name="scheduleType"][value="${schedule.scheduleType}"]`).checked = true;
+            if (form) {
+                document.getElementById('subjectSelect').value = schedule.subject._id;
+                document.getElementById('teacherSelect').value = schedule.teacher._id;
+                document.getElementById('sectionSelect').value = schedule.section._id;
+                document.getElementById('roomSelect').value = schedule.room._id;
+                document.getElementById('daySelect').value = schedule.day;
+                document.getElementById('startTime').value = schedule.startTime;
+                document.getElementById('endTime').value = schedule.endTime;
+                document.getElementById('startPeriod').value = schedule.startPeriod;
+                document.getElementById('endPeriod').value = schedule.endPeriod;
+                document.querySelector(`input[name="scheduleType"][value="${schedule.scheduleType}"]`).checked = true;
+            }
 
-            document.getElementById('scheduleModalTitle').textContent = 'Edit Schedule';
-            document.getElementById('submitScheduleBtn').textContent = 'Update Schedule';
-            scheduleModal.style.display = 'flex';
+            const modalTitle = document.getElementById('scheduleModalTitle');
+            if (modalTitle) modalTitle.textContent = 'Edit Schedule';
+            
+            const submitBtn = document.getElementById('submitScheduleBtn');
+            if (submitBtn) submitBtn.textContent = 'Update Schedule';
+            
+            if (scheduleModal) scheduleModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
 
             // Update hours info
@@ -617,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!confirm('Are you sure you want to delete this schedule?')) return;
 
         try {
-            const res = await fetch(`${API_BASE_URL}/schedules/${scheduleId}`, {
+            const res = await fetch(`/schedules/${scheduleId}`, {
                 method: 'DELETE'
             });
 
@@ -639,6 +772,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Bubble notification
     function showBubbleMessage(msg, type = "success") {
         const bubble = document.getElementById('scheduleBubbleMessage');
+        if (!bubble) return;
+        
         bubble.textContent = msg;
         bubble.className = "section-bubble-message";
         bubble.classList.add(type);

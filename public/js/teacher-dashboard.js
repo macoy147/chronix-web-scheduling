@@ -1,11 +1,17 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication first
-    if (!AuthGuard.checkAuthentication('teacher')) {
-        return;
+    // Check authentication first - with fallback
+    let authCheck = true;
+    if (typeof AuthGuard !== 'undefined') {
+        if (!AuthGuard.checkAuthentication('teacher')) {
+            return;
+        }
+    } else {
+        console.warn('AuthGuard not found, proceeding without authentication check');
+        // You might want to redirect to login here
+        // window.location.href = '/login.html';
     }
 
     // State management
@@ -18,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDayIndex = 0;
     let selectedFile = null;
 
-    // Profile dropdown
+    // Profile dropdown - with safety check
     const profileDropdown = document.querySelector('.teacher-profile-dropdown');
     if (profileDropdown) {
         profileDropdown.addEventListener('click', function(e) {
@@ -30,68 +36,117 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Logout functionality
-    document.getElementById('teacherLogoutBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        AuthGuard.logout();
-    });
+    // Logout functionality - with safety check
+    const logoutBtn = document.getElementById('teacherLogoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeof AuthGuard !== 'undefined') {
+                AuthGuard.logout();
+            } else {
+                // Fallback logout
+                sessionStorage.clear();
+                localStorage.clear();
+                window.location.href = '/login.html';
+            }
+        });
+    }
 
-    // Navigation
+    // Navigation - improved with error handling
     setupNavigation();
 
     function setupNavigation() {
-        document.getElementById('dashboardLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('dashboardView');
-            updateNavActive(this);
-        });
+        // Dashboard link
+        const dashboardLink = document.getElementById('dashboardLink');
+        if (dashboardLink) {
+            dashboardLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('dashboardView');
+                updateNavActive(this);
+            });
+        }
 
-        document.getElementById('scheduleLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('scheduleView');
-            updateNavActive(this);
-            renderScheduleViews(); // Refresh schedule data when switching to schedule view
-        });
+        // Schedule link
+        const scheduleLink = document.getElementById('scheduleLink');
+        if (scheduleLink) {
+            scheduleLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('scheduleView');
+                updateNavActive(this);
+                renderScheduleViews(); // Refresh schedule data when switching to schedule view
+            });
+        }
 
-        document.getElementById('profileLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('profileView');
-            updateNavActive(this);
-            updateProfileView(); // Refresh profile data when switching to profile view
-        });
+        // Profile link
+        const profileLink = document.getElementById('profileLink');
+        if (profileLink) {
+            profileLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('profileView');
+                updateNavActive(this);
+                updateProfileView(); // Refresh profile data when switching to profile view
+            });
+        }
 
-        document.getElementById('teacherProfileBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('profileView');
-            updateNavActive(document.getElementById('profileLink'));
-            updateProfileView();
-        });
+        // Teacher profile button
+        const teacherProfileBtn = document.getElementById('teacherProfileBtn');
+        if (teacherProfileBtn) {
+            teacherProfileBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('profileView');
+                const profileLink = document.getElementById('profileLink');
+                if (profileLink) updateNavActive(profileLink);
+                updateProfileView();
+            });
+        }
 
-        document.getElementById('viewFullScheduleBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('scheduleView');
-            updateNavActive(document.getElementById('scheduleLink'));
-            renderScheduleViews();
-        });
+        // View full schedule button
+        const viewFullScheduleBtn = document.getElementById('viewFullScheduleBtn');
+        if (viewFullScheduleBtn) {
+            viewFullScheduleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('scheduleView');
+                const scheduleLink = document.getElementById('scheduleLink');
+                if (scheduleLink) updateNavActive(scheduleLink);
+                renderScheduleViews();
+            });
+        }
     }
 
     function switchView(viewId) {
         document.querySelectorAll('.view-section').forEach(view => {
             view.classList.remove('active');
         });
-        document.getElementById(viewId).classList.add('active');
+        const targetView = document.getElementById(viewId);
+        if (targetView) {
+            targetView.classList.add('active');
+        }
     }
 
     function updateNavActive(clickedElement) {
         document.querySelectorAll('.nav-links li').forEach(li => {
             li.classList.remove('active');
         });
-        clickedElement.parentElement.classList.add('active');
+        if (clickedElement && clickedElement.parentElement) {
+            clickedElement.parentElement.classList.add('active');
+        }
     }
 
     // Update profile info in navigation
     function updateProfileInfo() {
-        const currentUser = AuthGuard.getCurrentUser();
+        let currentUser = null;
+        
+        // Get current user with fallback
+        if (typeof AuthGuard !== 'undefined') {
+            currentUser = AuthGuard.getCurrentUser();
+        } else {
+            // Fallback: try to get from sessionStorage
+            const userData = sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+            }
+        }
+        
         if (currentUser) {
             currentTeacher = currentUser;
             const firstName = currentUser.fullname?.split(' ')[0] || 'Teacher';
@@ -104,23 +159,51 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const profileAvatar = document.getElementById('teacherProfileAvatar');
             if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = `http://localhost:3001${currentUser.profilePicture}`;
+                profileAvatar.src = `${API_BASE_URL}${currentUser.profilePicture}`;
             }
 
             // Update greeting
-            document.getElementById('teacherGreetingName').textContent = firstName;
+            const greetingName = document.getElementById('teacherGreetingName');
+            if (greetingName) {
+                greetingName.textContent = firstName;
+            }
+        }
+    }
+
+    // Get user ID with fallback
+    function getUserId() {
+        if (typeof AuthGuard !== 'undefined') {
+            return AuthGuard.getUserId();
+        } else {
+            // Fallback: try to get from storage
+            const userData = sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser');
+            if (userData) {
+                const user = JSON.parse(userData);
+                return user._id;
+            }
+            return null;
+        }
+    }
+
+    // Store user session with fallback
+    function storeUserSession(userData) {
+        if (typeof AuthGuard !== 'undefined') {
+            AuthGuard.storeUserSession(userData);
+        } else {
+            // Fallback: store in sessionStorage
+            sessionStorage.setItem('currentUser', JSON.stringify(userData));
         }
     }
 
     // Fetch teacher data
     async function fetchTeacherData() {
         try {
-            const userId = AuthGuard.getUserId();
+            const userId = getUserId();
             if (userId) {
                 const res = await fetch(`${API_BASE_URL}/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
-                    AuthGuard.storeUserSession(userData);
+                    storeUserSession(userData);
                     currentTeacher = userData;
                     updateProfileInfo();
                     await loadSectionsData();
@@ -129,17 +212,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     throw new Error('Failed to fetch teacher data');
                 }
+            } else {
+                throw new Error('No user ID found');
             }
         } catch (error) {
             console.error('Error fetching teacher data:', error);
-            showNotification('Error loading teacher data', 'error');
+            showNotification('Error loading teacher data: ' + error.message, 'error');
         }
     }
 
     // Load sections data to find advisory sections
     async function loadSectionsData() {
         try {
-            const res = await fetch('http://localhost:3001/sections');
+            const res = await fetch(`${API_BASE_URL}/sections`);
             if (res.ok) {
                 allSections = await res.json();
                 console.log('Loaded sections for advisory check:', allSections);
@@ -156,12 +241,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load teacher schedules
     async function loadTeacherSchedules() {
         try {
-            const res = await fetch('http://localhost:3001/schedules');
+            const res = await fetch(`${API_BASE_URL}/schedules`);
             if (res.ok) {
                 allSchedules = await res.json();
                 // Filter schedules for current teacher
                 teacherSchedules = allSchedules.filter(schedule => {
-                    const teacherId = schedule.teacher._id || schedule.teacher;
+                    const teacherId = schedule.teacher?._id || schedule.teacher;
                     return teacherId === currentTeacher._id;
                 });
                 console.log('Loaded teacher schedules:', teacherSchedules);
@@ -175,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // IMPROVED: Find advisory sections for current teacher
+    // Find advisory sections for current teacher
     function findAdvisorySections() {
         if (!currentTeacher || !allSections.length) return [];
         
@@ -191,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return advisorySections;
     }
 
-    // IMPROVED: Calculate schedule duration with proper AM/PM handling
+    // Calculate schedule duration with proper AM/PM handling
     function calculateScheduleDuration(schedule) {
         const { startTime, endTime, startPeriod, endPeriod } = schedule;
         
@@ -219,13 +304,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return durationMinutes / 60; // Convert to hours
     }
 
-    // IMPROVED: Calculate teaching load with better grouping
+    // Calculate teaching load with better grouping
     function calculateTeachingLoad(schedules) {
         const classMap = new Map();
         
         schedules.forEach(schedule => {
-            const subjectId = schedule.subject._id || schedule.subject;
-            const sectionId = schedule.section._id || schedule.section;
+            const subjectId = schedule.subject?._id || schedule.subject;
+            if (!subjectId) return;
+            
+            const sectionId = schedule.section?._id || schedule.section;
             const classKey = `${subjectId}-${sectionId}`;
             
             if (!classMap.has(classKey)) {
@@ -277,8 +364,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update dashboard with teacher data
     function updateDashboard() {
+        // Update current date
+        const currentDateDisplay = document.getElementById('currentDateDisplay');
+        if (currentDateDisplay) {
+            const currentDate = new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            currentDateDisplay.textContent = currentDate;
+        }
+
         if (!teacherSchedules.length) {
             console.log('No schedules found for teacher');
+            // Set default values
+            document.getElementById('totalClasses').textContent = '0';
+            document.getElementById('lectureHours').textContent = '0';
+            document.getElementById('labHours').textContent = '0';
+            
+            const advisorySections = findAdvisorySections();
+            let advisoryDisplay = 'Not assigned';
+            if (advisorySections.length > 0) {
+                advisoryDisplay = advisorySections.map(section => section.sectionName).join(', ');
+            }
+            document.getElementById('advisorySection').textContent = advisoryDisplay;
+            
+            updateTodaysSchedule();
+            updateWeeklyPreview();
             return;
         }
 
@@ -302,20 +415,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update schedule displays
         updateTodaysSchedule();
         updateWeeklyPreview();
-        
-        // Update current date
-        const currentDate = new Date().toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-        document.getElementById('currentDateDisplay').textContent = currentDate;
     }
 
-    // IMPROVED: Update today's schedule with better sorting
+    // Update today's schedule with better sorting
     function updateTodaysSchedule() {
         const todayScheduleList = document.getElementById('todayScheduleList');
+        if (!todayScheduleList) return;
+        
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
         
         const todaysSchedules = teacherSchedules.filter(schedule => 
@@ -343,9 +449,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         todayScheduleList.innerHTML = todaysSchedules.map(schedule => {
-            const roomName = schedule.room.roomName || schedule.room;
-            const sectionName = schedule.section.sectionName || schedule.section;
-            const subjectCode = schedule.subject.courseCode || schedule.subject;
+            const roomName = schedule.room?.roomName || schedule.room || 'No room';
+            const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
+            const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
             
             return `
                 <div class="schedule-item-today ${schedule.scheduleType}">
@@ -365,6 +471,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update weekly preview
     function updateWeeklyPreview() {
         const weeklyPreview = document.getElementById('weeklyPreview');
+        if (!weeklyPreview) return;
+        
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         
         weeklyPreview.innerHTML = days.map(day => {
@@ -377,8 +485,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h5>${day}</h5>
                     ${daySchedules.length > 0 ? 
                         daySchedules.map(schedule => {
-                            const subjectCode = schedule.subject.courseCode || schedule.subject;
-                            const sectionName = schedule.section.sectionName || schedule.section;
+                            const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+                            const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
                             return `
                                 <div class="schedule-item-preview ${schedule.scheduleType}">
                                     <strong>${subjectCode}</strong><br>
@@ -398,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
     }
 
-    // IMPROVED: Update profile view with better data handling
+    // Update profile view with better data handling
     function updateProfileView() {
         if (!currentTeacher) {
             console.log('No teacher data available');
@@ -410,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const profileAvatar = document.getElementById('profileViewAvatar');
             if (profileAvatar) {
                 if (currentTeacher.profilePicture) {
-                    profileAvatar.src = `http://localhost:3001${currentTeacher.profilePicture}`;
+                    profileAvatar.src = `${API_BASE_URL}${currentTeacher.profilePicture}`;
                 } else {
                     profileAvatar.src = './img/default_teacher_avatar.png';
                 }
@@ -460,6 +568,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderScheduleViews() {
         if (!teacherSchedules.length) {
             console.log('No schedules to render');
+            // Set default values
+            document.getElementById('scheduleLectureCount').textContent = '0';
+            document.getElementById('scheduleLabCount').textContent = '0';
+            document.getElementById('scheduleTotalHours').textContent = '0';
             return;
         }
 
@@ -478,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // IMPROVED: Render weekly schedule with better data handling
+    // Render weekly schedule with better data handling
     function renderWeeklySchedule() {
         const weeklyGrid = document.getElementById('weeklyGrid');
         if (!weeklyGrid) return;
@@ -495,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const daySchedules = teacherSchedules.filter(schedule => {
                 const matchesDay = schedule.day === day;
                 const matchesShift = currentShift === 'all' || 
-                    (schedule.section.shift && schedule.section.shift.toLowerCase() === currentShift);
+                    (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
                 return matchesDay && matchesShift;
             });
 
@@ -520,9 +632,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const item = document.createElement('div');
                     item.className = `schedule-item-small ${schedule.scheduleType}`;
                     
-                    const subjectCode = schedule.subject.courseCode || schedule.subject;
-                    const sectionName = schedule.section.sectionName || schedule.section;
-                    const roomName = schedule.room.roomName || schedule.room;
+                    const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+                    const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
+                    const roomName = schedule.room?.roomName || schedule.room || 'No room';
                     const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
                     
                     item.innerHTML = `
@@ -541,7 +653,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // IMPROVED: Render daily schedule
+    // Render daily schedule
     function renderDailySchedule() {
         const dailySchedule = document.getElementById('dailySchedule');
         if (!dailySchedule) return;
@@ -556,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const daySchedules = teacherSchedules.filter(schedule => {
             const matchesDay = schedule.day === currentDay;
             const matchesShift = currentShift === 'all' || 
-                (schedule.section.shift && schedule.section.shift.toLowerCase() === currentShift);
+                (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
             return matchesDay && matchesShift;
         });
 
@@ -582,10 +694,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         dailySchedule.innerHTML = daySchedules.map(schedule => {
-            const subjectCode = schedule.subject.courseCode || schedule.subject;
-            const descriptiveTitle = schedule.subject.descriptiveTitle || '';
-            const roomName = schedule.room.roomName || schedule.room;
-            const sectionName = schedule.section.sectionName || schedule.section;
+            const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+            const descriptiveTitle = schedule.subject?.descriptiveTitle || '';
+            const roomName = schedule.room?.roomName || schedule.room || 'No room';
+            const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
             const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
             
             return `
@@ -602,21 +714,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // View toggle
-    document.getElementById('scheduleViewSelect').addEventListener('change', function() {
-        currentView = this.value;
-        updateScheduleView();
-    });
+    const scheduleViewSelect = document.getElementById('scheduleViewSelect');
+    if (scheduleViewSelect) {
+        scheduleViewSelect.addEventListener('change', function() {
+            currentView = this.value;
+            updateScheduleView();
+        });
+    }
 
     function updateScheduleView() {
         const weeklyView = document.getElementById('weeklyScheduleView');
         const dailyView = document.getElementById('dailyScheduleView');
 
         if (currentView === 'weekly') {
-            weeklyView.style.display = 'block';
-            dailyView.style.display = 'none';
+            if (weeklyView) weeklyView.style.display = 'block';
+            if (dailyView) dailyView.style.display = 'none';
         } else {
-            weeklyView.style.display = 'none';
-            dailyView.style.display = 'block';
+            if (weeklyView) weeklyView.style.display = 'none';
+            if (dailyView) dailyView.style.display = 'block';
         }
 
         renderScheduleViews();
@@ -633,132 +748,143 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Daily navigation
-    document.getElementById('prevDayBtn').addEventListener('click', function() {
-        currentDayIndex = (currentDayIndex - 1 + 6) % 6;
-        renderScheduleViews();
-    });
+    const prevDayBtn = document.getElementById('prevDayBtn');
+    if (prevDayBtn) {
+        prevDayBtn.addEventListener('click', function() {
+            currentDayIndex = (currentDayIndex - 1 + 6) % 6;
+            renderScheduleViews();
+        });
+    }
 
-    document.getElementById('nextDayBtn').addEventListener('click', function() {
-        currentDayIndex = (currentDayIndex + 1) % 6;
-        renderScheduleViews();
-    });
+    const nextDayBtn = document.getElementById('nextDayBtn');
+    if (nextDayBtn) {
+        nextDayBtn.addEventListener('click', function() {
+            currentDayIndex = (currentDayIndex + 1) % 6;
+            renderScheduleViews();
+        });
+    }
 
     // Profile Picture Upload
     const profilePictureInput = document.getElementById('profilePictureInput');
     const profilePicture = document.getElementById('profileViewAvatar');
 
-    profilePictureInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                showNotification('Please select a valid image file (JPEG, PNG, etc.)', 'error');
-                return;
+    if (profilePictureInput && profilePicture) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showNotification('Please select a valid image file (JPEG, PNG, etc.)', 'error');
+                    return;
+                }
+
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('Image size must be less than 5MB', 'error');
+                    return;
+                }
+
+                selectedFile = file;
+                
+                // Preview the image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profilePicture.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                
+                showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
             }
+        });
+    }
 
-            // Validate file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                showNotification('Image size must be less than 5MB', 'error');
-                return;
+    // Save Profile Changes with better validation
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', async function() {
+            const saveBtn = this;
+            const originalText = saveBtn.innerHTML;
+            
+            try {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+
+                const userId = getUserId();
+                if (!userId) {
+                    throw new Error('User not authenticated');
+                }
+
+                const fullName = document.getElementById('profileFullName').value.trim();
+                if (!fullName) {
+                    throw new Error('Full name is required');
+                }
+
+                const email = document.getElementById('profileEmail').value.trim();
+                if (!email) {
+                    throw new Error('Email is required');
+                }
+
+                // Basic email validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    throw new Error('Please enter a valid email address');
+                }
+
+                const formData = new FormData();
+                formData.append('fullname', fullName);
+                formData.append('email', email);
+                formData.append('ctuid', document.getElementById('profileCtuid').value.trim());
+                formData.append('birthdate', document.getElementById('profileBirthdate').value);
+                formData.append('gender', document.getElementById('profileGender').value);
+
+                // Add profile picture if selected
+                if (selectedFile) {
+                    formData.append('profilePicture', selectedFile);
+                }
+
+                const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to update profile');
+                }
+
+                const updatedUser = await response.json();
+                
+                // Update session storage and current teacher data
+                storeUserSession(updatedUser);
+                currentTeacher = updatedUser;
+                
+                // Update all profile pictures
+                updateProfilePictures(updatedUser.profilePicture);
+                
+                // Update navigation and greeting
+                updateProfileInfo();
+                
+                showNotification('Profile updated successfully!', 'success');
+                
+                // Reset file selection
+                selectedFile = null;
+                if (profilePictureInput) profilePictureInput.value = '';
+                
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showNotification(error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
             }
-
-            selectedFile = file;
-            
-            // Preview the image
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                profilePicture.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-            
-            showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
-        }
-    });
-
-    // IMPROVED: Save Profile Changes with better validation
-    document.getElementById('saveProfileBtn').addEventListener('click', async function() {
-        const saveBtn = this;
-        const originalText = saveBtn.innerHTML;
-        
-        try {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
-
-            const userId = AuthGuard.getUserId();
-            if (!userId) {
-                throw new Error('User not authenticated');
-            }
-
-            const fullName = document.getElementById('profileFullName').value.trim();
-            if (!fullName) {
-                throw new Error('Full name is required');
-            }
-
-            const email = document.getElementById('profileEmail').value.trim();
-            if (!email) {
-                throw new Error('Email is required');
-            }
-
-            // Basic email validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                throw new Error('Please enter a valid email address');
-            }
-
-            const formData = new FormData();
-            formData.append('fullname', fullName);
-            formData.append('email', email);
-            formData.append('ctuid', document.getElementById('profileCtuid').value.trim());
-            formData.append('birthdate', document.getElementById('profileBirthdate').value);
-            formData.append('gender', document.getElementById('profileGender').value);
-
-            // Add profile picture if selected
-            if (selectedFile) {
-                formData.append('profilePicture', selectedFile);
-            }
-
-            const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
-                method: 'PUT',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to update profile');
-            }
-
-            const updatedUser = await response.json();
-            
-            // Update session storage and current teacher data
-            AuthGuard.storeUserSession(updatedUser);
-            currentTeacher = updatedUser;
-            
-            // Update all profile pictures
-            updateProfilePictures(updatedUser.profilePicture);
-            
-            // Update navigation and greeting
-            updateProfileInfo();
-            
-            showNotification('Profile updated successfully!', 'success');
-            
-            // Reset file selection
-            selectedFile = null;
-            profilePictureInput.value = '';
-            
-        } catch (error) {
-            console.error('Error updating profile:', error);
-            showNotification(error.message, 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalText;
-        }
-    });
+        });
+    }
 
     // Helper function to update profile pictures everywhere
     function updateProfilePictures(profilePicturePath) {
         if (!profilePicturePath) return;
         
-        const imageUrl = `http://localhost:3001${profilePicturePath}`;
+        const imageUrl = `${API_BASE_URL}${profilePicturePath}`;
         
         // Update profile view avatar
         const profileAvatar = document.getElementById('profileViewAvatar');
@@ -774,26 +900,68 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Cancel changes
-    document.getElementById('cancelBtn').addEventListener('click', function() {
-        updateProfileView();
-        selectedFile = null;
-        profilePictureInput.value = '';
-        
-        // Reset profile picture to original
-        if (currentTeacher && currentTeacher.profilePicture) {
-            const profileAvatar = document.getElementById('profileViewAvatar');
-            if (profileAvatar) {
-                profileAvatar.src = `http://localhost:3001${currentTeacher.profilePicture}`;
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            updateProfileView();
+            selectedFile = null;
+            if (profilePictureInput) profilePictureInput.value = '';
+            
+            // Reset profile picture to original
+            if (currentTeacher && currentTeacher.profilePicture) {
+                const profileAvatar = document.getElementById('profileViewAvatar');
+                if (profileAvatar) {
+                    profileAvatar.src = `${API_BASE_URL}${currentTeacher.profilePicture}`;
+                }
             }
-        }
-        
-        showNotification('Changes cancelled', 'success');
-    });
+            
+            showNotification('Changes cancelled', 'success');
+        });
+    }
 
-    // IMPROVED: Notification system
+    // Notification system
     function showNotification(message, type = 'success') {
         const notification = document.getElementById('teacherNotification');
-        if (!notification) return;
+        if (!notification) {
+            // Create notification element if it doesn't exist
+            const newNotification = document.createElement('div');
+            newNotification.id = 'teacherNotification';
+            newNotification.className = `notification ${type}`;
+            newNotification.textContent = message;
+            newNotification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 4px;
+                color: white;
+                z-index: 10000;
+                opacity: 0;
+                transition: opacity 0.3s;
+            `;
+            if (type === 'success') {
+                newNotification.style.backgroundColor = '#28a745';
+            } else {
+                newNotification.style.backgroundColor = '#dc3545';
+            }
+            document.body.appendChild(newNotification);
+            
+            // Show notification
+            setTimeout(() => {
+                newNotification.style.opacity = '1';
+            }, 100);
+            
+            // Auto-hide after 4 seconds
+            setTimeout(() => {
+                newNotification.style.opacity = '0';
+                setTimeout(() => {
+                    if (newNotification.parentNode) {
+                        newNotification.parentNode.removeChild(newNotification);
+                    }
+                }, 300);
+            }, 4000);
+            return;
+        }
         
         notification.textContent = message;
         notification.className = `notification ${type}`;
@@ -813,7 +981,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification('Dashboard loaded successfully!', 'success');
         } catch (error) {
             console.error('Error initializing app:', error);
-            showNotification('Error loading dashboard', 'error');
+            showNotification('Error loading dashboard: ' + error.message, 'error');
         }
     }
 

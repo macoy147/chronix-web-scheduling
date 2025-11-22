@@ -1,9 +1,61 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
+// Simple auth helper
+const AuthHelper = {
+    checkAuthentication(requiredRole = null) {
+        const isAuthenticated = sessionStorage.getItem('isAuthenticated');
+        const userRole = sessionStorage.getItem('userRole');
+        
+        console.log('Auth check:', { isAuthenticated, userRole, requiredRole });
+        
+        if (!isAuthenticated || isAuthenticated !== 'true') {
+            this.redirectToLogin();
+            return false;
+        }
+        
+        if (requiredRole && userRole !== requiredRole) {
+            this.redirectToLogin('Unauthorized access.');
+            return false;
+        }
+        
+        return true;
+    },
+    
+    redirectToLogin(message = 'Please sign in') {
+        sessionStorage.setItem('loginRedirectMessage', message);
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    getCurrentUser() {
+        const userData = sessionStorage.getItem('currentUser');
+        return userData ? JSON.parse(userData) : null;
+    },
+    
+    getUserId() {
+        const user = this.getCurrentUser();
+        return user ? user._id : null;
+    },
+    
+    logout() {
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('isAuthenticated');
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('userId');
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    storeUserSession(userData) {
+        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+        sessionStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('userRole', userData.userrole);
+        sessionStorage.setItem('userId', userData._id);
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
-    if (!AuthGuard.checkAuthentication('admin')) {
+    if (!AuthHelper.checkAuthentication('admin')) {
         return;
     }
 
@@ -30,14 +82,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Logout functionality
-    document.getElementById('logoutBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        AuthGuard.logout();
-    });
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            AuthHelper.logout();
+        });
+    }
 
     // Update profile info
     function updateProfileInfo() {
-        const currentUser = AuthGuard.getCurrentUser();
+        const currentUser = AuthHelper.getCurrentUser();
         if (currentUser) {
             const firstName = currentUser.fullname.split(' ')[0];
             const profileName = document.getElementById('profileName');
@@ -46,7 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const profileAvatar = document.getElementById('profileAvatar');
             if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = `http://localhost:3001${currentUser.profilePicture}`;
+                profileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                    ? currentUser.profilePicture 
+                    : currentUser.profilePicture;
             }
         }
     }
@@ -54,12 +111,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data
     async function fetchUserData() {
         try {
-            const userId = AuthGuard.getUserId();
+            const userId = AuthHelper.getUserId();
             if (userId) {
-                const res = await fetch(`${API_BASE_URL}/user/${userId}`);
+                const res = await fetch(`/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
-                    AuthGuard.storeUserSession(userData);
+                    AuthHelper.storeUserSession(userData);
                     updateProfileInfo();
                 }
             }
@@ -96,12 +153,12 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadStudents() {
         try {
             console.log('🔄 Attempting to load students from /users/students...');
-            let res = await fetch('http://localhost:3001/users/students');
+            let res = await fetch('/users/students');
             
             // If the new endpoint fails, fall back to test-users
             if (!res.ok) {
                 console.log('❌ New endpoint failed, falling back to /test-users');
-                res = await fetch('http://localhost:3001/test-users');
+                res = await fetch('/test-users');
                 if (res.ok) {
                     const data = await res.json();
                     // Extract students from test-users response
@@ -131,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadSchedules() {
         try {
-            const res = await fetch('http://localhost:3001/schedules');
+            const res = await fetch('/schedules');
             if (res.ok) {
                 schedules = await res.json();
                 console.log('Loaded schedules:', schedules);
@@ -147,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadSections() {
         try {
-            const res = await fetch('http://localhost:3001/sections');
+            const res = await fetch('/sections');
             if (res.ok) {
                 sections = await res.json();
                 console.log(`✅ Loaded ${sections.length} sections:`, sections.map(s => s.sectionName));
@@ -173,9 +230,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const studentsWithSections = students.filter(s => s.section && s.section.trim() !== '').length;
         const uniqueStudentSections = new Set(students.map(s => s.section).filter(s => s && s.trim() !== '')).size;
 
-        document.getElementById('totalStudents').textContent = totalStudents;
-        document.getElementById('activeStudents').textContent = activeStudents;
-        document.getElementById('enrolledSections').textContent = totalSections;
+        const totalStudentsEl = document.getElementById('totalStudents');
+        const activeStudentsEl = document.getElementById('activeStudents');
+        const enrolledSectionsEl = document.getElementById('enrolledSections');
+        
+        if (totalStudentsEl) totalStudentsEl.textContent = totalStudents;
+        if (activeStudentsEl) activeStudentsEl.textContent = activeStudents;
+        if (enrolledSectionsEl) enrolledSectionsEl.textContent = totalSections;
         
         console.log(`📊 Statistics:`, {
             totalStudents,
@@ -407,25 +468,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Update modal student info with safe display
-        document.getElementById('modalStudentName').textContent = safeDisplay(student.fullname);
-        document.getElementById('modalStudentEmail').textContent = safeDisplay(student.email);
-        document.getElementById('modalStudentId').textContent = `CTU ID: ${safeDisplay(student.ctuid, 'No ID')}`;
-        document.getElementById('modalStudentSection').textContent = `Section: ${safeDisplay(student.section, 'Not Assigned')}`;
-        document.getElementById('studentScheduleTitle').textContent = `${safeDisplay(student.fullname)}'s Class Schedule`;
+        const modalStudentName = document.getElementById('modalStudentName');
+        const modalStudentEmail = document.getElementById('modalStudentEmail');
+        const modalStudentId = document.getElementById('modalStudentId');
+        const modalStudentSection = document.getElementById('modalStudentSection');
+        const studentScheduleTitle = document.getElementById('studentScheduleTitle');
+        
+        if (modalStudentName) modalStudentName.textContent = safeDisplay(student.fullname);
+        if (modalStudentEmail) modalStudentEmail.textContent = safeDisplay(student.email);
+        if (modalStudentId) modalStudentId.textContent = `CTU ID: ${safeDisplay(student.ctuid, 'No ID')}`;
+        if (modalStudentSection) modalStudentSection.textContent = `Section: ${safeDisplay(student.section, 'Not Assigned')}`;
+        if (studentScheduleTitle) studentScheduleTitle.textContent = `${safeDisplay(student.fullname)}'s Class Schedule`;
 
         // Load student avatar if available
         const avatar = document.getElementById('modalStudentAvatar');
-        if (student.profilePicture && student.profilePicture !== '') {
-            avatar.src = `http://localhost:3001${student.profilePicture}`;
-        } else {
-            avatar.src = './img/default_student_avatar.png';
+        if (avatar && student.profilePicture && student.profilePicture !== '') {
+            avatar.src = student.profilePicture.startsWith('http') 
+                ? student.profilePicture 
+                : student.profilePicture;
+        } else if (avatar) {
+            avatar.src = '/img/default_student_avatar.png';
         }
 
         // Render schedule
         renderStudentSchedule(student);
         
         // Show modal
-        document.getElementById('studentScheduleModal').style.display = 'flex';
+        const scheduleModal = document.getElementById('studentScheduleModal');
+        if (scheduleModal) scheduleModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
@@ -439,20 +509,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Populate form with student data - using safeDisplay with empty string fallback for form fields
-        document.getElementById('editFullName').value = safeDisplay(student.fullname, '');
-        document.getElementById('editEmail').value = safeDisplay(student.email, '');
-        document.getElementById('editCtuid').value = safeDisplay(student.ctuid, '');
-        document.getElementById('editBirthdate').value = safeDisplay(student.birthdate, '');
-        document.getElementById('editGender').value = safeDisplay(student.gender, '');
-        document.getElementById('editSection').value = safeDisplay(student.section, '');
-        document.getElementById('editRoom').value = safeDisplay(student.room, '');
+        const editFullName = document.getElementById('editFullName');
+        const editEmail = document.getElementById('editEmail');
+        const editCtuid = document.getElementById('editCtuid');
+        const editBirthdate = document.getElementById('editBirthdate');
+        const editGender = document.getElementById('editGender');
+        const editSection = document.getElementById('editSection');
+        const editRoom = document.getElementById('editRoom');
+        const editStudentModalTitle = document.getElementById('editStudentModalTitle');
+        
+        if (editFullName) editFullName.value = safeDisplay(student.fullname, '');
+        if (editEmail) editEmail.value = safeDisplay(student.email, '');
+        if (editCtuid) editCtuid.value = safeDisplay(student.ctuid, '');
+        if (editBirthdate) editBirthdate.value = safeDisplay(student.birthdate, '');
+        if (editGender) editGender.value = safeDisplay(student.gender, '');
+        if (editSection) editSection.value = safeDisplay(student.section, '');
+        if (editRoom) editRoom.value = safeDisplay(student.room, '');
 
         // Set current student ID for form submission
         currentStudentId = studentId;
-        document.getElementById('editStudentModalTitle').textContent = `Edit ${safeDisplay(student.fullname)}`;
+        if (editStudentModalTitle) editStudentModalTitle.textContent = `Edit ${safeDisplay(student.fullname)}`;
 
         // Show modal
-        document.getElementById('editStudentModal').style.display = 'flex';
+        const editModal = document.getElementById('editStudentModal');
+        if (editModal) editModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
@@ -468,141 +548,182 @@ document.addEventListener('DOMContentLoaded', function() {
         studentToDelete = student;
 
         // Update confirmation text
-        document.getElementById('deleteConfirmationText').textContent = 
-            `Are you sure you want to delete ${safeDisplay(student.fullname)}? This action cannot be undone.`;
+        const deleteConfirmationText = document.getElementById('deleteConfirmationText');
+        if (deleteConfirmationText) {
+            deleteConfirmationText.textContent = 
+                `Are you sure you want to delete ${safeDisplay(student.fullname)}? This action cannot be undone.`;
+        }
 
         // Show modal
-        document.getElementById('deleteStudentModal').style.display = 'flex';
+        const deleteModal = document.getElementById('deleteStudentModal');
+        if (deleteModal) deleteModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
     // Edit student form submission
-    document.getElementById('editStudentForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            fullname: document.getElementById('editFullName').value,
-            email: document.getElementById('editEmail').value,
-            ctuid: document.getElementById('editCtuid').value,
-            birthdate: document.getElementById('editBirthdate').value,
-            gender: document.getElementById('editGender').value,
-            section: document.getElementById('editSection').value,
-            room: document.getElementById('editRoom').value
-        };
+    const editStudentForm = document.getElementById('editStudentForm');
+    if (editStudentForm) {
+        editStudentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                fullname: document.getElementById('editFullName').value,
+                email: document.getElementById('editEmail').value,
+                ctuid: document.getElementById('editCtuid').value,
+                birthdate: document.getElementById('editBirthdate').value,
+                gender: document.getElementById('editGender').value,
+                section: document.getElementById('editSection').value,
+                room: document.getElementById('editRoom').value
+            };
 
-        console.log('Submitting student update:', formData);
+            console.log('Submitting student update:', formData);
 
-        // Basic validation
-        if (!formData.fullname || !formData.email || !formData.ctuid) {
-            showBubbleMessage('Please fill in all required fields', 'error');
-            return;
-        }
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/user/${currentStudentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (res.ok) {
-                const updatedStudent = await res.json();
-                showBubbleMessage('Student updated successfully!', 'success');
-                document.getElementById('editStudentModal').style.display = 'none';
-                document.body.style.overflow = 'auto';
-                
-                // Update local students array and re-render
-                const studentIndex = students.findIndex(s => s._id === currentStudentId);
-                if (studentIndex !== -1) {
-                    students[studentIndex] = updatedStudent;
-                }
-                renderStudentsTable();
-                updateStatistics();
-            } else {
-                const error = await res.json();
-                showBubbleMessage(error.error || 'Failed to update student', 'error');
+            // Basic validation
+            if (!formData.fullname || !formData.email || !formData.ctuid) {
+                showBubbleMessage('Please fill in all required fields', 'error');
+                return;
             }
-        } catch (error) {
-            console.error('Error updating student:', error);
-            showBubbleMessage('Failed to update student', 'error');
-        }
-    });
+
+            try {
+                const res = await fetch(`/user/${currentStudentId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (res.ok) {
+                    const updatedStudent = await res.json();
+                    showBubbleMessage('Student updated successfully!', 'success');
+                    const editModal = document.getElementById('editStudentModal');
+                    if (editModal) editModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    
+                    // Update local students array and re-render
+                    const studentIndex = students.findIndex(s => s._id === currentStudentId);
+                    if (studentIndex !== -1) {
+                        students[studentIndex] = updatedStudent;
+                    }
+                    renderStudentsTable();
+                    updateStatistics();
+                } else {
+                    const error = await res.json();
+                    showBubbleMessage(error.error || 'Failed to update student', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating student:', error);
+                showBubbleMessage('Failed to update student', 'error');
+            }
+        });
+    }
 
     // Delete student confirmation
-    document.getElementById('confirmDeleteStudent').addEventListener('click', async function() {
-        if (!studentToDelete) return;
+    const confirmDeleteStudent = document.getElementById('confirmDeleteStudent');
+    if (confirmDeleteStudent) {
+        confirmDeleteStudent.addEventListener('click', async function() {
+            if (!studentToDelete) return;
 
-        try {
-            const res = await fetch(`${API_BASE_URL}/user/${studentToDelete._id}`, {
-                method: 'DELETE'
-            });
+            try {
+                const res = await fetch(`/user/${studentToDelete._id}`, {
+                    method: 'DELETE'
+                });
 
-            if (res.ok) {
-                showBubbleMessage('Student deleted successfully!', 'success');
-                document.getElementById('deleteStudentModal').style.display = 'none';
-                document.body.style.overflow = 'auto';
-                
-                // Reload data to reflect changes
-                await loadAllData();
-            } else {
-                const error = await res.json();
-                showBubbleMessage(error.error || 'Failed to delete student', 'error');
+                if (res.ok) {
+                    showBubbleMessage('Student deleted successfully!', 'success');
+                    const deleteModal = document.getElementById('deleteStudentModal');
+                    if (deleteModal) deleteModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    
+                    // Reload data to reflect changes
+                    await loadAllData();
+                } else {
+                    const error = await res.json();
+                    showBubbleMessage(error.error || 'Failed to delete student', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting student:', error);
+                showBubbleMessage('Failed to delete student', 'error');
             }
-        } catch (error) {
-            console.error('Error deleting student:', error);
-            showBubbleMessage('Failed to delete student', 'error');
-        }
-    });
+        });
+    }
 
     // Close modals
-    document.getElementById('closeStudentScheduleModal').addEventListener('click', function() {
-        document.getElementById('studentScheduleModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const closeStudentScheduleModal = document.getElementById('closeStudentScheduleModal');
+    if (closeStudentScheduleModal) {
+        closeStudentScheduleModal.addEventListener('click', function() {
+            const modal = document.getElementById('studentScheduleModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
-    document.getElementById('closeEditStudentModal').addEventListener('click', function() {
-        document.getElementById('editStudentModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const closeEditStudentModal = document.getElementById('closeEditStudentModal');
+    if (closeEditStudentModal) {
+        closeEditStudentModal.addEventListener('click', function() {
+            const modal = document.getElementById('editStudentModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
-    document.getElementById('cancelEditStudent').addEventListener('click', function() {
-        document.getElementById('editStudentModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const cancelEditStudent = document.getElementById('cancelEditStudent');
+    if (cancelEditStudent) {
+        cancelEditStudent.addEventListener('click', function() {
+            const modal = document.getElementById('editStudentModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
-    document.getElementById('closeDeleteStudentModal').addEventListener('click', function() {
-        document.getElementById('deleteStudentModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const closeDeleteStudentModal = document.getElementById('closeDeleteStudentModal');
+    if (closeDeleteStudentModal) {
+        closeDeleteStudentModal.addEventListener('click', function() {
+            const modal = document.getElementById('deleteStudentModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
-    document.getElementById('cancelDeleteStudent').addEventListener('click', function() {
-        document.getElementById('deleteStudentModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const cancelDeleteStudent = document.getElementById('cancelDeleteStudent');
+    if (cancelDeleteStudent) {
+        cancelDeleteStudent.addEventListener('click', function() {
+            const modal = document.getElementById('deleteStudentModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
     // Close modals when clicking outside
-    document.getElementById('studentScheduleModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
+    const studentScheduleModal = document.getElementById('studentScheduleModal');
+    if (studentScheduleModal) {
+        studentScheduleModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
-    document.getElementById('editStudentModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
+    const editStudentModal = document.getElementById('editStudentModal');
+    if (editStudentModal) {
+        editStudentModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
-    document.getElementById('deleteStudentModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
+    const deleteStudentModal = document.getElementById('deleteStudentModal');
+    if (deleteStudentModal) {
+        deleteStudentModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
     // Render student schedule
     function renderStudentSchedule(student) {
@@ -633,9 +754,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        document.getElementById('lectureCount').textContent = lectureHours.toFixed(1);
-        document.getElementById('labCount').textContent = labHours.toFixed(1);
-        document.getElementById('totalHours').textContent = (lectureHours + labHours).toFixed(1);
+        const lectureCount = document.getElementById('lectureCount');
+        const labCount = document.getElementById('labCount');
+        const totalHours = document.getElementById('totalHours');
+        
+        if (lectureCount) lectureCount.textContent = lectureHours.toFixed(1);
+        if (labCount) labCount.textContent = labHours.toFixed(1);
+        if (totalHours) totalHours.textContent = (lectureHours + labHours).toFixed(1);
     }
 
     // Calculate schedule duration
@@ -656,6 +781,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render weekly schedule
     function renderWeeklySchedule(studentSchedules) {
         const weeklyGrid = document.getElementById('weeklyGrid');
+        if (!weeklyGrid) return;
+        
         weeklyGrid.innerHTML = '';
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -709,12 +836,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render daily schedule
     function renderDailySchedule(studentSchedules) {
         const dailySchedule = document.getElementById('dailySchedule');
+        if (!dailySchedule) return;
+        
         dailySchedule.innerHTML = '';
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const currentDay = days[currentDayIndex];
         
-        document.getElementById('currentDayDisplay').textContent = currentDay;
+        const currentDayDisplay = document.getElementById('currentDayDisplay');
+        if (currentDayDisplay) currentDayDisplay.textContent = currentDay;
 
         const daySchedules = studentSchedules.filter(schedule => 
             schedule.day === currentDay && 
@@ -758,21 +888,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // View toggle
-    document.getElementById('scheduleViewSelect').addEventListener('change', function() {
-        currentView = this.value;
-        updateScheduleView();
-    });
+    const scheduleViewSelect = document.getElementById('scheduleViewSelect');
+    if (scheduleViewSelect) {
+        scheduleViewSelect.addEventListener('change', function() {
+            currentView = this.value;
+            updateScheduleView();
+        });
+    }
 
     function updateScheduleView() {
         const weeklyView = document.getElementById('weeklyScheduleView');
         const dailyView = document.getElementById('dailyScheduleView');
 
         if (currentView === 'weekly') {
-            weeklyView.style.display = 'block';
-            dailyView.style.display = 'none';
+            if (weeklyView) weeklyView.style.display = 'block';
+            if (dailyView) dailyView.style.display = 'none';
         } else {
-            weeklyView.style.display = 'none';
-            dailyView.style.display = 'block';
+            if (weeklyView) weeklyView.style.display = 'none';
+            if (dailyView) dailyView.style.display = 'block';
         }
 
         if (currentStudentId) {
@@ -800,37 +933,58 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Daily navigation
-    document.getElementById('prevDayBtn').addEventListener('click', function() {
-        currentDayIndex = (currentDayIndex - 1 + 6) % 6;
-        if (currentStudentId) {
-            const student = students.find(s => s._id === currentStudentId);
-            if (student) {
-                renderStudentSchedule(student);
+    const prevDayBtn = document.getElementById('prevDayBtn');
+    if (prevDayBtn) {
+        prevDayBtn.addEventListener('click', function() {
+            currentDayIndex = (currentDayIndex - 1 + 6) % 6;
+            if (currentStudentId) {
+                const student = students.find(s => s._id === currentStudentId);
+                if (student) {
+                    renderStudentSchedule(student);
+                }
             }
-        }
-    });
+        });
+    }
 
-    document.getElementById('nextDayBtn').addEventListener('click', function() {
-        currentDayIndex = (currentDayIndex + 1) % 6;
-        if (currentStudentId) {
-            const student = students.find(s => s._id === currentStudentId);
-            if (student) {
-                renderStudentSchedule(student);
+    const nextDayBtn = document.getElementById('nextDayBtn');
+    if (nextDayBtn) {
+        nextDayBtn.addEventListener('click', function() {
+            currentDayIndex = (currentDayIndex + 1) % 6;
+            if (currentStudentId) {
+                const student = students.find(s => s._id === currentStudentId);
+                if (student) {
+                    renderStudentSchedule(student);
+                }
             }
-        }
-    });
+        });
+    }
 
     // Filter listeners
-    document.getElementById('studentSearch').addEventListener('input', applyFilters);
-    document.getElementById('yearLevelFilter').addEventListener('change', applyFilters);
-    document.getElementById('sectionFilter').addEventListener('change', applyFilters);
-    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+    const studentSearch = document.getElementById('studentSearch');
+    if (studentSearch) {
+        studentSearch.addEventListener('input', applyFilters);
+    }
+
+    const yearLevelFilter = document.getElementById('yearLevelFilter');
+    if (yearLevelFilter) {
+        yearLevelFilter.addEventListener('change', applyFilters);
+    }
+
+    const sectionFilter = document.getElementById('sectionFilter');
+    if (sectionFilter) {
+        sectionFilter.addEventListener('change', applyFilters);
+    }
+
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', applyFilters);
+    }
 
     // Loading state
     function showLoadingState(show) {
         const loadingState = document.getElementById('loadingState');
         const tableContainer = document.querySelector('.students-table-container');
-        loadingState.style.display = show ? 'block' : 'none';
+        if (loadingState) loadingState.style.display = show ? 'block' : 'none';
         if (tableContainer) {
             tableContainer.style.display = show ? 'none' : 'block';
         }
@@ -840,7 +994,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function showEmptyState(show) {
         const emptyState = document.getElementById('emptyState');
         const tableContainer = document.querySelector('.students-table-container');
-        emptyState.style.display = show ? 'block' : 'none';
+        if (emptyState) emptyState.style.display = show ? 'block' : 'none';
         if (tableContainer) {
             tableContainer.style.display = show ? 'none' : 'block';
         }
@@ -849,6 +1003,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Bubble notification
     function showBubbleMessage(msg, type = "success") {
         const bubble = document.getElementById('studentBubbleMessage');
+        if (!bubble) return;
+        
         bubble.textContent = msg;
         bubble.className = "section-bubble-message";
         bubble.classList.add(type);

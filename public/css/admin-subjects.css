@@ -690,3 +690,92 @@ body {
         gap: 12px 0;
     }
 }
+
+
+/* Add these styles to your existing CSS file */
+
+.loading-state, .no-data, .error-state {
+    text-align: center;
+    padding: 3rem !important;
+    color: #6c757d;
+}
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.no-data i, .error-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.error-state {
+    color: #dc3545;
+}
+
+.no-data {
+    color: #6c757d;
+}
+
+.action-cell {
+    white-space: nowrap;
+}
+
+/* Ensure table responsiveness */
+.subjects-table-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+}
+
+/* Modal improvements */
+.horizontal-modal {
+    max-width: 95vw;
+    width: auto;
+}
+
+.horizontal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}

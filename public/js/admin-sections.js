@@ -1,9 +1,61 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
+// Simple auth helper
+const AuthHelper = {
+    checkAuthentication(requiredRole = null) {
+        const isAuthenticated = sessionStorage.getItem('isAuthenticated');
+        const userRole = sessionStorage.getItem('userRole');
+        
+        console.log('Auth check:', { isAuthenticated, userRole, requiredRole });
+        
+        if (!isAuthenticated || isAuthenticated !== 'true') {
+            this.redirectToLogin();
+            return false;
+        }
+        
+        if (requiredRole && userRole !== requiredRole) {
+            this.redirectToLogin('Unauthorized access.');
+            return false;
+        }
+        
+        return true;
+    },
+    
+    redirectToLogin(message = 'Please sign in') {
+        sessionStorage.setItem('loginRedirectMessage', message);
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    getCurrentUser() {
+        const userData = sessionStorage.getItem('currentUser');
+        return userData ? JSON.parse(userData) : null;
+    },
+    
+    getUserId() {
+        const user = this.getCurrentUser();
+        return user ? user._id : null;
+    },
+    
+    logout() {
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('isAuthenticated');
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('userId');
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    storeUserSession(userData) {
+        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+        sessionStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('userRole', userData.userrole);
+        sessionStorage.setItem('userId', userData._id);
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
-    if (!AuthGuard.checkAuthentication('admin')) {
+    if (!AuthHelper.checkAuthentication('admin')) {
         return;
     }
 
@@ -26,14 +78,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Logout functionality
-    document.getElementById('logoutBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        AuthGuard.logout();
-    });
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            AuthHelper.logout();
+        });
+    }
 
     // Update profile info
     function updateProfileInfo() {
-        const currentUser = AuthGuard.getCurrentUser();
+        const currentUser = AuthHelper.getCurrentUser();
         if (currentUser) {
             const firstName = currentUser.fullname.split(' ')[0];
             const profileName = document.getElementById('profileName');
@@ -42,7 +97,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const profileAvatar = document.getElementById('profileAvatar');
             if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = `http://localhost:3001${currentUser.profilePicture}`;
+                profileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                    ? currentUser.profilePicture 
+                    : currentUser.profilePicture;
             }
         }
     }
@@ -50,12 +107,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data
     async function fetchUserData() {
         try {
-            const userId = AuthGuard.getUserId();
+            const userId = AuthHelper.getUserId();
             if (userId) {
-                const res = await fetch(`${API_BASE_URL}/user/${userId}`);
+                const res = await fetch(`/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
-                    AuthGuard.storeUserSession(userData);
+                    AuthHelper.storeUserSession(userData);
                     updateProfileInfo();
                 }
             }
@@ -86,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load sections
     async function loadSections() {
         try {
-            const res = await fetch('http://localhost:3001/sections');
+            const res = await fetch('/sections');
             if (res.ok) {
                 sections = await res.json();
                 console.log('Loaded sections:', sections);
@@ -103,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load teachers for adviser dropdown
     async function loadTeachers() {
         try {
-            const res = await fetch('http://localhost:3001/teachers');
+            const res = await fetch('/teachers');
             if (res.ok) {
                 teachers = await res.json();
                 console.log('Loaded teachers for adviser dropdown:', teachers);
@@ -121,6 +178,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Populate adviser dropdown with teachers
     function populateAdviserDropdown() {
         const select = document.getElementById('adviserTeacherSelect');
+        if (!select) return;
+        
         // Clear existing options except the first one
         while (select.options.length > 1) {
             select.remove(1);
@@ -137,6 +196,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Populate academic year dropdown
     function populateAcademicYearDropdown() {
         const select = document.getElementById('academicYearSelect');
+        if (!select) return;
+        
         select.innerHTML = '<option value="" disabled selected>Academic Year</option>';
         
         const currentYear = new Date().getFullYear();
@@ -160,6 +221,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render sections table
     function renderSectionsTable() {
         const tbody = document.getElementById('sectionsTableBody');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
 
         if (sections.length === 0) {
@@ -203,91 +266,113 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Open create section modal
-    document.getElementById('openSectionModal').addEventListener('click', function() {
-        editMode = false;
-        editingSectionId = null;
-        document.getElementById('sectionForm').reset();
-        document.querySelector('#sectionModal h3').textContent = 'Create New Section';
-        document.querySelector('#sectionModal .modal-submit').textContent = 'Create Section';
-        document.getElementById('sectionModal').style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    });
+    const openModalBtn = document.getElementById('openSectionModal');
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', function() {
+            editMode = false;
+            editingSectionId = null;
+            const form = document.getElementById('sectionForm');
+            if (form) form.reset();
+            
+            const modalTitle = document.querySelector('#sectionModal h3');
+            if (modalTitle) modalTitle.textContent = 'Create New Section';
+            
+            const submitBtn = document.querySelector('#sectionModal .modal-submit');
+            if (submitBtn) submitBtn.textContent = 'Create Section';
+            
+            const modal = document.getElementById('sectionModal');
+            if (modal) modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
+    }
 
     // Close section modal
-    document.getElementById('closeSectionModal').addEventListener('click', function() {
-        document.getElementById('sectionModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const closeModalBtn = document.getElementById('closeSectionModal');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+            const modal = document.getElementById('sectionModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
     // Close modal when clicking outside
-    document.getElementById('sectionModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
+    const modal = document.getElementById('sectionModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
     // Section form submission
-    document.getElementById('sectionForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            sectionName: this.sectionName.value.trim(),
-            programID: this.programID.value,
-            yearLevel: parseInt(this.yearLevel.value),
-            shift: this.shift.value,
-            adviserTeacher: this.adviserTeacher.value, // Store teacher ID
-            totalEnrolled: parseInt(this.totalEnrolled.value),
-            academicYear: this.academicYear.value,
-            semester: this.semester.value,
-            status: this.status.value
-        };
-
-        // Validation
-        if (!formData.sectionName || !formData.programID || !formData.yearLevel || !formData.shift || 
-            !formData.totalEnrolled || !formData.academicYear || !formData.semester) {
-            showBubbleMessage('Please fill all required fields', 'error');
-            return;
-        }
-
-        if (formData.totalEnrolled < 0) {
-            showBubbleMessage('Total enrolled cannot be negative', 'error');
-            return;
-        }
-
-        try {
-            let url = 'http://localhost:3001/sections';
-            let method = 'POST';
+    const sectionForm = document.getElementById('sectionForm');
+    if (sectionForm) {
+        sectionForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            if (editMode && editingSectionId) {
-                url += `/${editingSectionId}`;
-                method = 'PUT';
+            const formData = {
+                sectionName: this.sectionName.value.trim(),
+                programID: this.programID.value,
+                yearLevel: parseInt(this.yearLevel.value),
+                shift: this.shift.value,
+                adviserTeacher: this.adviserTeacher.value, // Store teacher ID
+                totalEnrolled: parseInt(this.totalEnrolled.value),
+                academicYear: this.academicYear.value,
+                semester: this.semester.value,
+                status: this.status.value
+            };
+
+            // Validation
+            if (!formData.sectionName || !formData.programID || !formData.yearLevel || !formData.shift || 
+                !formData.totalEnrolled || !formData.academicYear || !formData.semester) {
+                showBubbleMessage('Please fill all required fields', 'error');
+                return;
             }
 
-            const res = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
+            if (formData.totalEnrolled < 0) {
+                showBubbleMessage('Total enrolled cannot be negative', 'error');
+                return;
+            }
 
-            if (res.ok) {
-                showBubbleMessage(editMode ? 'Section updated successfully!' : 'Section created successfully!', 'success');
-                document.getElementById('sectionModal').style.display = 'none';
-                document.body.style.overflow = 'auto';
+            try {
+                let url = '/sections';
+                let method = 'POST';
                 
-                // Reload sections data
-                await loadSections();
-            } else {
-                const error = await res.json();
-                showBubbleMessage(error.error || 'Failed to save section', 'error');
+                if (editMode && editingSectionId) {
+                    url += `/${editingSectionId}`;
+                    method = 'PUT';
+                }
+
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (res.ok) {
+                    showBubbleMessage(editMode ? 'Section updated successfully!' : 'Section created successfully!', 'success');
+                    const modal = document.getElementById('sectionModal');
+                    if (modal) modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    
+                    // Reload sections data
+                    await loadSections();
+                    renderSectionsTable();
+                } else {
+                    const error = await res.json();
+                    showBubbleMessage(error.error || 'Failed to save section', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving section:', error);
+                showBubbleMessage('Failed to save section', 'error');
             }
-        } catch (error) {
-            console.error('Error saving section:', error);
-            showBubbleMessage('Failed to save section', 'error');
-        }
-    });
+        });
+    }
 
     // Open edit section modal
     window.openEditSection = function(sectionId) {
@@ -301,19 +386,27 @@ document.addEventListener('DOMContentLoaded', function() {
         editingSectionId = sectionId;
 
         // Populate form with section data
-        document.getElementById('sectionForm').sectionName.value = section.sectionName;
-        document.getElementById('sectionForm').programID.value = section.programID;
-        document.getElementById('sectionForm').yearLevel.value = section.yearLevel;
-        document.getElementById('sectionForm').shift.value = section.shift;
-        document.getElementById('sectionForm').adviserTeacher.value = section.adviserTeacher || '';
-        document.getElementById('sectionForm').totalEnrolled.value = section.totalEnrolled;
-        document.getElementById('sectionForm').academicYear.value = section.academicYear;
-        document.getElementById('sectionForm').semester.value = section.semester;
-        document.getElementById('sectionForm').status.value = section.status;
+        const form = document.getElementById('sectionForm');
+        if (form) {
+            form.sectionName.value = section.sectionName;
+            form.programID.value = section.programID;
+            form.yearLevel.value = section.yearLevel;
+            form.shift.value = section.shift;
+            form.adviserTeacher.value = section.adviserTeacher || '';
+            form.totalEnrolled.value = section.totalEnrolled;
+            form.academicYear.value = section.academicYear;
+            form.semester.value = section.semester;
+            form.status.value = section.status;
+        }
 
-        document.querySelector('#sectionModal h3').textContent = 'Edit Section';
-        document.querySelector('#sectionModal .modal-submit').textContent = 'Update Section';
-        document.getElementById('sectionModal').style.display = 'flex';
+        const modalTitle = document.querySelector('#sectionModal h3');
+        if (modalTitle) modalTitle.textContent = 'Edit Section';
+        
+        const submitBtn = document.querySelector('#sectionModal .modal-submit');
+        if (submitBtn) submitBtn.textContent = 'Update Section';
+        
+        const modal = document.getElementById('sectionModal');
+        if (modal) modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
@@ -326,55 +419,74 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         editingSectionId = sectionId;
-        document.getElementById('deleteModalText').textContent = 
-            `Are you sure you want to delete section "${section.sectionName}"? This action cannot be undone.`;
-        document.getElementById('deleteSectionModal').style.display = 'flex';
+        const deleteModalText = document.getElementById('deleteModalText');
+        if (deleteModalText) {
+            deleteModalText.textContent = 
+                `Are you sure you want to delete section "${section.sectionName}"? This action cannot be undone.`;
+        }
+        
+        const deleteModal = document.getElementById('deleteSectionModal');
+        if (deleteModal) deleteModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
     // Close delete modal
-    document.getElementById('cancelDeleteSectionBtn').addEventListener('click', function() {
-        document.getElementById('deleteSectionModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const cancelDeleteBtn = document.getElementById('cancelDeleteSectionBtn');
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', function() {
+            const deleteModal = document.getElementById('deleteSectionModal');
+            if (deleteModal) deleteModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
     // Close delete modal when clicking outside
-    document.getElementById('deleteSectionModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
+    const deleteModal = document.getElementById('deleteSectionModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
     // Confirm section deletion
-    document.getElementById('confirmDeleteSectionBtn').addEventListener('click', async function() {
-        if (!editingSectionId) return;
+    const confirmDeleteBtn = document.getElementById('confirmDeleteSectionBtn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async function() {
+            if (!editingSectionId) return;
 
-        try {
-            const res = await fetch(`${API_BASE_URL}/sections/${editingSectionId}`, {
-                method: 'DELETE'
-            });
+            try {
+                const res = await fetch(`/sections/${editingSectionId}`, {
+                    method: 'DELETE'
+                });
 
-            if (res.ok) {
-                showBubbleMessage('Section deleted successfully!', 'success');
-                document.getElementById('deleteSectionModal').style.display = 'none';
-                document.body.style.overflow = 'auto';
-                
-                // Reload sections data
-                await loadSections();
-            } else {
-                const error = await res.json();
-                showBubbleMessage(error.error || 'Failed to delete section', 'error');
+                if (res.ok) {
+                    showBubbleMessage('Section deleted successfully!', 'success');
+                    const deleteModal = document.getElementById('deleteSectionModal');
+                    if (deleteModal) deleteModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    
+                    // Reload sections data
+                    await loadSections();
+                    renderSectionsTable();
+                } else {
+                    const error = await res.json();
+                    showBubbleMessage(error.error || 'Failed to delete section', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting section:', error);
+                showBubbleMessage('Failed to delete section', 'error');
             }
-        } catch (error) {
-            console.error('Error deleting section:', error);
-            showBubbleMessage('Failed to delete section', 'error');
-        }
-    });
+        });
+    }
 
     // Bubble notification
     function showBubbleMessage(msg, type = "success") {
         const bubble = document.getElementById('sectionBubbleMessage');
+        if (!bubble) return;
+        
         bubble.textContent = msg;
         bubble.className = "section-bubble-message";
         bubble.classList.add(type);

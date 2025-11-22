@@ -1,9 +1,61 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
+// Simple auth helper
+const AuthHelper = {
+    checkAuthentication(requiredRole = null) {
+        const isAuthenticated = sessionStorage.getItem('isAuthenticated');
+        const userRole = sessionStorage.getItem('userRole');
+        
+        console.log('Auth check:', { isAuthenticated, userRole, requiredRole });
+        
+        if (!isAuthenticated || isAuthenticated !== 'true') {
+            this.redirectToLogin();
+            return false;
+        }
+        
+        if (requiredRole && userRole !== requiredRole) {
+            this.redirectToLogin('Unauthorized access.');
+            return false;
+        }
+        
+        return true;
+    },
+    
+    redirectToLogin(message = 'Please sign in') {
+        sessionStorage.setItem('loginRedirectMessage', message);
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    getCurrentUser() {
+        const userData = sessionStorage.getItem('currentUser');
+        return userData ? JSON.parse(userData) : null;
+    },
+    
+    getUserId() {
+        const user = this.getCurrentUser();
+        return user ? user._id : null;
+    },
+    
+    logout() {
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('isAuthenticated');
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('userId');
+        window.location.href = 'auth.html?mode=signin';
+    },
+    
+    storeUserSession(userData) {
+        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+        sessionStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('userRole', userData.userrole);
+        sessionStorage.setItem('userId', userData._id);
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
-    if (!AuthGuard.checkAuthentication('admin')) {
+    if (!AuthHelper.checkAuthentication('admin')) {
         return;
     }
 
@@ -29,14 +81,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Logout functionality
-    document.getElementById('logoutBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        AuthGuard.logout();
-    });
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            AuthHelper.logout();
+        });
+    }
 
     // Update profile info
     function updateProfileInfo() {
-        const currentUser = AuthGuard.getCurrentUser();
+        const currentUser = AuthHelper.getCurrentUser();
         if (currentUser) {
             const firstName = currentUser.fullname.split(' ')[0];
             const profileName = document.getElementById('profileName');
@@ -45,7 +100,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const profileAvatar = document.getElementById('profileAvatar');
             if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = `http://localhost:3001${currentUser.profilePicture}`;
+                profileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                    ? currentUser.profilePicture 
+                    : currentUser.profilePicture;
             }
         }
     }
@@ -53,12 +110,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data
     async function fetchUserData() {
         try {
-            const userId = AuthGuard.getUserId();
+            const userId = AuthHelper.getUserId();
             if (userId) {
-                const res = await fetch(`${API_BASE_URL}/user/${userId}`);
+                const res = await fetch(`/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
-                    AuthGuard.storeUserSession(userData);
+                    AuthHelper.storeUserSession(userData);
                     updateProfileInfo();
                 }
             }
@@ -90,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadTeachers() {
         try {
-            const res = await fetch('http://localhost:3001/teachers');
+            const res = await fetch('/teachers');
             if (res.ok) {
                 teachers = await res.json();
                 console.log('Loaded teachers with full data:', teachers);
@@ -106,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadSchedules() {
         try {
-            const res = await fetch('http://localhost:3001/schedules');
+            const res = await fetch('/schedules');
             if (res.ok) {
                 schedules = await res.json();
                 console.log('Loaded schedules for teachers:', schedules);
@@ -141,6 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render teachers table
     function renderTeachersTable() {
         const tbody = document.getElementById('teachersTableBody');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
 
         if (teachers.length === 0) {
@@ -184,16 +243,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Combined filter function for search and status
     function applyFilters() {
-        const searchTerm = document.getElementById('teacherSearch').value.toLowerCase();
-        const statusFilter = document.getElementById('statusFilter').value;
+        const searchTerm = document.getElementById('teacherSearch')?.value.toLowerCase() || '';
+        const statusFilter = document.getElementById('statusFilter')?.value || '';
         const rows = document.querySelectorAll('#teachersTableBody tr');
         let hasVisibleRows = false;
 
         rows.forEach(row => {
-            const teacherName = row.cells[0].textContent.toLowerCase();
-            const email = row.cells[1].textContent.toLowerCase();
-            const ctuid = row.cells[2].textContent.toLowerCase();
-            const statusBadge = row.cells[4].querySelector('.status-badge');
+            const teacherName = row.cells[0]?.textContent.toLowerCase() || '';
+            const email = row.cells[1]?.textContent.toLowerCase() || '';
+            const ctuid = row.cells[2]?.textContent.toLowerCase() || '';
+            const statusBadge = row.cells[4]?.querySelector('.status-badge');
             const teacherStatus = statusBadge ? statusBadge.textContent.toLowerCase() : '';
 
             const matchesSearch = teacherName.includes(searchTerm) || 
@@ -221,24 +280,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Update modal teacher info with safe display
-        document.getElementById('modalTeacherName').textContent = safeDisplay(teacher.fullname);
-        document.getElementById('modalTeacherEmail').textContent = safeDisplay(teacher.email);
-        document.getElementById('modalTeacherId').textContent = safeDisplay(teacher.ctuid);
-        document.getElementById('teacherScheduleTitle').textContent = `${safeDisplay(teacher.fullname)}'s Schedule`;
+        const modalTeacherName = document.getElementById('modalTeacherName');
+        const modalTeacherEmail = document.getElementById('modalTeacherEmail');
+        const modalTeacherId = document.getElementById('modalTeacherId');
+        const teacherScheduleTitle = document.getElementById('teacherScheduleTitle');
+        
+        if (modalTeacherName) modalTeacherName.textContent = safeDisplay(teacher.fullname);
+        if (modalTeacherEmail) modalTeacherEmail.textContent = safeDisplay(teacher.email);
+        if (modalTeacherId) modalTeacherId.textContent = safeDisplay(teacher.ctuid);
+        if (teacherScheduleTitle) teacherScheduleTitle.textContent = `${safeDisplay(teacher.fullname)}'s Schedule`;
 
         // Load teacher avatar if available
         const avatar = document.getElementById('modalTeacherAvatar');
-        if (teacher.profilePicture && teacher.profilePicture !== '') {
-            avatar.src = `http://localhost:3001${teacher.profilePicture}`;
-        } else {
-            avatar.src = './img/default_teacher_avatar.png';
+        if (avatar && teacher.profilePicture && teacher.profilePicture !== '') {
+            avatar.src = teacher.profilePicture.startsWith('http') 
+                ? teacher.profilePicture 
+                : teacher.profilePicture;
+        } else if (avatar) {
+            avatar.src = '/img/default_teacher_avatar.png';
         }
 
         // Render schedule
         renderTeacherSchedule(teacherId);
         
         // Show modal
-        document.getElementById('teacherScheduleModal').style.display = 'flex';
+        const scheduleModal = document.getElementById('teacherScheduleModal');
+        if (scheduleModal) scheduleModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
@@ -252,20 +319,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Populate form with teacher data
-        document.getElementById('editFullName').value = safeDisplay(teacher.fullname, '');
-        document.getElementById('editEmail').value = safeDisplay(teacher.email, '');
-        document.getElementById('editCtuid').value = safeDisplay(teacher.ctuid, '');
-        document.getElementById('editBirthdate').value = safeDisplay(teacher.birthdate, '');
-        document.getElementById('editGender').value = safeDisplay(teacher.gender, '');
-        document.getElementById('editSection').value = safeDisplay(teacher.section, '');
-        document.getElementById('editRoom').value = safeDisplay(teacher.room, '');
+        const editFullName = document.getElementById('editFullName');
+        const editEmail = document.getElementById('editEmail');
+        const editCtuid = document.getElementById('editCtuid');
+        const editBirthdate = document.getElementById('editBirthdate');
+        const editGender = document.getElementById('editGender');
+        const editSection = document.getElementById('editSection');
+        const editRoom = document.getElementById('editRoom');
+        const editTeacherModalTitle = document.getElementById('editTeacherModalTitle');
+        
+        if (editFullName) editFullName.value = safeDisplay(teacher.fullname, '');
+        if (editEmail) editEmail.value = safeDisplay(teacher.email, '');
+        if (editCtuid) editCtuid.value = safeDisplay(teacher.ctuid, '');
+        if (editBirthdate) editBirthdate.value = safeDisplay(teacher.birthdate, '');
+        if (editGender) editGender.value = safeDisplay(teacher.gender, '');
+        if (editSection) editSection.value = safeDisplay(teacher.section, '');
+        if (editRoom) editRoom.value = safeDisplay(teacher.room, '');
 
         // Set current teacher ID for form submission
         currentTeacherId = teacherId;
-        document.getElementById('editTeacherModalTitle').textContent = `Edit ${safeDisplay(teacher.fullname)}`;
+        if (editTeacherModalTitle) editTeacherModalTitle.textContent = `Edit ${safeDisplay(teacher.fullname)}`;
 
         // Show modal
-        document.getElementById('editTeacherModal').style.display = 'flex';
+        const editModal = document.getElementById('editTeacherModal');
+        if (editModal) editModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
@@ -282,148 +359,189 @@ document.addEventListener('DOMContentLoaded', function() {
         const scheduleCount = getTeacherSchedulesCount(teacherId);
 
         // Update confirmation text
-        document.getElementById('deleteConfirmationText').textContent = 
-            `Are you sure you want to delete ${safeDisplay(teacher.fullname)}? This action cannot be undone.`;
+        const deleteConfirmationText = document.getElementById('deleteConfirmationText');
+        if (deleteConfirmationText) {
+            deleteConfirmationText.textContent = 
+                `Are you sure you want to delete ${safeDisplay(teacher.fullname)}? This action cannot be undone.`;
+        }
         
         // Update schedule count warning
         const scheduleWarning = document.getElementById('scheduleCountWarning');
-        scheduleWarning.textContent = scheduleCount;
+        if (scheduleWarning) scheduleWarning.textContent = scheduleCount;
         
         // Show/hide warning based on schedule count
         const warningInfo = document.querySelector('.teacher-warning-info');
-        warningInfo.style.display = scheduleCount > 0 ? 'block' : 'none';
+        if (warningInfo) warningInfo.style.display = scheduleCount > 0 ? 'block' : 'none';
 
         // Show modal
-        document.getElementById('deleteTeacherModal').style.display = 'flex';
+        const deleteModal = document.getElementById('deleteTeacherModal');
+        if (deleteModal) deleteModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
     // Edit teacher form submission - FIXED VERSION
-    document.getElementById('editTeacherForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = {
-            fullname: document.getElementById('editFullName').value,
-            email: document.getElementById('editEmail').value,
-            ctuid: document.getElementById('editCtuid').value,
-            birthdate: document.getElementById('editBirthdate').value,
-            gender: document.getElementById('editGender').value,
-            section: document.getElementById('editSection').value,
-            room: document.getElementById('editRoom').value
-        };
+    const editTeacherForm = document.getElementById('editTeacherForm');
+    if (editTeacherForm) {
+        editTeacherForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                fullname: document.getElementById('editFullName').value,
+                email: document.getElementById('editEmail').value,
+                ctuid: document.getElementById('editCtuid').value,
+                birthdate: document.getElementById('editBirthdate').value,
+                gender: document.getElementById('editGender').value,
+                section: document.getElementById('editSection').value,
+                room: document.getElementById('editRoom').value
+            };
 
-        console.log('Submitting teacher update:', formData); // Debug log
+            console.log('Submitting teacher update:', formData); // Debug log
 
-        // Basic validation
-        if (!formData.fullname || !formData.email || !formData.ctuid) {
-            showBubbleMessage('Please fill in all required fields', 'error');
-            return;
-        }
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/user/${currentTeacherId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (res.ok) {
-                const updatedTeacher = await res.json();
-                showBubbleMessage('Teacher updated successfully!', 'success');
-                document.getElementById('editTeacherModal').style.display = 'none';
-                document.body.style.overflow = 'auto';
-                
-                // Update local teachers array and re-render
-                const teacherIndex = teachers.findIndex(t => t._id === currentTeacherId);
-                if (teacherIndex !== -1) {
-                    teachers[teacherIndex] = updatedTeacher;
-                }
-                renderTeachersTable();
-            } else {
-                const error = await res.json();
-                showBubbleMessage(error.error || 'Failed to update teacher', 'error');
+            // Basic validation
+            if (!formData.fullname || !formData.email || !formData.ctuid) {
+                showBubbleMessage('Please fill in all required fields', 'error');
+                return;
             }
-        } catch (error) {
-            console.error('Error updating teacher:', error);
-            showBubbleMessage('Failed to update teacher', 'error');
-        }
-    });
+
+            try {
+                const res = await fetch(`/user/${currentTeacherId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (res.ok) {
+                    const updatedTeacher = await res.json();
+                    showBubbleMessage('Teacher updated successfully!', 'success');
+                    const editModal = document.getElementById('editTeacherModal');
+                    if (editModal) editModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    
+                    // Update local teachers array and re-render
+                    const teacherIndex = teachers.findIndex(t => t._id === currentTeacherId);
+                    if (teacherIndex !== -1) {
+                        teachers[teacherIndex] = updatedTeacher;
+                    }
+                    renderTeachersTable();
+                } else {
+                    const error = await res.json();
+                    showBubbleMessage(error.error || 'Failed to update teacher', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating teacher:', error);
+                showBubbleMessage('Failed to update teacher', 'error');
+            }
+        });
+    }
 
     // Delete teacher confirmation
-    document.getElementById('confirmDeleteTeacher').addEventListener('click', async function() {
-        if (!teacherToDelete) return;
+    const confirmDeleteTeacher = document.getElementById('confirmDeleteTeacher');
+    if (confirmDeleteTeacher) {
+        confirmDeleteTeacher.addEventListener('click', async function() {
+            if (!teacherToDelete) return;
 
-        try {
-            const res = await fetch(`${API_BASE_URL}/user/${teacherToDelete._id}`, {
-                method: 'DELETE'
-            });
+            try {
+                const res = await fetch(`/user/${teacherToDelete._id}`, {
+                    method: 'DELETE'
+                });
 
-            if (res.ok) {
-                showBubbleMessage('Teacher deleted successfully!', 'success');
-                document.getElementById('deleteTeacherModal').style.display = 'none';
-                document.body.style.overflow = 'auto';
-                
-                // Reload data to reflect changes
-                await loadAllData();
-            } else {
-                const error = await res.json();
-                showBubbleMessage(error.error || 'Failed to delete teacher', 'error');
+                if (res.ok) {
+                    showBubbleMessage('Teacher deleted successfully!', 'success');
+                    const deleteModal = document.getElementById('deleteTeacherModal');
+                    if (deleteModal) deleteModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    
+                    // Reload data to reflect changes
+                    await loadAllData();
+                } else {
+                    const error = await res.json();
+                    showBubbleMessage(error.error || 'Failed to delete teacher', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting teacher:', error);
+                showBubbleMessage('Failed to delete teacher', 'error');
             }
-        } catch (error) {
-            console.error('Error deleting teacher:', error);
-            showBubbleMessage('Failed to delete teacher', 'error');
-        }
-    });
+        });
+    }
 
     // Close modals
-    document.getElementById('closeTeacherScheduleModal').addEventListener('click', function() {
-        document.getElementById('teacherScheduleModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const closeTeacherScheduleModal = document.getElementById('closeTeacherScheduleModal');
+    if (closeTeacherScheduleModal) {
+        closeTeacherScheduleModal.addEventListener('click', function() {
+            const modal = document.getElementById('teacherScheduleModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
-    document.getElementById('closeEditTeacherModal').addEventListener('click', function() {
-        document.getElementById('editTeacherModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const closeEditTeacherModal = document.getElementById('closeEditTeacherModal');
+    if (closeEditTeacherModal) {
+        closeEditTeacherModal.addEventListener('click', function() {
+            const modal = document.getElementById('editTeacherModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
-    document.getElementById('cancelEditTeacher').addEventListener('click', function() {
-        document.getElementById('editTeacherModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const cancelEditTeacher = document.getElementById('cancelEditTeacher');
+    if (cancelEditTeacher) {
+        cancelEditTeacher.addEventListener('click', function() {
+            const modal = document.getElementById('editTeacherModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
-    document.getElementById('closeDeleteTeacherModal').addEventListener('click', function() {
-        document.getElementById('deleteTeacherModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const closeDeleteTeacherModal = document.getElementById('closeDeleteTeacherModal');
+    if (closeDeleteTeacherModal) {
+        closeDeleteTeacherModal.addEventListener('click', function() {
+            const modal = document.getElementById('deleteTeacherModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
-    document.getElementById('cancelDeleteTeacher').addEventListener('click', function() {
-        document.getElementById('deleteTeacherModal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    });
+    const cancelDeleteTeacher = document.getElementById('cancelDeleteTeacher');
+    if (cancelDeleteTeacher) {
+        cancelDeleteTeacher.addEventListener('click', function() {
+            const modal = document.getElementById('deleteTeacherModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
 
     // Close modals when clicking outside
-    document.getElementById('teacherScheduleModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
+    const teacherScheduleModal = document.getElementById('teacherScheduleModal');
+    if (teacherScheduleModal) {
+        teacherScheduleModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
-    document.getElementById('editTeacherModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
+    const editTeacherModal = document.getElementById('editTeacherModal');
+    if (editTeacherModal) {
+        editTeacherModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
-    document.getElementById('deleteTeacherModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    });
+    const deleteTeacherModal = document.getElementById('deleteTeacherModal');
+    if (deleteTeacherModal) {
+        deleteTeacherModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
 
     // Render teacher schedule
     function renderTeacherSchedule(teacherId) {
@@ -456,9 +574,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        document.getElementById('lectureCount').textContent = lectureHours.toFixed(1);
-        document.getElementById('labCount').textContent = labHours.toFixed(1);
-        document.getElementById('totalHours').textContent = (lectureHours + labHours).toFixed(1);
+        const lectureCount = document.getElementById('lectureCount');
+        const labCount = document.getElementById('labCount');
+        const totalHours = document.getElementById('totalHours');
+        
+        if (lectureCount) lectureCount.textContent = lectureHours.toFixed(1);
+        if (labCount) labCount.textContent = labHours.toFixed(1);
+        if (totalHours) totalHours.textContent = (lectureHours + labHours).toFixed(1);
     }
 
     // Calculate schedule duration (reuse from schedules.js)
@@ -479,6 +601,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render weekly schedule
     function renderWeeklySchedule(teacherSchedules) {
         const weeklyGrid = document.getElementById('weeklyGrid');
+        if (!weeklyGrid) return;
+        
         weeklyGrid.innerHTML = '';
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -525,12 +649,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render daily schedule
     function renderDailySchedule(teacherSchedules) {
         const dailySchedule = document.getElementById('dailySchedule');
+        if (!dailySchedule) return;
+        
         dailySchedule.innerHTML = '';
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const currentDay = days[currentDayIndex];
         
-        document.getElementById('currentDayDisplay').textContent = currentDay;
+        const currentDayDisplay = document.getElementById('currentDayDisplay');
+        if (currentDayDisplay) currentDayDisplay.textContent = currentDay;
 
         const daySchedules = teacherSchedules.filter(schedule => 
             schedule.day === currentDay && 
@@ -575,21 +702,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // View toggle
-    document.getElementById('scheduleViewSelect').addEventListener('change', function() {
-        currentView = this.value;
-        updateScheduleView();
-    });
+    const scheduleViewSelect = document.getElementById('scheduleViewSelect');
+    if (scheduleViewSelect) {
+        scheduleViewSelect.addEventListener('change', function() {
+            currentView = this.value;
+            updateScheduleView();
+        });
+    }
 
     function updateScheduleView() {
         const weeklyView = document.getElementById('weeklyScheduleView');
         const dailyView = document.getElementById('dailyScheduleView');
 
         if (currentView === 'weekly') {
-            weeklyView.style.display = 'block';
-            dailyView.style.display = 'none';
+            if (weeklyView) weeklyView.style.display = 'block';
+            if (dailyView) dailyView.style.display = 'none';
         } else {
-            weeklyView.style.display = 'none';
-            dailyView.style.display = 'block';
+            if (weeklyView) weeklyView.style.display = 'none';
+            if (dailyView) dailyView.style.display = 'block';
         }
 
         if (currentTeacherId) {
@@ -611,39 +741,54 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Daily navigation
-    document.getElementById('prevDayBtn').addEventListener('click', function() {
-        currentDayIndex = (currentDayIndex - 1 + 6) % 6;
-        if (currentTeacherId) {
-            renderTeacherSchedule(currentTeacherId);
-        }
-    });
+    const prevDayBtn = document.getElementById('prevDayBtn');
+    if (prevDayBtn) {
+        prevDayBtn.addEventListener('click', function() {
+            currentDayIndex = (currentDayIndex - 1 + 6) % 6;
+            if (currentTeacherId) {
+                renderTeacherSchedule(currentTeacherId);
+            }
+        });
+    }
 
-    document.getElementById('nextDayBtn').addEventListener('click', function() {
-        currentDayIndex = (currentDayIndex + 1) % 6;
-        if (currentTeacherId) {
-            renderTeacherSchedule(currentTeacherId);
-        }
-    });
+    const nextDayBtn = document.getElementById('nextDayBtn');
+    if (nextDayBtn) {
+        nextDayBtn.addEventListener('click', function() {
+            currentDayIndex = (currentDayIndex + 1) % 6;
+            if (currentTeacherId) {
+                renderTeacherSchedule(currentTeacherId);
+            }
+        });
+    }
 
     // Search and status filter listeners (both call applyFilters)
-    document.getElementById('teacherSearch').addEventListener('input', applyFilters);
-    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+    const teacherSearch = document.getElementById('teacherSearch');
+    if (teacherSearch) {
+        teacherSearch.addEventListener('input', applyFilters);
+    }
+
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', applyFilters);
+    }
 
     // Loading state
     function showLoadingState(show) {
         const loadingState = document.getElementById('loadingState');
-        loadingState.style.display = show ? 'block' : 'none';
+        if (loadingState) loadingState.style.display = show ? 'block' : 'none';
     }
 
     // Empty state
     function showEmptyState(show) {
         const emptyState = document.getElementById('emptyState');
-        emptyState.style.display = show ? 'block' : 'none';
+        if (emptyState) emptyState.style.display = show ? 'block' : 'none';
     }
 
     // Bubble notification
     function showBubbleMessage(msg, type = "success") {
         const bubble = document.getElementById('teacherBubbleMessage');
+        if (!bubble) return;
+        
         bubble.textContent = msg;
         bubble.className = "section-bubble-message";
         bubble.classList.add(type);
@@ -658,4 +803,3 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial load
     loadAllData();
 });
-

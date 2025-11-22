@@ -1,10 +1,20 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
+// Import AuthGuard (assuming it's available globally, but let's check)
+// If AuthGuard is not available, we'll create a fallback
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication first
-    if (!AuthGuard.checkAuthentication('student')) {
-        return;
+    // Check authentication first - with fallback
+    let authCheck = true;
+    if (typeof AuthGuard !== 'undefined') {
+        if (!AuthGuard.checkAuthentication('student')) {
+            return;
+        }
+    } else {
+        console.warn('AuthGuard not found, proceeding without authentication check');
+        // You might want to redirect to login here
+        // window.location.href = '/login.html';
     }
 
     // State management
@@ -17,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDayIndex = 0;
     let selectedFile = null;
 
-    // Profile dropdown
+    // Profile dropdown - with safety check
     const profileDropdown = document.querySelector('.student-profile-dropdown');
     if (profileDropdown) {
         profileDropdown.addEventListener('click', function(e) {
@@ -29,68 +39,117 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Logout functionality
-    document.getElementById('studentLogoutBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        AuthGuard.logout();
-    });
+    // Logout functionality - with safety check
+    const logoutBtn = document.getElementById('studentLogoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeof AuthGuard !== 'undefined') {
+                AuthGuard.logout();
+            } else {
+                // Fallback logout
+                sessionStorage.clear();
+                localStorage.clear();
+                window.location.href = '/login.html';
+            }
+        });
+    }
 
-    // Navigation
+    // Navigation - improved with error handling
     setupNavigation();
 
     function setupNavigation() {
-        document.getElementById('dashboardLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('dashboardView');
-            updateNavActive(this);
-        });
+        // Dashboard link
+        const dashboardLink = document.getElementById('dashboardLink');
+        if (dashboardLink) {
+            dashboardLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('dashboardView');
+                updateNavActive(this);
+            });
+        }
 
-        document.getElementById('scheduleLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('scheduleView');
-            updateNavActive(this);
-            renderScheduleViews(); // Refresh schedule data when switching to schedule view
-        });
+        // Schedule link
+        const scheduleLink = document.getElementById('scheduleLink');
+        if (scheduleLink) {
+            scheduleLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('scheduleView');
+                updateNavActive(this);
+                renderScheduleViews(); // Refresh schedule data when switching to schedule view
+            });
+        }
 
-        document.getElementById('profileLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('profileView');
-            updateNavActive(this);
-            updateProfileView(); // Refresh profile data when switching to profile view
-        });
+        // Profile link
+        const profileLink = document.getElementById('profileLink');
+        if (profileLink) {
+            profileLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('profileView');
+                updateNavActive(this);
+                updateProfileView(); // Refresh profile data when switching to profile view
+            });
+        }
 
-        document.getElementById('studentProfileBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('profileView');
-            updateNavActive(document.getElementById('profileLink'));
-            updateProfileView();
-        });
+        // Student profile button
+        const studentProfileBtn = document.getElementById('studentProfileBtn');
+        if (studentProfileBtn) {
+            studentProfileBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('profileView');
+                const profileLink = document.getElementById('profileLink');
+                if (profileLink) updateNavActive(profileLink);
+                updateProfileView();
+            });
+        }
 
-        document.getElementById('viewFullScheduleBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            switchView('scheduleView');
-            updateNavActive(document.getElementById('scheduleLink'));
-            renderScheduleViews();
-        });
+        // View full schedule button
+        const viewFullScheduleBtn = document.getElementById('viewFullScheduleBtn');
+        if (viewFullScheduleBtn) {
+            viewFullScheduleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('scheduleView');
+                const scheduleLink = document.getElementById('scheduleLink');
+                if (scheduleLink) updateNavActive(scheduleLink);
+                renderScheduleViews();
+            });
+        }
     }
 
     function switchView(viewId) {
         document.querySelectorAll('.view-section').forEach(view => {
             view.classList.remove('active');
         });
-        document.getElementById(viewId).classList.add('active');
+        const targetView = document.getElementById(viewId);
+        if (targetView) {
+            targetView.classList.add('active');
+        }
     }
 
     function updateNavActive(clickedElement) {
         document.querySelectorAll('.nav-links li').forEach(li => {
             li.classList.remove('active');
         });
-        clickedElement.parentElement.classList.add('active');
+        if (clickedElement && clickedElement.parentElement) {
+            clickedElement.parentElement.classList.add('active');
+        }
     }
 
     // Update profile info in navigation
     function updateProfileInfo() {
-        const currentUser = AuthGuard.getCurrentUser();
+        let currentUser = null;
+        
+        // Get current user with fallback
+        if (typeof AuthGuard !== 'undefined') {
+            currentUser = AuthGuard.getCurrentUser();
+        } else {
+            // Fallback: try to get from sessionStorage
+            const userData = sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+            }
+        }
+        
         if (currentUser) {
             currentStudent = currentUser;
             const firstName = currentUser.fullname?.split(' ')[0] || 'Student';
@@ -103,23 +162,51 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const profileAvatar = document.getElementById('studentProfileAvatar');
             if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = `http://localhost:3001${currentUser.profilePicture}`;
+                profileAvatar.src = `${API_BASE_URL}${currentUser.profilePicture}`;
             }
 
             // Update greeting
-            document.getElementById('studentGreetingName').textContent = firstName;
+            const greetingName = document.getElementById('studentGreetingName');
+            if (greetingName) {
+                greetingName.textContent = firstName;
+            }
+        }
+    }
+
+    // Get user ID with fallback
+    function getUserId() {
+        if (typeof AuthGuard !== 'undefined') {
+            return AuthGuard.getUserId();
+        } else {
+            // Fallback: try to get from storage
+            const userData = sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser');
+            if (userData) {
+                const user = JSON.parse(userData);
+                return user._id;
+            }
+            return null;
+        }
+    }
+
+    // Store user session with fallback
+    function storeUserSession(userData) {
+        if (typeof AuthGuard !== 'undefined') {
+            AuthGuard.storeUserSession(userData);
+        } else {
+            // Fallback: store in sessionStorage
+            sessionStorage.setItem('currentUser', JSON.stringify(userData));
         }
     }
 
     // Fetch student data
     async function fetchStudentData() {
         try {
-            const userId = AuthGuard.getUserId();
+            const userId = getUserId();
             if (userId) {
                 const res = await fetch(`${API_BASE_URL}/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
-                    AuthGuard.storeUserSession(userData);
+                    storeUserSession(userData);
                     currentStudent = userData;
                     updateProfileInfo();
                     await loadSectionsData();
@@ -128,17 +215,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     throw new Error('Failed to fetch student data');
                 }
+            } else {
+                throw new Error('No user ID found');
             }
         } catch (error) {
             console.error('Error fetching student data:', error);
-            showNotification('Error loading student data', 'error');
+            showNotification('Error loading student data: ' + error.message, 'error');
         }
     }
 
     // Load sections data to find student's section
     async function loadSectionsData() {
         try {
-            const res = await fetch('http://localhost:3001/sections');
+            const res = await fetch(`${API_BASE_URL}/sections`);
             if (res.ok) {
                 allSections = await res.json();
                 console.log('Loaded sections for student:', allSections);
@@ -155,13 +244,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load student schedules based on their section
     async function loadStudentSchedules() {
         try {
-            const res = await fetch('http://localhost:3001/schedules');
+            const res = await fetch(`${API_BASE_URL}/schedules`);
             if (res.ok) {
                 allSchedules = await res.json();
                 // Filter schedules for current student's section
                 studentSchedules = allSchedules.filter(schedule => {
                     const studentSection = currentStudent.section;
-                    const scheduleSectionName = schedule.section.sectionName || schedule.section;
+                    if (!studentSection) return false;
+                    
+                    const scheduleSectionName = schedule.section?.sectionName || schedule.section;
                     return scheduleSectionName === studentSection;
                 });
                 console.log('Loaded student schedules:', studentSchedules);
@@ -208,7 +299,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const subjectMap = new Map();
         
         schedules.forEach(schedule => {
-            const subjectId = schedule.subject._id || schedule.subject;
+            const subjectId = schedule.subject?._id || schedule.subject;
+            if (!subjectId) return;
+            
             const subjectKey = subjectId;
             
             if (!subjectMap.has(subjectKey)) {
@@ -260,8 +353,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update dashboard with student data
     function updateDashboard() {
+        // Update current date
+        const currentDateDisplay = document.getElementById('currentDateDisplay');
+        if (currentDateDisplay) {
+            const currentDate = new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            currentDateDisplay.textContent = currentDate;
+        }
+
         if (!studentSchedules.length) {
             console.log('No schedules found for student');
+            // Set default values
+            document.getElementById('totalSubjects').textContent = '0';
+            document.getElementById('lectureHours').textContent = '0';
+            document.getElementById('labHours').textContent = '0';
+            document.getElementById('studentSection').textContent = currentStudent?.section || 'Not assigned';
+            
+            updateTodaysSchedule();
+            updateWeeklyPreview();
             return;
         }
 
@@ -273,26 +386,19 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('labHours').textContent = academicLoad.labHours;
         
         // Update student section
-        const studentSection = currentStudent.section || 'Not assigned';
+        const studentSection = currentStudent?.section || 'Not assigned';
         document.getElementById('studentSection').textContent = studentSection;
 
         // Update schedule displays
         updateTodaysSchedule();
         updateWeeklyPreview();
-        
-        // Update current date
-        const currentDate = new Date().toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-        document.getElementById('currentDateDisplay').textContent = currentDate;
     }
 
     // Update today's schedule with better sorting
     function updateTodaysSchedule() {
         const todayScheduleList = document.getElementById('todayScheduleList');
+        if (!todayScheduleList) return;
+        
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
         
         const todaysSchedules = studentSchedules.filter(schedule => 
@@ -320,9 +426,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         todayScheduleList.innerHTML = todaysSchedules.map(schedule => {
-            const roomName = schedule.room.roomName || schedule.room;
-            const subjectCode = schedule.subject.courseCode || schedule.subject;
-            const teacherName = schedule.teacher.fullname || schedule.teacher;
+            const roomName = schedule.room?.roomName || schedule.room || 'No room';
+            const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+            const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
             
             return `
                 <div class="schedule-item-today ${schedule.scheduleType}">
@@ -333,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="schedule-subject">${subjectCode}</div>
                         <div class="schedule-meta">${teacherName} • ${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
                     </div>
-                    <div class="schedule-section">${currentStudent.section || 'No Section'}</div>
+                    <div class="schedule-section">${currentStudent?.section || 'No Section'}</div>
                 </div>
             `;
         }).join('');
@@ -342,6 +448,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update weekly preview
     function updateWeeklyPreview() {
         const weeklyPreview = document.getElementById('weeklyPreview');
+        if (!weeklyPreview) return;
+        
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         
         weeklyPreview.innerHTML = days.map(day => {
@@ -354,8 +462,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h5>${day}</h5>
                     ${daySchedules.length > 0 ? 
                         daySchedules.map(schedule => {
-                            const subjectCode = schedule.subject.courseCode || schedule.subject;
-                            const teacherName = schedule.teacher.fullname || schedule.teacher;
+                            const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+                            const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
                             return `
                                 <div class="schedule-item-preview ${schedule.scheduleType}">
                                     <strong>${subjectCode}</strong><br>
@@ -387,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const profileAvatar = document.getElementById('profileViewAvatar');
             if (profileAvatar) {
                 if (currentStudent.profilePicture) {
-                    profileAvatar.src = `http://localhost:3001${currentStudent.profilePicture}`;
+                    profileAvatar.src = `${API_BASE_URL}${currentStudent.profilePicture}`;
                 } else {
                     profileAvatar.src = './img/default_student_avatar.png';
                 }
@@ -430,6 +538,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderScheduleViews() {
         if (!studentSchedules.length) {
             console.log('No schedules to render');
+            // Set default values
+            document.getElementById('scheduleLectureCount').textContent = '0';
+            document.getElementById('scheduleLabCount').textContent = '0';
+            document.getElementById('scheduleTotalHours').textContent = '0';
             return;
         }
 
@@ -465,7 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const daySchedules = studentSchedules.filter(schedule => {
                 const matchesDay = schedule.day === day;
                 const matchesShift = currentShift === 'all' || 
-                    (schedule.section.shift && schedule.section.shift.toLowerCase() === currentShift);
+                    (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
                 return matchesDay && matchesShift;
             });
 
@@ -490,9 +602,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const item = document.createElement('div');
                     item.className = `schedule-item-small ${schedule.scheduleType}`;
                     
-                    const subjectCode = schedule.subject.courseCode || schedule.subject;
-                    const teacherName = schedule.teacher.fullname || schedule.teacher;
-                    const roomName = schedule.room.roomName || schedule.room;
+                    const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+                    const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
+                    const roomName = schedule.room?.roomName || schedule.room || 'No room';
                     const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
                     
                     item.innerHTML = `
@@ -526,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const daySchedules = studentSchedules.filter(schedule => {
             const matchesDay = schedule.day === currentDay;
             const matchesShift = currentShift === 'all' || 
-                (schedule.section.shift && schedule.section.shift.toLowerCase() === currentShift);
+                (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
             return matchesDay && matchesShift;
         });
 
@@ -552,10 +664,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         dailySchedule.innerHTML = daySchedules.map(schedule => {
-            const subjectCode = schedule.subject.courseCode || schedule.subject;
-            const descriptiveTitle = schedule.subject.descriptiveTitle || '';
-            const roomName = schedule.room.roomName || schedule.room;
-            const teacherName = schedule.teacher.fullname || schedule.teacher;
+            const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+            const descriptiveTitle = schedule.subject?.descriptiveTitle || '';
+            const roomName = schedule.room?.roomName || schedule.room || 'No room';
+            const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
             const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
             
             return `
@@ -565,28 +677,31 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="schedule-subject">${subjectCode}${descriptiveTitle ? ' - ' + descriptiveTitle : ''}</div>
                         <div class="schedule-meta">${teacherName} • ${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
                     </div>
-                    <div class="schedule-section">${currentStudent.section || 'No Section'}</div>
+                    <div class="schedule-section">${currentStudent?.section || 'No Section'}</div>
                 </div>
             `;
         }).join('');
     }
 
     // View toggle
-    document.getElementById('scheduleViewSelect').addEventListener('change', function() {
-        currentView = this.value;
-        updateScheduleView();
-    });
+    const scheduleViewSelect = document.getElementById('scheduleViewSelect');
+    if (scheduleViewSelect) {
+        scheduleViewSelect.addEventListener('change', function() {
+            currentView = this.value;
+            updateScheduleView();
+        });
+    }
 
     function updateScheduleView() {
         const weeklyView = document.getElementById('weeklyScheduleView');
         const dailyView = document.getElementById('dailyScheduleView');
 
         if (currentView === 'weekly') {
-            weeklyView.style.display = 'block';
-            dailyView.style.display = 'none';
+            if (weeklyView) weeklyView.style.display = 'block';
+            if (dailyView) dailyView.style.display = 'none';
         } else {
-            weeklyView.style.display = 'none';
-            dailyView.style.display = 'block';
+            if (weeklyView) weeklyView.style.display = 'none';
+            if (dailyView) dailyView.style.display = 'block';
         }
 
         renderScheduleViews();
@@ -603,134 +718,145 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Daily navigation
-    document.getElementById('prevDayBtn').addEventListener('click', function() {
-        currentDayIndex = (currentDayIndex - 1 + 6) % 6;
-        renderScheduleViews();
-    });
+    const prevDayBtn = document.getElementById('prevDayBtn');
+    if (prevDayBtn) {
+        prevDayBtn.addEventListener('click', function() {
+            currentDayIndex = (currentDayIndex - 1 + 6) % 6;
+            renderScheduleViews();
+        });
+    }
 
-    document.getElementById('nextDayBtn').addEventListener('click', function() {
-        currentDayIndex = (currentDayIndex + 1) % 6;
-        renderScheduleViews();
-    });
+    const nextDayBtn = document.getElementById('nextDayBtn');
+    if (nextDayBtn) {
+        nextDayBtn.addEventListener('click', function() {
+            currentDayIndex = (currentDayIndex + 1) % 6;
+            renderScheduleViews();
+        });
+    }
 
     // Profile Picture Upload
     const profilePictureInput = document.getElementById('profilePictureInput');
     const profilePicture = document.getElementById('profileViewAvatar');
 
-    profilePictureInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                showNotification('Please select a valid image file (JPEG, PNG, etc.)', 'error');
-                return;
-            }
+    if (profilePictureInput && profilePicture) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showNotification('Please select a valid image file (JPEG, PNG, etc.)', 'error');
+                    return;
+                }
 
-            // Validate file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                showNotification('Image size must be less than 5MB', 'error');
-                return;
-            }
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('Image size must be less than 5MB', 'error');
+                    return;
+                }
 
-            selectedFile = file;
-            
-            // Preview the image
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                profilePicture.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-            
-            showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
-        }
-    });
+                selectedFile = file;
+                
+                // Preview the image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profilePicture.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                
+                showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
+            }
+        });
+    }
 
     // Save Profile Changes with better validation
-    document.getElementById('saveProfileBtn').addEventListener('click', async function() {
-        const saveBtn = this;
-        const originalText = saveBtn.innerHTML;
-        
-        try {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
-
-            const userId = AuthGuard.getUserId();
-            if (!userId) {
-                throw new Error('User not authenticated');
-            }
-
-            const fullName = document.getElementById('profileFullName').value.trim();
-            if (!fullName) {
-                throw new Error('Full name is required');
-            }
-
-            const email = document.getElementById('profileEmail').value.trim();
-            if (!email) {
-                throw new Error('Email is required');
-            }
-
-            // Basic email validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                throw new Error('Please enter a valid email address');
-            }
-
-            const formData = new FormData();
-            formData.append('fullname', fullName);
-            formData.append('email', email);
-            formData.append('ctuid', document.getElementById('profileCtuid').value.trim());
-            formData.append('birthdate', document.getElementById('profileBirthdate').value);
-            formData.append('gender', document.getElementById('profileGender').value);
-            formData.append('section', currentStudent.section || '');
-            formData.append('room', currentStudent.room || '');
-
-            // Add profile picture if selected
-            if (selectedFile) {
-                formData.append('profilePicture', selectedFile);
-            }
-
-            const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
-                method: 'PUT',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to update profile');
-            }
-
-            const updatedUser = await response.json();
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', async function() {
+            const saveBtn = this;
+            const originalText = saveBtn.innerHTML;
             
-            // Update session storage and current student data
-            AuthGuard.storeUserSession(updatedUser);
-            currentStudent = updatedUser;
-            
-            // Update all profile pictures
-            updateProfilePictures(updatedUser.profilePicture);
-            
-            // Update navigation and greeting
-            updateProfileInfo();
-            
-            showNotification('Profile updated successfully!', 'success');
-            
-            // Reset file selection
-            selectedFile = null;
-            profilePictureInput.value = '';
-            
-        } catch (error) {
-            console.error('Error updating profile:', error);
-            showNotification(error.message, 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalText;
-        }
-    });
+            try {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+
+                const userId = getUserId();
+                if (!userId) {
+                    throw new Error('User not authenticated');
+                }
+
+                const fullName = document.getElementById('profileFullName').value.trim();
+                if (!fullName) {
+                    throw new Error('Full name is required');
+                }
+
+                const email = document.getElementById('profileEmail').value.trim();
+                if (!email) {
+                    throw new Error('Email is required');
+                }
+
+                // Basic email validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    throw new Error('Please enter a valid email address');
+                }
+
+                const formData = new FormData();
+                formData.append('fullname', fullName);
+                formData.append('email', email);
+                formData.append('ctuid', document.getElementById('profileCtuid').value.trim());
+                formData.append('birthdate', document.getElementById('profileBirthdate').value);
+                formData.append('gender', document.getElementById('profileGender').value);
+                formData.append('section', currentStudent?.section || '');
+                formData.append('room', currentStudent?.room || '');
+
+                // Add profile picture if selected
+                if (selectedFile) {
+                    formData.append('profilePicture', selectedFile);
+                }
+
+                const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to update profile');
+                }
+
+                const updatedUser = await response.json();
+                
+                // Update session storage and current student data
+                storeUserSession(updatedUser);
+                currentStudent = updatedUser;
+                
+                // Update all profile pictures
+                updateProfilePictures(updatedUser.profilePicture);
+                
+                // Update navigation and greeting
+                updateProfileInfo();
+                
+                showNotification('Profile updated successfully!', 'success');
+                
+                // Reset file selection
+                selectedFile = null;
+                if (profilePictureInput) profilePictureInput.value = '';
+                
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showNotification(error.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+        });
+    }
 
     // Helper function to update profile pictures everywhere
     function updateProfilePictures(profilePicturePath) {
         if (!profilePicturePath) return;
         
-        const imageUrl = `http://localhost:3001${profilePicturePath}`;
+        const imageUrl = `${API_BASE_URL}${profilePicturePath}`;
         
         // Update profile view avatar
         const profileAvatar = document.getElementById('profileViewAvatar');
@@ -746,26 +872,68 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Cancel changes
-    document.getElementById('cancelBtn').addEventListener('click', function() {
-        updateProfileView();
-        selectedFile = null;
-        profilePictureInput.value = '';
-        
-        // Reset profile picture to original
-        if (currentStudent && currentStudent.profilePicture) {
-            const profileAvatar = document.getElementById('profileViewAvatar');
-            if (profileAvatar) {
-                profileAvatar.src = `http://localhost:3001${currentStudent.profilePicture}`;
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            updateProfileView();
+            selectedFile = null;
+            if (profilePictureInput) profilePictureInput.value = '';
+            
+            // Reset profile picture to original
+            if (currentStudent && currentStudent.profilePicture) {
+                const profileAvatar = document.getElementById('profileViewAvatar');
+                if (profileAvatar) {
+                    profileAvatar.src = `${API_BASE_URL}${currentStudent.profilePicture}`;
+                }
             }
-        }
-        
-        showNotification('Changes cancelled', 'success');
-    });
+            
+            showNotification('Changes cancelled', 'success');
+        });
+    }
 
     // Notification system
     function showNotification(message, type = 'success') {
         const notification = document.getElementById('studentNotification');
-        if (!notification) return;
+        if (!notification) {
+            // Create notification element if it doesn't exist
+            const newNotification = document.createElement('div');
+            newNotification.id = 'studentNotification';
+            newNotification.className = `notification ${type}`;
+            newNotification.textContent = message;
+            newNotification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 4px;
+                color: white;
+                z-index: 10000;
+                opacity: 0;
+                transition: opacity 0.3s;
+            `;
+            if (type === 'success') {
+                newNotification.style.backgroundColor = '#28a745';
+            } else {
+                newNotification.style.backgroundColor = '#dc3545';
+            }
+            document.body.appendChild(newNotification);
+            
+            // Show notification
+            setTimeout(() => {
+                newNotification.style.opacity = '1';
+            }, 100);
+            
+            // Auto-hide after 4 seconds
+            setTimeout(() => {
+                newNotification.style.opacity = '0';
+                setTimeout(() => {
+                    if (newNotification.parentNode) {
+                        newNotification.parentNode.removeChild(newNotification);
+                    }
+                }, 300);
+            }, 4000);
+            return;
+        }
         
         notification.textContent = message;
         notification.className = `notification ${type}`;
@@ -785,7 +953,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification('Dashboard loaded successfully!', 'success');
         } catch (error) {
             console.error('Error initializing app:', error);
-            showNotification('Error loading dashboard', 'error');
+            showNotification('Error loading dashboard: ' + error.message, 'error');
         }
     }
 
