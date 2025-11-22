@@ -26,6 +26,13 @@ app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
 
+// ✅ IMPROVEMENT: Add a request logger for debugging
+// This will log every incoming request's method, path, and body, which is extremely useful for debugging on Render.
+app.use((req, res, next) => {
+    console.log(`🔗 ${req.method} ${req.path}`, req.body);
+    next();
+});
+
 // Serve front-end static assets from ./public at web root
 // This makes URLs like /css/auth.css and /js/admin-dashboard.js resolve to public/css/... and public/js/...
 app.use(express.static(path.join(__dirname, 'public')));
@@ -199,7 +206,9 @@ const upload = multer({
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
-            cb(new Error('Only image files are allowed!'), false);
+            // Multer attaches the error to the request object
+            req.fileValidationError = 'Only image files are allowed!';
+            cb(null, false);
         }
     }
 });
@@ -306,7 +315,7 @@ app.post('/login', async (req, res) => {
                 error: 'Email and password are required'
             });
         }
-        // Clean the email
+        // Clean email
         const cleanEmail = email.trim().toLowerCase();
         console.log('📧 Searching for user with email:', cleanEmail);
         // Find user by email
@@ -378,6 +387,12 @@ app.get('/user/:id', async (req, res) => {
 // Update user profile with file upload
 app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
     try {
+        // ✅ IMPROVEMENT: Check for multer file validation errors
+        // This ensures the user is notified if they upload an invalid file type.
+        if (req.fileValidationError) {
+            return res.status(400).json({ error: req.fileValidationError });
+        }
+
         const { fullname, email, ctuid, birthdate, gender, section, room } = req.body;
 
         const updateFields = {};
@@ -429,7 +444,7 @@ app.delete('/user/:id', async (req, res) => {
         }
         // Delete all schedules associated with this teacher
         await Schedule.deleteMany({ teacher: userId });
-        // Delete the user
+        // Delete user
         await User.findByIdAndDelete(userId);
         console.log('✅ User deleted successfully:', user.email);
         res.json({ message: 'User deleted successfully' });
@@ -606,7 +621,7 @@ app.get('/students-per-room', async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error('Error fetching students per room:', error);
-        res.status(500).json({ error: 'Failed to fetch students per room' });
+        res.status(500).json({ error: 'Failed to fetch students per room.' });
     }
 });
 

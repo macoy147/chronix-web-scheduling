@@ -1,4 +1,3 @@
-// public/js/error-handler.js
 export const handleApiError = (error) => {
   console.error('API Error:', error);
   
@@ -9,7 +8,7 @@ export const handleApiError = (error) => {
 
   // Create and show a notification bubble
   const notification = document.createElement('div');
-  notification.className = 'notification error'; // Use your existing CSS class
+  notification.className = 'notification error';
   notification.textContent = message;
   notification.style.cssText = `
     position: fixed; 
