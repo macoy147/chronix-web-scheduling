@@ -1,21 +1,36 @@
-
 class AuthGuard {
     static checkAuthentication(requiredRole = null) {
         const isAuthenticated = sessionStorage.getItem('isAuthenticated');
         const userRole = sessionStorage.getItem('userRole');
+        const currentUser = sessionStorage.getItem('currentUser');
         
-        console.log('Auth check:', { isAuthenticated, userRole, requiredRole }); // Debug log
+        console.log('Auth check:', { 
+            isAuthenticated, 
+            userRole, 
+            requiredRole,
+            currentUserExists: !!currentUser,
+            currentPage: window.location.pathname.split('/').pop()
+        });
         
         if (!isAuthenticated || isAuthenticated !== 'true') {
+            console.error('Authentication failed: User not authenticated');
+            this.redirectToLogin();
+            return false;
+        }
+        
+        if (!currentUser) {
+            console.error('Authentication failed: No user data in session');
             this.redirectToLogin();
             return false;
         }
         
         if (requiredRole && userRole !== requiredRole) {
+            console.error(`Authentication failed: Required role ${requiredRole}, but user has role ${userRole}`);
             this.redirectToLogin('Unauthorized access. You do not have permission to view this page.');
             return false;
         }
         
+        console.log('Authentication successful');
         return true;
     }
     
@@ -82,7 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (!publicPages.includes(currentPage)) {
         // Define role requirements for each page
-        // In auth-guard.js, around line 56
         const roleRequirements = {
             'admin-dashboard.html': 'admin',
             'admin-subjects.html': 'admin', 
@@ -93,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'admin-teachers.html': 'admin',
             'admin-profile.html': 'admin',
             'teacher-dashboard.html': 'teacher',
-            'student-dashboard.html': 'student'  // ADD THIS LINE
+            'student-dashboard.html': 'student'  // This was the missing line
         };
         
         const requiredRole = roleRequirements[currentPage] || null;
@@ -123,3 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Export the class for use in other modules
+export default AuthGuard;

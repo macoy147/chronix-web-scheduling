@@ -24,9 +24,9 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marcomontellano147
 
 // ✅ FIXED: Configure CORS for production
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Use your production URL
-  credentials: true, // Allow cookies to be sent
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Use your production URL
+    credentials: true, // Allow cookies to be sent
+    optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 };
 app.use(cors(corsOptions));
 
@@ -306,7 +306,7 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// Login - Simple and robust version
+// Login - Enhanced version with all user fields
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -316,6 +316,7 @@ app.post('/login', async (req, res) => {
             password: password ? '***' : 'missing',
             timestamp: new Date().toISOString()
         });
+        
         // Basic validation
         if (!email || !password) {
             logger.warn('❌ Missing email or password');
@@ -323,9 +324,11 @@ app.post('/login', async (req, res) => {
                 error: 'Email and password are required'
             });
         }
+        
         // Clean email
         const cleanEmail = email.trim().toLowerCase();
         logger.info('📧 Searching for user with email:', cleanEmail);
+        
         // Find user by email
         const user = await User.findOne({ email: cleanEmail });
 
@@ -335,12 +338,14 @@ app.post('/login', async (req, res) => {
                 error: 'Invalid email or password'
             });
         }
+        
         logger.info('✅ User found:', {
             id: user._id,
             email: user.email,
             storedPassword: user.password,
             inputPassword: password
         });
+        
         // Simple password comparison (since we're storing plain text for now)
         if (user.password !== password) {
             logger.warn('❌ Password mismatch');
@@ -348,24 +353,28 @@ app.post('/login', async (req, res) => {
                 error: 'Invalid email or password'
             });
         }
+        
         logger.info('✅ Password matches!');
+        
         // Update last login
         user.lastLogin = new Date();
         await user.save();
-        // Prepare user data for response
+        
+        // Prepare user data for response - ensure all fields are included
         const userResponse = {
             _id: user._id,
             fullname: user.fullname,
             email: user.email,
             userrole: user.userrole,
             ctuid: user.ctuid,
-            profilePicture: user.profilePicture,
+            profilePicture: user.profilePicture || '',
             lastLogin: user.lastLogin,
-            birthdate: user.birthdate,
-            gender: user.gender,
-            section: user.section,
-            room: user.room
+            birthdate: user.birthdate || '',
+            gender: user.gender || '',
+            section: user.section || '',
+            room: user.room || ''
         };
+        
         logger.info('🎉 Login successful for:', user.email);
 
         res.json({
