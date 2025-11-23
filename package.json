@@ -1,6 +1,7 @@
 {
   "name": "chronix",
   "version": "1.0.0",
+  "type": "module",
   "description": "CHRONIX Scheduling System Backend",
   "main": "server.js",
   "scripts": {

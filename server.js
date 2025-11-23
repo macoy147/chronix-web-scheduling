@@ -1,4 +1,4 @@
-// server.js
+// server.js - UPDATED VERSION
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -19,7 +19,7 @@ dotenv.config({ path: '.env' });
 const app = express();
 
 // ✅ FIXED: Use environment variables for security
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002; // Changed to 3002 to avoid conflict
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marcomontellano147user:marcomontellano147db@cluster0.qk0lbhg.mongodb.net/chronix?retryWrites=true&w=majority&appName=Cluster0';
 
 // ✅ FIXED: Configure CORS for production
@@ -33,52 +33,96 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 // ✅ IMPROVEMENT: Add a request logger for debugging
-// This will log every incoming request's method, path, and body, which is extremely useful for debugging on Render.
 app.use((req, res, next) => {
     logger.info(`${req.method} ${req.path}`, { body: req.body });
     next();
 });
 
-// Serve front-end static assets from ./public at web root
-// This makes URLs like /css/auth.css and /js/admin-dashboard.js resolve to public/css/... and public/js/...
+// ✅ FIXED: Serve front-end static assets from ./public at web root
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve uploaded images from /uploads
+// ✅ FIXED: Serve uploaded images from /uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/img', express.static(path.join(__dirname, 'public', 'img')));
 
 // ✅ FIXED: Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'public'))); // Adjust path to your built frontend
+    app.use(express.static(path.join(__dirname, 'public')));
 }
 
-// Connect to MongoDB
+// Connect to MongoDB with updated options
 mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+    // Remove deprecated options
+    // useNewUrlParser: true,
+    // useUnifiedTopology: true,
+}).then(() => {
+    logger.info("✅ Connected to MongoDB!");
+    // Check if admin user exists, if not create one
+    ensureAdminUser();
+}).catch(err => {
+    logger.error('MongoDB connection error:', err);
 });
 
-const db = mongoose.connection;
-db.on('error', (error) => logger.error('MongoDB connection error:', error));
-db.once('open', async () => {
-    logger.info("✅ Connected to MongoDB!");
-    try {
-        // Drop old index if it exists (the one causing duplicate key error)
-        const indexes = await db.collection('subjects').indexes();
-        const badIndex = indexes.find(idx => idx.name === 'code_1');
-        if (badIndex) {
-            logger.warn("⚠️ Found old index 'code_1' — dropping it...");
-            await db.collection('subjects').dropIndex('code_1');
-            logger.info("✅ Dropped old 'code_1' index successfully.");
-        }
+// --------------------- MULTER CONFIGURATION ---------------------
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
-        // Check if admin user exists, if not create one
-        await ensureAdminUser();
-    } catch (err) {
-        logger.error("Error checking/dropping old index:", err);
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'profile-' + req.params.id + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: function (req, file, cb) {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            // Multer attaches the error to the request object
+            req.fileValidationError = 'Only image files are allowed!';
+            cb(null, false);
+        }
+    }
+});
+
+// --------------------- HELPER FUNCTIONS ---------------------
+// Function to ensure admin user exists
+async function ensureAdminUser() {
+    try {
+        const adminUser = await User.findOne({ email: 'admin@gmail.com' });
+        if (!adminUser) {
+            const newAdmin = new User({
+                fullname: 'System Administrator',
+                email: 'admin@gmail.com',
+                userrole: 'admin',
+                ctuid: 'ADMIN001',
+                password: 'admin', // In production, this should be hashed
+                birthdate: '2000-01-01',
+                gender: 'male'
+            });
+            await newAdmin.save();
+            logger.info('✅ Admin user created successfully');
+            logger.info('📧 Email: admin@gmail.com');
+            logger.info('🔑 Password: admin');
+        } else {
+            logger.info('✅ Admin user already exists');
+        }
+    } catch (error) {
+        logger.error('Error ensuring admin user:', error);
+    }
+}
 
 // --------------------- MODELS ---------------------
 // User Model - UPDATED with proper fields
@@ -188,66 +232,6 @@ const Schedule = mongoose.model('Schedule', ScheduleSchema);
 // Ensure indexes match schema
 Subject.syncIndexes().then(() => logger.info("✅ Subject indexes synchronized.")).catch(err => logger.error(err));
 
-// --------------------- MULTER CONFIGURATION ---------------------
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'profile-' + req.params.id + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    },
-    fileFilter: function (req, file, cb) {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            // Multer attaches the error to the request object
-            req.fileValidationError = 'Only image files are allowed!';
-            cb(null, false);
-        }
-    }
-});
-
-// --------------------- HELPER FUNCTIONS ---------------------
-// Function to ensure admin user exists
-async function ensureAdminUser() {
-    try {
-        const adminUser = await User.findOne({ email: 'admin@gmail.com' });
-        if (!adminUser) {
-            const newAdmin = new User({
-                fullname: 'System Administrator',
-                email: 'admin@gmail.com',
-                userrole: 'admin',
-                ctuid: 'ADMIN001',
-                password: 'admin', // In production, this should be hashed
-                birthdate: '2000-01-01',
-                gender: 'male'
-            });
-            await newAdmin.save();
-            logger.info('✅ Admin user created successfully');
-            logger.info('📧 Email: admin@gmail.com');
-            logger.info('🔑 Password: admin');
-        } else {
-            logger.info('✅ Admin user already exists');
-        }
-    } catch (error) {
-        logger.error('Error ensuring admin user:', error);
-    }
-}
-
 // --------------------- DEBUG ROUTES ---------------------
 // Test server connection
 app.get('/test', (req, res) => {
@@ -306,7 +290,7 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// Login - Enhanced version with all user fields
+// Login - Simple and robust version
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -316,7 +300,6 @@ app.post('/login', async (req, res) => {
             password: password ? '***' : 'missing',
             timestamp: new Date().toISOString()
         });
-        
         // Basic validation
         if (!email || !password) {
             logger.warn('❌ Missing email or password');
@@ -324,11 +307,9 @@ app.post('/login', async (req, res) => {
                 error: 'Email and password are required'
             });
         }
-        
         // Clean email
         const cleanEmail = email.trim().toLowerCase();
         logger.info('📧 Searching for user with email:', cleanEmail);
-        
         // Find user by email
         const user = await User.findOne({ email: cleanEmail });
 
@@ -338,14 +319,12 @@ app.post('/login', async (req, res) => {
                 error: 'Invalid email or password'
             });
         }
-        
         logger.info('✅ User found:', {
             id: user._id,
             email: user.email,
             storedPassword: user.password,
             inputPassword: password
         });
-        
         // Simple password comparison (since we're storing plain text for now)
         if (user.password !== password) {
             logger.warn('❌ Password mismatch');
@@ -353,14 +332,11 @@ app.post('/login', async (req, res) => {
                 error: 'Invalid email or password'
             });
         }
-        
         logger.info('✅ Password matches!');
-        
         // Update last login
         user.lastLogin = new Date();
         await user.save();
-        
-        // Prepare user data for response - ensure all fields are included
+        // Prepare user data for response
         const userResponse = {
             _id: user._id,
             fullname: user.fullname,
@@ -374,7 +350,6 @@ app.post('/login', async (req, res) => {
             section: user.section || '',
             room: user.room || ''
         };
-        
         logger.info('🎉 Login successful for:', user.email);
 
         res.json({
@@ -405,7 +380,6 @@ app.get('/user/:id', async (req, res) => {
 app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
     try {
         // ✅ IMPROVEMENT: Check for multer file validation errors
-        // This ensures the user is notified if they upload an invalid file type.
         if (req.fileValidationError) {
             return res.status(400).json({ error: req.fileValidationError });
         }

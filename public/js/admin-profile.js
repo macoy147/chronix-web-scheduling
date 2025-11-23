@@ -1,4 +1,4 @@
-// public/js/admin-profile.js - FIXED VERSION
+// public/js/admin-profile.js - ENHANCED VERSION
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
@@ -54,6 +54,45 @@ const AuthHelper = {
     }
 };
 
+// Profile picture helper
+const ProfilePictureHelper = {
+    // Get full profile picture URL
+    getProfilePictureUrl(profilePicturePath) {
+        if (!profilePicturePath) {
+            return '/img/default_admin_avatar.png';
+        }
+        
+        // If it's already a full URL, return as is
+        if (profilePicturePath.startsWith('http')) {
+            return profilePicturePath;
+        }
+        
+        // If it's a relative path, make it absolute
+        if (profilePicturePath.startsWith('/')) {
+            return profilePicturePath;
+        }
+        
+        // Default fallback
+        return '/img/default_admin_avatar.png';
+    },
+    
+    // Validate file before upload
+    validateFile(file) {
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        
+        if (!validTypes.includes(file.type)) {
+            throw new Error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
+        }
+        
+        if (file.size > maxSize) {
+            throw new Error('Image size must be less than 5MB');
+        }
+        
+        return true;
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Admin Profile loaded');
     
@@ -87,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateProfileInfo() {
         const currentUser = AuthHelper.getCurrentUser();
         if (currentUser) {
-            const firstName = currentUser.fullname.split(' ')[0];
+            const firstName = currentUser.fullname?.split(' ')[0] || 'Admin';
             const profileName = document.getElementById('profileName');
             if (profileName) {
                 profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down"></i>`;
@@ -95,14 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const profileAvatar = document.getElementById('profileAvatar');
             if (profileAvatar) {
-                if (currentUser.profilePicture) {
-                    // Use relative path for profile picture
-                    profileAvatar.src = currentUser.profilePicture.startsWith('/') 
-                        ? currentUser.profilePicture 
-                        : '/' + currentUser.profilePicture;
-                } else {
-                    profileAvatar.src = '/img/default_admin_avatar.png';
-                }
+                profileAvatar.src = ProfilePictureHelper.getProfilePictureUrl(currentUser.profilePicture);
             }
         }
     }
@@ -130,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const response = await fetch(`/user/${userId}`);
+            const response = await fetch(`${API_BASE_URL}/user/${userId}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch user data');
             }
@@ -160,12 +192,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const userRoleEl = document.getElementById('userRole');
         if (userRoleEl) userRoleEl.textContent = userData.userrole ? userData.userrole.charAt(0).toUpperCase() + userData.userrole.slice(1) : 'Administrator';
         
-        // Profile picture
+        // Profile picture - use helper function
         const profilePicture = document.getElementById('profilePicture');
-        if (profilePicture && userData.profilePicture) {
-            profilePicture.src = userData.profilePicture.startsWith('/') 
-                ? userData.profilePicture 
-                : '/' + userData.profilePicture;
+        if (profilePicture) {
+            profilePicture.src = ProfilePictureHelper.getProfilePictureUrl(userData.profilePicture);
         }
 
         // Account details
@@ -210,28 +240,25 @@ document.addEventListener('DOMContentLoaded', function() {
         profilePictureInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                // Validate file type
-                if (!file.type.startsWith('image/')) {
-                    showNotification('Please select a valid image file', 'error');
-                    return;
+                try {
+                    // Validate file using helper
+                    ProfilePictureHelper.validateFile(file);
+                    selectedFile = file;
+                    
+                    // Preview the image
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (profilePicture) {
+                            profilePicture.src = e.target.result;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
+                } catch (error) {
+                    showNotification(error.message, 'error');
+                    profilePictureInput.value = ''; // Clear the invalid file
                 }
-
-                // Validate file size (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    showNotification('Image size must be less than 5MB', 'error');
-                    return;
-                }
-
-                selectedFile = file;
-                
-                // Preview the image
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    if (profilePicture) {
-                        profilePicture.src = e.target.result;
-                    }
-                };
-                reader.readAsDataURL(file);
             }
         });
     }
@@ -240,11 +267,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     if (saveProfileBtn) {
         saveProfileBtn.addEventListener('click', async function() {
+            const saveBtn = this;
+            const originalText = saveBtn.innerHTML;
+            
             try {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+
                 const userId = AuthHelper.getUserId();
                 if (!userId) {
-                    showNotification('User not authenticated', 'error');
-                    return;
+                    throw new Error('User not authenticated');
                 }
 
                 const formData = new FormData();
@@ -252,15 +284,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Add basic profile data
                 const fullName = document.getElementById('fullName').value.trim();
                 if (!fullName) {
-                    showNotification('Full name is required', 'error');
-                    return;
+                    throw new Error('Full name is required');
                 }
                 
                 formData.append('fullname', fullName);
                 
                 const emailEl = document.getElementById('email');
                 if (emailEl) {
-                    formData.append('email', emailEl.value.trim());
+                    const email = emailEl.value.trim();
+                    if (!email) {
+                        throw new Error('Email is required');
+                    }
+                    formData.append('email', email);
                 }
 
                 // Add profile picture if selected
@@ -268,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     formData.append('profilePicture', selectedFile);
                 }
 
-                const response = await fetch(`/user/${userId}`, {
+                const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
                     method: 'PUT',
                     body: formData
                 });
@@ -283,22 +318,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update session storage
                 AuthHelper.storeUserSession(updatedUser);
                 
-                // Update profile picture
-                if (selectedFile && updatedUser.profilePicture) {
-                    const newImageSrc = updatedUser.profilePicture.startsWith('/') 
-                        ? updatedUser.profilePicture 
-                        : '/' + updatedUser.profilePicture;
-                    
-                    if (profilePicture) {
-                        profilePicture.src = newImageSrc;
-                    }
-                    
-                    // Update navigation avatar too
-                    const navAvatar = document.getElementById('profileAvatar');
-                    if (navAvatar) {
-                        navAvatar.src = newImageSrc;
-                    }
-                }
+                // Update all profile pictures
+                updateAllProfilePictures(updatedUser.profilePicture);
                 
                 // Update navigation profile info
                 updateProfileInfo();
@@ -312,8 +333,30 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.error('Error updating profile:', error);
                 showNotification(error.message || 'Failed to update profile', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
             }
         });
+    }
+
+    // Helper function to update all profile pictures
+    function updateAllProfilePictures(profilePicturePath) {
+        if (!profilePicturePath) return;
+        
+        const imageUrl = ProfilePictureHelper.getProfilePictureUrl(profilePicturePath);
+        
+        // Update profile view avatar
+        const profilePicture = document.getElementById('profilePicture');
+        if (profilePicture) {
+            profilePicture.src = imageUrl;
+        }
+        
+        // Update navigation avatar
+        const navAvatar = document.getElementById('profileAvatar');
+        if (navAvatar) {
+            navAvatar.src = imageUrl;
+        }
     }
 
     // Cancel changes
