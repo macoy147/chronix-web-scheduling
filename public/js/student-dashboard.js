@@ -1,21 +1,92 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
+import AuthGuard from './auth-guard.js';
 
-// Import AuthGuard (assuming it's available globally, but let's check)
-// If AuthGuard is not available, we'll create a fallback
+// Profile picture helper - UPDATED FOR BASE64 SUPPORT
+const ProfilePictureHelper = {
+    getProfilePictureUrl(profilePicturePath) {
+        if (!profilePicturePath) {
+            return './img/default_student_avatar.png';
+        }
+        
+        // Check if it's a base64 data URL
+        if (profilePicturePath.startsWith('data:image/')) {
+            return profilePicturePath;
+        }
+        
+        if (profilePicturePath.startsWith('http')) {
+            return profilePicturePath;
+        }
+        
+        if (profilePicturePath.startsWith('/')) {
+            return profilePicturePath;
+        }
+        
+        // For backward compatibility with old file paths
+        if (profilePicturePath.includes('profile-')) {
+            return '/uploads/' + profilePicturePath;
+        }
+        
+        return './img/default_student_avatar.png';
+    },
+    
+    validateFile(file) {
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        const maxSize = 5 * 1024 * 1024;
+        
+        if (!validTypes.includes(file.type)) {
+            throw new Error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
+        }
+        
+        if (file.size > maxSize) {
+            throw new Error('Image size must be less than 5MB');
+        }
+        
+        return true;
+    }
+};
+
+// Notification helper
+const NotificationHelper = {
+    showNotification(message, type = 'success', duration = 5000) {
+        let notification = document.getElementById('studentNotification');
+        if (!notification) {
+            notification = this.createNotificationElement();
+        }
+        
+        notification.textContent = message;
+        notification.className = `notification ${type} show`;
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, duration);
+        
+        console.log(`🔔 ${type.toUpperCase()}: ${message}`);
+    },
+    
+    createNotificationElement() {
+        const notification = document.createElement('div');
+        notification.id = 'studentNotification';
+        notification.className = 'notification';
+        document.body.appendChild(notification);
+        return notification;
+    }
+};
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication first - with fallback
-    let authCheck = true;
-    if (typeof AuthGuard !== 'undefined') {
-        if (!AuthGuard.checkAuthentication('student')) {
-            return;
-        }
-    } else {
-        console.warn('AuthGuard not found, proceeding without authentication check');
-        // You might want to redirect to login here
-        // window.location.href = '/login.html';
+    console.log('🏁 Student Dashboard loaded - Initializing...');
+    
+    // Use AuthGuard for authentication check
+    if (!AuthGuard.checkAuthentication('student')) {
+        return;
     }
+
+    // Initialize notification system
+    NotificationHelper.createNotificationElement();
+
+    // Debug: Log current user info
+    const currentUser = AuthGuard.getCurrentUser();
+    console.log('👤 Current user from AuthGuard:', currentUser);
 
     // State management
     let currentStudent = null;
@@ -27,35 +98,182 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDayIndex = 0;
     let selectedFile = null;
 
-    // Profile dropdown - with safety check
+    // Profile dropdown
     const profileDropdown = document.querySelector('.student-profile-dropdown');
     if (profileDropdown) {
         profileDropdown.addEventListener('click', function(e) {
             e.stopPropagation();
             profileDropdown.classList.toggle('open');
         });
+
         document.addEventListener('click', function() {
             profileDropdown.classList.remove('open');
         });
     }
 
-    // Logout functionality - with safety check
+    // Logout functionality - Use AuthGuard's logout
     const logoutBtn = document.getElementById('studentLogoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            if (typeof AuthGuard !== 'undefined') {
-                AuthGuard.logout();
-            } else {
-                // Fallback logout
-                sessionStorage.clear();
-                localStorage.clear();
-                window.location.href = '/login.html';
-            }
+            AuthGuard.logout();
         });
     }
 
-    // Navigation - improved with error handling
+    // Update profile name and avatar in navigation
+    function updateProfileInfo() {
+        const currentUser = AuthGuard.getCurrentUser();
+        if (currentUser) {
+            currentStudent = currentUser;
+            const firstName = currentUser.fullname?.split(' ')[0] || 'Student';
+            const profileName = document.getElementById('studentProfileName');
+            if (profileName) {
+                profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down"></i>`;
+            }
+
+            const profileAvatar = document.getElementById('studentProfileAvatar');
+            if (profileAvatar) {
+                profileAvatar.src = ProfilePictureHelper.getProfilePictureUrl(currentUser.profilePicture);
+            }
+            
+            console.log('🔄 Profile info updated in navigation');
+        }
+    }
+
+    // Load user profile data
+    async function loadUserProfile() {
+        try {
+            const userId = AuthGuard.getUserId();
+            if (!userId) {
+                console.error('❌ No user ID found from AuthGuard');
+                NotificationHelper.showNotification('User not authenticated. Please sign in again.', 'error');
+                setTimeout(() => AuthGuard.redirectToLogin(), 2000);
+                return;
+            }
+
+            console.log('🔄 Loading user profile for ID:', userId);
+            
+            const response = await fetch(`${API_BASE_URL}/user/${userId}`);
+            
+            if (response.status === 401) {
+                NotificationHelper.showNotification('Session expired. Please sign in again.', 'error');
+                setTimeout(() => AuthGuard.redirectToLogin(), 2000);
+                return;
+            }
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`);
+            }
+
+            const userData = await response.json();
+            console.log('✅ User data loaded:', userData);
+            
+            populateProfileFields(userData);
+            
+            // Update session storage with fresh data using AuthGuard
+            AuthGuard.storeUserSession(userData);
+            updateProfileInfo();
+            
+            // Load additional data
+            await loadSectionsData();
+            await loadStudentSchedules();
+            updateDashboard();
+            
+        } catch (error) {
+            console.error('❌ Error loading user profile:', error);
+            
+            if (error.message.includes('401') || error.message.includes('unauthorized')) {
+                NotificationHelper.showNotification('Session expired. Please sign in again.', 'error');
+                setTimeout(() => AuthGuard.redirectToLogin(), 2000);
+            } else {
+                NotificationHelper.showNotification('Failed to load profile data: ' + error.message, 'error');
+            }
+        }
+    }
+
+    // Populate profile fields with user data
+    function populateProfileFields(userData) {
+        console.log('📝 Populating profile fields with:', userData);
+        
+        // Basic info
+        const fullNameEl = document.getElementById('profileFullName');
+        if (fullNameEl) fullNameEl.value = userData.fullname || '';
+        
+        const emailEl = document.getElementById('profileEmail');
+        if (emailEl) emailEl.value = userData.email || '';
+        
+        const userRoleEl = document.getElementById('profileUserRole');
+        if (userRoleEl) userRoleEl.textContent = userData.userrole ? userData.userrole.charAt(0).toUpperCase() + userData.userrole.slice(1) : 'Student';
+        
+        // Profile picture
+        const profilePicture = document.getElementById('profileViewAvatar');
+        if (profilePicture) {
+            const pictureUrl = ProfilePictureHelper.getProfilePictureUrl(userData.profilePicture);
+            console.log('🖼️ Setting profile picture to:', pictureUrl);
+            profilePicture.src = pictureUrl;
+        }
+
+        // Update profile view elements
+        document.getElementById('profileViewName').textContent = userData.fullname || 'Student';
+        document.getElementById('profileViewEmail').textContent = userData.email || 'No email provided';
+        document.getElementById('profileViewRole').textContent = 'Student';
+
+        // Personal information
+        document.getElementById('profileCtuid').value = userData.ctuid || '';
+        document.getElementById('profileBirthdate').value = userData.birthdate || '';
+        document.getElementById('profileGender').value = userData.gender || '';
+
+        // Update greeting
+        const greetingName = document.getElementById('studentGreetingName');
+        if (greetingName) {
+            const firstName = userData.fullname?.split(' ')[0] || 'Student';
+            greetingName.textContent = firstName;
+        }
+    }
+
+    // Load sections data to find student's section
+    async function loadSectionsData() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/sections`);
+            if (res.ok) {
+                allSections = await res.json();
+                console.log('Loaded sections for student:', allSections);
+            } else {
+                console.error('Failed to load sections');
+                allSections = [];
+            }
+        } catch (error) {
+            console.error('Error loading sections:', error);
+            allSections = [];
+        }
+    }
+
+    // Load student schedules based on their section
+    async function loadStudentSchedules() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/schedules`);
+            if (res.ok) {
+                allSchedules = await res.json();
+                // Filter schedules for current student's section
+                studentSchedules = allSchedules.filter(schedule => {
+                    const studentSection = currentStudent.section;
+                    if (!studentSection) return false;
+                    
+                    const scheduleSectionName = schedule.section?.sectionName || schedule.section;
+                    return scheduleSectionName === studentSection;
+                });
+                console.log('Loaded student schedules:', studentSchedules);
+            } else {
+                console.error('Failed to load schedules');
+                studentSchedules = [];
+            }
+        } catch (error) {
+            console.error('Error loading schedules:', error);
+            studentSchedules = [];
+        }
+    }
+
+    // Navigation
     setupNavigation();
 
     function setupNavigation() {
@@ -76,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 switchView('scheduleView');
                 updateNavActive(this);
-                renderScheduleViews(); // Refresh schedule data when switching to schedule view
+                renderScheduleViews();
             });
         }
 
@@ -87,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 switchView('profileView');
                 updateNavActive(this);
-                updateProfileView(); // Refresh profile data when switching to profile view
+                updateProfileView();
             });
         }
 
@@ -135,142 +353,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Update profile info in navigation
-    function updateProfileInfo() {
-        let currentUser = null;
-        
-        // Get current user with fallback
-        if (typeof AuthGuard !== 'undefined') {
-            currentUser = AuthGuard.getCurrentUser();
-        } else {
-            // Fallback: try to get from sessionStorage
-            const userData = sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser');
-            if (userData) {
-                currentUser = JSON.parse(userData);
-            }
-        }
-        
-        if (currentUser) {
-            currentStudent = currentUser;
-            const firstName = currentUser.fullname?.split(' ')[0] || 'Student';
-            
-            // Update navigation profile
-            const profileName = document.getElementById('studentProfileName');
-            if (profileName) {
-                profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down"></i>`;
-            }
-            
-            const profileAvatar = document.getElementById('studentProfileAvatar');
-            if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = `${API_BASE_URL}${currentUser.profilePicture}`;
-            }
-
-            // Update greeting
-            const greetingName = document.getElementById('studentGreetingName');
-            if (greetingName) {
-                greetingName.textContent = firstName;
-            }
-        }
-    }
-
-    // Get user ID with fallback
-    function getUserId() {
-        if (typeof AuthGuard !== 'undefined') {
-            return AuthGuard.getUserId();
-        } else {
-            // Fallback: try to get from storage
-            const userData = sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser');
-            if (userData) {
-                const user = JSON.parse(userData);
-                return user._id;
-            }
-            return null;
-        }
-    }
-
-    // Store user session with fallback
-    function storeUserSession(userData) {
-        if (typeof AuthGuard !== 'undefined') {
-            AuthGuard.storeUserSession(userData);
-        } else {
-            // Fallback: store in sessionStorage
-            sessionStorage.setItem('currentUser', JSON.stringify(userData));
-        }
-    }
-
-    // Fetch student data
-    async function fetchStudentData() {
-        try {
-            const userId = getUserId();
-            if (userId) {
-                const res = await fetch(`${API_BASE_URL}/user/${userId}`);
-                if (res.ok) {
-                    const userData = await res.json();
-                    storeUserSession(userData);
-                    currentStudent = userData;
-                    updateProfileInfo();
-                    await loadSectionsData();
-                    await loadStudentSchedules();
-                    updateDashboard();
-                } else {
-                    throw new Error('Failed to fetch student data');
-                }
-            } else {
-                throw new Error('No user ID found');
-            }
-        } catch (error) {
-            console.error('Error fetching student data:', error);
-            showNotification('Error loading student data: ' + error.message, 'error');
-        }
-    }
-
-    // Load sections data to find student's section
-    async function loadSectionsData() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/sections`);
-            if (res.ok) {
-                allSections = await res.json();
-                console.log('Loaded sections for student:', allSections);
-            } else {
-                console.error('Failed to load sections');
-                allSections = [];
-            }
-        } catch (error) {
-            console.error('Error loading sections:', error);
-            allSections = [];
-        }
-    }
-
-    // Load student schedules based on their section
-    async function loadStudentSchedules() {
-        try {
-            const res = await fetch(`${API_BASE_URL}/schedules`);
-            if (res.ok) {
-                allSchedules = await res.json();
-                // Filter schedules for current student's section
-                studentSchedules = allSchedules.filter(schedule => {
-                    const studentSection = currentStudent.section;
-                    if (!studentSection) return false;
-                    
-                    const scheduleSectionName = schedule.section?.sectionName || schedule.section;
-                    return scheduleSectionName === studentSection;
-                });
-                console.log('Loaded student schedules:', studentSchedules);
-            } else {
-                console.error('Failed to load schedules');
-                studentSchedules = [];
-            }
-        } catch (error) {
-            console.error('Error loading schedules:', error);
-            studentSchedules = [];
-        }
-    }
-
-    // Calculate schedule duration with proper AM/PM handling
+    // Calculate schedule duration
     function calculateScheduleDuration(schedule) {
         const { startTime, endTime, startPeriod, endPeriod } = schedule;
         
-        // Convert to 24-hour format for easier calculation
         const convertTo24Hour = (time, period) => {
             let [hours, minutes] = time.split(':').map(Number);
             
@@ -286,12 +372,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const startMinutes = convertTo24Hour(startTime, startPeriod);
         const endMinutes = convertTo24Hour(endTime, endPeriod);
         
-        // Handle overnight schedules (unlikely but possible)
         const durationMinutes = endMinutes >= startMinutes 
             ? endMinutes - startMinutes 
-            : (1440 - startMinutes) + endMinutes; // 1440 minutes in a day
+            : (1440 - startMinutes) + endMinutes;
         
-        return durationMinutes / 60; // Convert to hours
+        return durationMinutes / 60;
     }
 
     // Calculate academic load
@@ -321,30 +406,18 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (schedule.scheduleType === 'lab') {
                 subjectInfo.labHours += duration;
             }
-            
-            subjectInfo.sessions.push({
-                day: schedule.day,
-                startTime: schedule.startTime,
-                endTime: schedule.endTime,
-                startPeriod: schedule.startPeriod,
-                endPeriod: schedule.endPeriod,
-                duration: duration,
-                room: schedule.room,
-                teacher: schedule.teacher
-            });
         });
         
         const distinctSubjects = Array.from(subjectMap.values());
         const totalSubjects = distinctSubjects.length;
         
-        // Calculate total weekly hours
         const lectureHours = distinctSubjects.reduce((total, subjectInfo) => total + subjectInfo.lecHours, 0);
         const labHours = distinctSubjects.reduce((total, subjectInfo) => total + subjectInfo.labHours, 0);
         const totalWeeklyHours = lectureHours + labHours;
         
         return {
             totalSubjects,
-            lectureHours: Math.round(lectureHours * 10) / 10, // Round to 1 decimal
+            lectureHours: Math.round(lectureHours * 10) / 10,
             labHours: Math.round(labHours * 10) / 10,
             totalWeeklyHours: Math.round(totalWeeklyHours * 10) / 10,
             distinctSubjects
@@ -367,7 +440,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!studentSchedules.length) {
             console.log('No schedules found for student');
-            // Set default values
             document.getElementById('totalSubjects').textContent = '0';
             document.getElementById('lectureHours').textContent = '0';
             document.getElementById('labHours').textContent = '0';
@@ -380,21 +452,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const academicLoad = calculateAcademicLoad(studentSchedules);
         
-        // Update stats cards
         document.getElementById('totalSubjects').textContent = academicLoad.totalSubjects;
         document.getElementById('lectureHours').textContent = academicLoad.lectureHours;
         document.getElementById('labHours').textContent = academicLoad.labHours;
         
-        // Update student section
         const studentSection = currentStudent?.section || 'Not assigned';
         document.getElementById('studentSection').textContent = studentSection;
 
-        // Update schedule displays
         updateTodaysSchedule();
         updateWeeklyPreview();
+        updateProfileView();
     }
 
-    // Update today's schedule with better sorting
+    // Update today's schedule
     function updateTodaysSchedule() {
         const todayScheduleList = document.getElementById('todayScheduleList');
         if (!todayScheduleList) return;
@@ -404,7 +474,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const todaysSchedules = studentSchedules.filter(schedule => 
             schedule.day === today
         ).sort((a, b) => {
-            // Convert times to comparable numbers
             const getTimeValue = (schedule) => {
                 let timeValue = parseInt(schedule.startTime.replace(':', ''));
                 if (schedule.startPeriod === 'PM' && timeValue < 1200) timeValue += 1200;
@@ -455,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
         weeklyPreview.innerHTML = days.map(day => {
             const daySchedules = studentSchedules
                 .filter(schedule => schedule.day === day)
-                .slice(0, 3); // Show only first 3 classes per day for preview
+                .slice(0, 3);
             
             return `
                 <div class="weekly-day-preview">
@@ -473,17 +542,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         }).join('') : 
                         '<p style="color: var(--ctu-text-secondary); font-size: 0.9em; text-align: center;">No classes</p>'
                     }
-                    ${studentSchedules.filter(schedule => schedule.day === day).length > 3 ? 
-                        `<p style="color: var(--ctu-light-blue); font-size: 0.8em; text-align: center; margin-top: 8px;">
-                            +${studentSchedules.filter(schedule => schedule.day === day).length - 3} more
-                        </p>` : ''
-                    }
                 </div>
             `;
         }).join('');
     }
 
-    // Update profile view with better data handling
+    // Update profile view
     function updateProfileView() {
         if (!currentStudent) {
             console.log('No student data available');
@@ -491,27 +555,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            // Update avatar and basic info
-            const profileAvatar = document.getElementById('profileViewAvatar');
-            if (profileAvatar) {
-                if (currentStudent.profilePicture) {
-                    profileAvatar.src = `${API_BASE_URL}${currentStudent.profilePicture}`;
-                } else {
-                    profileAvatar.src = './img/default_student_avatar.png';
-                }
-            }
-
-            document.getElementById('profileViewName').textContent = currentStudent.fullname || 'Student';
-            document.getElementById('profileViewEmail').textContent = currentStudent.email || 'No email provided';
-            document.getElementById('profileViewRole').textContent = 'Student';
-
-            // Update personal information (editable fields)
-            document.getElementById('profileFullName').value = currentStudent.fullname || '';
-            document.getElementById('profileCtuid').value = currentStudent.ctuid || '';
-            document.getElementById('profileEmail').value = currentStudent.email || '';
-            document.getElementById('profileBirthdate').value = currentStudent.birthdate || '';
-            document.getElementById('profileGender').value = currentStudent.gender || '';
-
             // Update academic information
             const academicLoad = calculateAcademicLoad(studentSchedules);
             
@@ -521,8 +564,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('profileWeeklyHours').textContent = academicLoad.totalWeeklyHours;
 
             // Update account information
-            document.getElementById('profileUserRole').textContent = currentStudent.userrole ? 
-                currentStudent.userrole.charAt(0).toUpperCase() + currentStudent.userrole.slice(1) : 'Student';
             document.getElementById('profileLastLogin').textContent = currentStudent.lastLogin ? 
                 new Date(currentStudent.lastLogin).toLocaleString() : 'Never';
             document.getElementById('profileAccountCreated').textContent = currentStudent.createdAt ? 
@@ -530,15 +571,199 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Error updating profile view:', error);
-            showNotification('Error loading profile data', 'error');
+            NotificationHelper.showNotification('Error loading profile data', 'error');
         }
     }
 
-    // Render schedule views
+    // Profile picture upload
+    const profilePictureInput = document.getElementById('profilePictureInput');
+    const profilePicture = document.getElementById('profileViewAvatar');
+
+    if (profilePictureInput && profilePicture) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    ProfilePictureHelper.validateFile(file);
+                    selectedFile = file;
+                    
+                    // Preview the image
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (profilePicture) {
+                            profilePicture.src = e.target.result;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    NotificationHelper.showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
+                } catch (error) {
+                    NotificationHelper.showNotification(error.message, 'error');
+                    profilePictureInput.value = '';
+                    selectedFile = null;
+                }
+            }
+        });
+    }
+
+    // Save profile changes - USING AuthGuard
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', async function() {
+            const saveBtn = this;
+            const originalText = saveBtn.innerHTML;
+            
+            try {
+                const userId = AuthGuard.getUserId();
+                if (!userId) {
+                    throw new Error('User not authenticated. Please sign in again.');
+                }
+
+                console.log('🔄 Starting profile update for user:', userId);
+
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+
+                const formData = new FormData();
+                
+                // Add basic profile data
+                const fullName = document.getElementById('profileFullName').value.trim();
+                if (!fullName) {
+                    throw new Error('Full name is required');
+                }
+                
+                formData.append('fullname', fullName);
+                
+                const emailEl = document.getElementById('profileEmail');
+                if (emailEl) {
+                    const email = emailEl.value.trim();
+                    if (!email) {
+                        throw new Error('Email is required');
+                    }
+                    formData.append('email', email);
+                }
+
+                // Add additional fields
+                formData.append('ctuid', document.getElementById('profileCtuid').value.trim());
+                formData.append('birthdate', document.getElementById('profileBirthdate').value);
+                formData.append('gender', document.getElementById('profileGender').value);
+                formData.append('section', currentStudent?.section || '');
+                formData.append('room', currentStudent?.room || '');
+
+                // Add profile picture if selected
+                if (selectedFile) {
+                    formData.append('profilePicture', selectedFile);
+                    console.log('📤 Uploading profile picture:', selectedFile.name);
+                }
+
+                console.log('🔄 Saving profile changes to server...');
+                
+                const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                if (response.status === 401) {
+                    throw new Error('Session expired. Please sign in again.');
+                }
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch {
+                        errorData = { error: errorText };
+                    }
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const updatedUser = result.user;
+                const changes = result.changes || [];
+                
+                console.log('✅ Profile update successful:', updatedUser);
+                
+                // Update session storage using AuthGuard
+                AuthGuard.storeUserSession(updatedUser);
+                currentStudent = updatedUser;
+                
+                // Update all profile pictures
+                updateAllProfilePictures(updatedUser.profilePicture);
+                
+                // Update navigation profile info
+                updateProfileInfo();
+                
+                // Update profile view
+                updateProfileView();
+                
+                // Show detailed notification
+                if (changes.length > 0) {
+                    NotificationHelper.showNotification(
+                        `Profile updated successfully! Changes: ${changes.join(', ')}`, 
+                        'success', 
+                        6000
+                    );
+                } else {
+                    NotificationHelper.showNotification('Profile updated successfully!', 'success');
+                }
+                
+                selectedFile = null;
+                if (profilePictureInput) {
+                    profilePictureInput.value = '';
+                }
+                
+            } catch (error) {
+                console.error('❌ Error updating profile:', error);
+                
+                if (error.message.includes('Session expired') || error.message.includes('not authenticated')) {
+                    NotificationHelper.showNotification(error.message, 'error');
+                    setTimeout(() => AuthGuard.redirectToLogin(), 2000);
+                } else {
+                    NotificationHelper.showNotification(error.message || 'Failed to update profile', 'error');
+                }
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+        });
+    }
+
+    // Helper function to update all profile pictures
+    function updateAllProfilePictures(profilePicturePath) {
+        if (!profilePicturePath) return;
+        
+        const imageUrl = ProfilePictureHelper.getProfilePictureUrl(profilePicturePath);
+        console.log('🔄 Updating all profile pictures to:', imageUrl);
+        
+        const profilePicture = document.getElementById('profileViewAvatar');
+        if (profilePicture) {
+            profilePicture.src = imageUrl;
+        }
+        
+        const navAvatar = document.getElementById('studentProfileAvatar');
+        if (navAvatar) {
+            navAvatar.src = imageUrl;
+        }
+    }
+
+    // Cancel changes
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            loadUserProfile();
+            selectedFile = null;
+            if (profilePictureInput) {
+                profilePictureInput.value = '';
+            }
+            NotificationHelper.showNotification('Changes cancelled', 'info');
+        });
+    }
+
+    // Schedule view functions
     function renderScheduleViews() {
         if (!studentSchedules.length) {
             console.log('No schedules to render');
-            // Set default values
             document.getElementById('scheduleLectureCount').textContent = '0';
             document.getElementById('scheduleLabCount').textContent = '0';
             document.getElementById('scheduleTotalHours').textContent = '0';
@@ -547,12 +772,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const academicLoad = calculateAcademicLoad(studentSchedules);
         
-        // Update schedule statistics
         document.getElementById('scheduleLectureCount').textContent = academicLoad.lectureHours;
         document.getElementById('scheduleLabCount').textContent = academicLoad.labHours;
         document.getElementById('scheduleTotalHours').textContent = academicLoad.totalWeeklyHours;
 
-        // Render based on current view
         if (currentView === 'weekly') {
             renderWeeklySchedule();
         } else {
@@ -560,7 +783,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Render weekly schedule with better data handling
     function renderWeeklySchedule() {
         const weeklyGrid = document.getElementById('weeklyGrid');
         if (!weeklyGrid) return;
@@ -579,17 +801,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const matchesShift = currentShift === 'all' || 
                     (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
                 return matchesDay && matchesShift;
-            });
-
-            // Sort by start time
-            daySchedules.sort((a, b) => {
-                const getTimeValue = (schedule) => {
-                    let timeValue = parseInt(schedule.startTime.replace(':', ''));
-                    if (schedule.startPeriod === 'PM' && timeValue < 1200) timeValue += 1200;
-                    if (schedule.startPeriod === 'AM' && timeValue === 1200) timeValue = 0;
-                    return timeValue;
-                };
-                return getTimeValue(a) - getTimeValue(b);
             });
 
             if (daySchedules.length === 0) {
@@ -614,7 +825,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div><small>${timeDisplay}</small></div>
                     `;
                     
-                    item.title = `${subjectCode} - ${teacherName} (${roomName})`;
                     dayDiv.appendChild(item);
                 });
             }
@@ -623,337 +833,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Render daily schedule
-    function renderDailySchedule() {
-        const dailySchedule = document.getElementById('dailySchedule');
-        if (!dailySchedule) return;
-
-        dailySchedule.innerHTML = '';
-
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const currentDay = days[currentDayIndex];
-        
-        document.getElementById('currentDayDisplay').textContent = currentDay;
-
-        const daySchedules = studentSchedules.filter(schedule => {
-            const matchesDay = schedule.day === currentDay;
-            const matchesShift = currentShift === 'all' || 
-                (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
-            return matchesDay && matchesShift;
-        });
-
-        // Sort by start time
-        daySchedules.sort((a, b) => {
-            const getTimeValue = (schedule) => {
-                let timeValue = parseInt(schedule.startTime.replace(':', ''));
-                if (schedule.startPeriod === 'PM' && timeValue < 1200) timeValue += 1200;
-                if (schedule.startPeriod === 'AM' && timeValue === 1200) timeValue = 0;
-                return timeValue;
-            };
-            return getTimeValue(a) - getTimeValue(b);
-        });
-
-        if (daySchedules.length === 0) {
-            dailySchedule.innerHTML = `
-                <div class="empty-state">
-                    <i class="bi bi-calendar-x"></i>
-                    <p>No classes for ${currentDay}</p>
-                </div>
-            `;
-            return;
-        }
-
-        dailySchedule.innerHTML = daySchedules.map(schedule => {
-            const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
-            const descriptiveTitle = schedule.subject?.descriptiveTitle || '';
-            const roomName = schedule.room?.roomName || schedule.room || 'No room';
-            const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
-            const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
-            
-            return `
-                <div class="daily-schedule-item ${schedule.scheduleType}">
-                    <div class="schedule-time">${timeDisplay}</div>
-                    <div class="schedule-details">
-                        <div class="schedule-subject">${subjectCode}${descriptiveTitle ? ' - ' + descriptiveTitle : ''}</div>
-                        <div class="schedule-meta">${teacherName} • ${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
-                    </div>
-                    <div class="schedule-section">${currentStudent?.section || 'No Section'}</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    // View toggle
-    const scheduleViewSelect = document.getElementById('scheduleViewSelect');
-    if (scheduleViewSelect) {
-        scheduleViewSelect.addEventListener('change', function() {
-            currentView = this.value;
-            updateScheduleView();
-        });
-    }
-
-    function updateScheduleView() {
-        const weeklyView = document.getElementById('weeklyScheduleView');
-        const dailyView = document.getElementById('dailyScheduleView');
-
-        if (currentView === 'weekly') {
-            if (weeklyView) weeklyView.style.display = 'block';
-            if (dailyView) dailyView.style.display = 'none';
-        } else {
-            if (weeklyView) weeklyView.style.display = 'none';
-            if (dailyView) dailyView.style.display = 'block';
-        }
-
-        renderScheduleViews();
-    }
-
-    // Shift toggle
-    document.querySelectorAll('.shift-btn-small').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.shift-btn-small').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            currentShift = this.dataset.shift;
-            renderScheduleViews();
-        });
-    });
-
-    // Daily navigation
-    const prevDayBtn = document.getElementById('prevDayBtn');
-    if (prevDayBtn) {
-        prevDayBtn.addEventListener('click', function() {
-            currentDayIndex = (currentDayIndex - 1 + 6) % 6;
-            renderScheduleViews();
-        });
-    }
-
-    const nextDayBtn = document.getElementById('nextDayBtn');
-    if (nextDayBtn) {
-        nextDayBtn.addEventListener('click', function() {
-            currentDayIndex = (currentDayIndex + 1) % 6;
-            renderScheduleViews();
-        });
-    }
-
-    // Profile Picture Upload
-    const profilePictureInput = document.getElementById('profilePictureInput');
-    const profilePicture = document.getElementById('profileViewAvatar');
-
-    if (profilePictureInput && profilePicture) {
-        profilePictureInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                // Validate file type
-                if (!file.type.startsWith('image/')) {
-                    showNotification('Please select a valid image file (JPEG, PNG, etc.)', 'error');
-                    return;
-                }
-
-                // Validate file size (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    showNotification('Image size must be less than 5MB', 'error');
-                    return;
-                }
-
-                selectedFile = file;
-                
-                // Preview the image
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    profilePicture.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-                
-                showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
-            }
-        });
-    }
-
-    // Save Profile Changes with better validation
-    const saveProfileBtn = document.getElementById('saveProfileBtn');
-    if (saveProfileBtn) {
-        saveProfileBtn.addEventListener('click', async function() {
-            const saveBtn = this;
-            const originalText = saveBtn.innerHTML;
-            
-            try {
-                saveBtn.disabled = true;
-                saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
-
-                const userId = getUserId();
-                if (!userId) {
-                    throw new Error('User not authenticated');
-                }
-
-                const fullName = document.getElementById('profileFullName').value.trim();
-                if (!fullName) {
-                    throw new Error('Full name is required');
-                }
-
-                const email = document.getElementById('profileEmail').value.trim();
-                if (!email) {
-                    throw new Error('Email is required');
-                }
-
-                // Basic email validation
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) {
-                    throw new Error('Please enter a valid email address');
-                }
-
-                const formData = new FormData();
-                formData.append('fullname', fullName);
-                formData.append('email', email);
-                formData.append('ctuid', document.getElementById('profileCtuid').value.trim());
-                formData.append('birthdate', document.getElementById('profileBirthdate').value);
-                formData.append('gender', document.getElementById('profileGender').value);
-                formData.append('section', currentStudent?.section || '');
-                formData.append('room', currentStudent?.room || '');
-
-                // Add profile picture if selected
-                if (selectedFile) {
-                    formData.append('profilePicture', selectedFile);
-                }
-
-                const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
-                    method: 'PUT',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to update profile');
-                }
-
-                const updatedUser = await response.json();
-                
-                // Update session storage and current student data
-                storeUserSession(updatedUser);
-                currentStudent = updatedUser;
-                
-                // Update all profile pictures
-                updateProfilePictures(updatedUser.profilePicture);
-                
-                // Update navigation and greeting
-                updateProfileInfo();
-                
-                showNotification('Profile updated successfully!', 'success');
-                
-                // Reset file selection
-                selectedFile = null;
-                if (profilePictureInput) profilePictureInput.value = '';
-                
-            } catch (error) {
-                console.error('Error updating profile:', error);
-                showNotification(error.message, 'error');
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = originalText;
-            }
-        });
-    }
-
-    // Helper function to update profile pictures everywhere
-    function updateProfilePictures(profilePicturePath) {
-        if (!profilePicturePath) return;
-        
-        const imageUrl = `${API_BASE_URL}${profilePicturePath}`;
-        
-        // Update profile view avatar
-        const profileAvatar = document.getElementById('profileViewAvatar');
-        if (profileAvatar) {
-            profileAvatar.src = imageUrl;
-        }
-        
-        // Update navigation avatar
-        const navAvatar = document.getElementById('studentProfileAvatar');
-        if (navAvatar) {
-            navAvatar.src = imageUrl;
-        }
-    }
-
-    // Cancel changes
-    const cancelBtn = document.getElementById('cancelBtn');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', function() {
-            updateProfileView();
-            selectedFile = null;
-            if (profilePictureInput) profilePictureInput.value = '';
-            
-            // Reset profile picture to original
-            if (currentStudent && currentStudent.profilePicture) {
-                const profileAvatar = document.getElementById('profileViewAvatar');
-                if (profileAvatar) {
-                    profileAvatar.src = `${API_BASE_URL}${currentStudent.profilePicture}`;
-                }
-            }
-            
-            showNotification('Changes cancelled', 'success');
-        });
-    }
-
-    // Notification system
-    function showNotification(message, type = 'success') {
-        const notification = document.getElementById('studentNotification');
-        if (!notification) {
-            // Create notification element if it doesn't exist
-            const newNotification = document.createElement('div');
-            newNotification.id = 'studentNotification';
-            newNotification.className = `notification ${type}`;
-            newNotification.textContent = message;
-            newNotification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 12px 20px;
-                border-radius: 4px;
-                color: white;
-                z-index: 10000;
-                opacity: 0;
-                transition: opacity 0.3s;
-            `;
-            if (type === 'success') {
-                newNotification.style.backgroundColor = '#28a745';
-            } else {
-                newNotification.style.backgroundColor = '#dc3545';
-            }
-            document.body.appendChild(newNotification);
-            
-            // Show notification
-            setTimeout(() => {
-                newNotification.style.opacity = '1';
-            }, 100);
-            
-            // Auto-hide after 4 seconds
-            setTimeout(() => {
-                newNotification.style.opacity = '0';
-                setTimeout(() => {
-                    if (newNotification.parentNode) {
-                        newNotification.parentNode.removeChild(newNotification);
-                    }
-                }, 300);
-            }, 4000);
-            return;
-        }
-        
-        notification.textContent = message;
-        notification.className = `notification ${type}`;
-        notification.classList.add('show');
-        
-        // Auto-hide after 4 seconds
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 4000);
-    }
+    // Add your other schedule functions (renderDailySchedule, etc.) here
 
     // Initialize the application
     async function initializeApp() {
         try {
             updateProfileInfo();
-            await fetchStudentData();
-            showNotification('Dashboard loaded successfully!', 'success');
+            await loadUserProfile();
+            NotificationHelper.showNotification('Dashboard loaded successfully!', 'success');
         } catch (error) {
             console.error('Error initializing app:', error);
-            showNotification('Error loading dashboard: ' + error.message, 'error');
+            NotificationHelper.showNotification('Error loading dashboard: ' + error.message, 'error');
         }
     }
 
