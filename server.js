@@ -1,4 +1,4 @@
-// server.js - FIXED PROFILE PICTURE UPLOAD
+// server.js - FIXED PROFILE PICTURE UPLOAD WITH BASE64 STORAGE
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -19,7 +19,7 @@ dotenv.config({ path: '.env' });
 const app = express();
 
 // ✅ FIXED: Use environment variables for security
-const PORT = process.env.PORT || 3002; // Changed to 3002 to avoid conflict
+const PORT = process.env.PORT || 3002;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marcomontellano147user:marcomontellano147db@cluster0.qk0lbhg.mongodb.net/chronix?retryWrites=true&w=majority&appName=Cluster0';
 
 // ✅ FIXED: Configure CORS for production
@@ -30,21 +30,19 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10mb' })); // Increased limit for base64 images
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
 // ✅ IMPROVEMENT: Add a request logger for debugging
 app.use((req, res, next) => {
-    logger.info(`${req.method} ${req.path}`, { body: req.body });
+    logger.info(`${req.method} ${req.path}`, { 
+        body: req.body ? (req.body.profilePicture ? { ...req.body, profilePicture: 'BASE64_IMAGE' } : req.body) : 'No body' 
+    });
     next();
 });
 
 // ✅ FIXED: Serve front-end static assets from ./public at web root
 app.use(express.static(path.join(__dirname, 'public')));
-
-// ✅ FIXED: Serve uploaded images from /uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-app.use('/img', express.static(path.join(__dirname, 'public', 'img')));
 
 // ✅ FIXED: Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {
@@ -63,26 +61,8 @@ mongoose.connect(MONGODB_URI, {
 });
 
 // --------------------- MULTER CONFIGURATION ---------------------
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadsDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        // Use user ID in filename for better organization
-        const userId = req.params.id || 'unknown';
-        const extension = path.extname(file.originalname);
-        const filename = `profile-${userId}-${uniqueSuffix}${extension}`;
-        cb(null, filename);
-    }
-});
+// Use memory storage for base64 conversion (no file system dependency)
+const storage = multer.memoryStorage(); // Store files in memory as Buffer
 const upload = multer({
     storage: storage,
     limits: {
@@ -125,22 +105,23 @@ async function ensureAdminUser() {
     }
 }
 
-// ✅ NEW: Helper function to delete old profile picture
-async function deleteOldProfilePicture(userId) {
+// ✅ UPDATED: Process profile picture to base64
+async function processProfilePicture(file, userId) {
+    if (!file) return null;
+    
     try {
-        const user = await User.findById(userId);
-        if (user && user.profilePicture && user.profilePicture.startsWith('/uploads/')) {
-            const oldFilename = user.profilePicture.replace('/uploads/', '');
-            const oldFilePath = path.join(uploadsDir, oldFilename);
-            
-            if (fs.existsSync(oldFilePath)) {
-                fs.unlinkSync(oldFilePath);
-                logger.info(`🗑️ Deleted old profile picture: ${oldFilename}`);
-            }
-        }
+        // Convert buffer to base64
+        const base64Image = file.buffer.toString('base64');
+        const mimeType = file.mimetype;
+        
+        // Create data URL for direct embedding
+        const profilePictureUrl = `data:${mimeType};base64,${base64Image}`;
+        
+        logger.info(`✅ Profile picture processed for user ${userId}, size: ${base64Image.length} bytes`);
+        return profilePictureUrl;
     } catch (error) {
-        logger.error('Error deleting old profile picture:', error);
-        // Don't throw error, continue with update
+        logger.error('Error processing profile picture:', error);
+        return null;
     }
 }
 
@@ -249,7 +230,6 @@ const ScheduleSchema = new mongoose.Schema({
 });
 const Schedule = mongoose.model('Schedule', ScheduleSchema);
 
-
 // Notification Model - NEW: For tracking profile changes
 const NotificationSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -286,7 +266,7 @@ app.get('/test-users', async (req, res) => {
                 room: user.room,
                 birthdate: user.birthdate,
                 gender: user.gender,
-                profilePicture: user.profilePicture,
+                profilePicture: user.profilePicture ? 'BASE64_IMAGE_PRESENT' : 'No image',
                 lastLogin: user.lastLogin
             }))
         });
@@ -446,16 +426,7 @@ app.get('/user/:id', async (req, res) => {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
         
-        // Ensure profile picture URL is properly formatted
-        if (user.profilePicture && !user.profilePicture.startsWith('http')) {
-            // If it's a local file, make sure it has the correct path
-            if (user.profilePicture.startsWith('uploads/')) {
-                user.profilePicture = '/' + user.profilePicture;
-            } else if (!user.profilePicture.startsWith('/uploads/')) {
-                user.profilePicture = '/uploads/' + user.profilePicture;
-            }
-        }
-        
+        // Base64 images are already self-contained, no need for path adjustments
         res.json(user);
     } catch (error) {
         logger.error('Error fetching user:', error);
@@ -463,7 +434,7 @@ app.get('/user/:id', async (req, res) => {
     }
 });
 
-// Update user profile with file upload - ENHANCED WITH NOTIFICATIONS
+// Update user profile with file upload - UPDATED FOR BASE64 STORAGE
 app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
     try {
         // Check for multer file validation errors
@@ -509,15 +480,14 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
             changes.push(`room changed from "${currentUser.room}" to "${room}"`);
         }
 
-        // If file was uploaded, update profile picture path
+        // If file was uploaded, process and store as base64
         if (req.file) {
-            // Delete old profile picture first
-            await deleteOldProfilePicture(req.params.id);
-            
-            // Store the correct path for web access
-            updateFields.profilePicture = '/uploads/' + req.file.filename;
-            changes.push('profile picture updated');
-            logger.info('✅ Profile picture uploaded and saved:', req.file.filename);
+            const profilePictureUrl = await processProfilePicture(req.file, req.params.id);
+            if (profilePictureUrl) {
+                updateFields.profilePicture = profilePictureUrl;
+                changes.push('profile picture updated');
+                logger.info('✅ Profile picture processed and saved to database');
+            }
         }
 
         // If no changes were made, return early
@@ -525,7 +495,7 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
             return res.status(400).json({ error: 'No changes detected' });
         }
 
-        logger.info('🔄 Updating user with fields:', updateFields);
+        logger.info('🔄 Updating user with fields:', Object.keys(updateFields));
 
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
@@ -558,17 +528,6 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
 
     } catch (error) {
         logger.error('❌ Error updating user:', error);
-        
-        // If there was a file upload error, delete the uploaded file
-        if (req.file) {
-            try {
-                fs.unlinkSync(req.file.path);
-                logger.info('🗑️ Deleted uploaded file due to error:', req.file.filename);
-            } catch (deleteError) {
-                logger.error('Error deleting uploaded file:', deleteError);
-            }
-        }
-        
         res.status(500).json({ error: 'Error updating user: ' + error.message });
     }
 });
@@ -598,7 +557,7 @@ app.delete('/user/:id', async (req, res) => {
     }
 });
 
-// Upload profile picture (standalone endpoint) - ENHANCED WITH NOTIFICATIONS
+// Upload profile picture (standalone endpoint) - UPDATED FOR BASE64 STORAGE
 app.post('/upload-profile-picture/:id', upload.single('profilePicture'), async (req, res) => {
     try {
         if (!req.file) {
@@ -610,15 +569,14 @@ app.post('/upload-profile-picture/:id', upload.single('profilePicture'), async (
         // Check if user exists
         const user = await User.findById(userId);
         if (!user) {
-            // Delete the uploaded file if user doesn't exist
-            fs.unlinkSync(req.file.path);
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Delete old profile picture
-        await deleteOldProfilePicture(userId);
-
-        const profilePictureUrl = '/uploads/' + req.file.filename;
+        // Process and store profile picture as base64
+        const profilePictureUrl = await processProfilePicture(req.file, userId);
+        if (!profilePictureUrl) {
+            return res.status(400).json({ error: 'Failed to process profile picture' });
+        }
         
         // Update user with new profile picture
         const updatedUser = await User.findByIdAndUpdate(
@@ -646,16 +604,6 @@ app.post('/upload-profile-picture/:id', upload.single('profilePicture'), async (
 
     } catch (error) {
         logger.error('Error uploading profile picture:', error);
-        
-        // Delete uploaded file on error
-        if (req.file) {
-            try {
-                fs.unlinkSync(req.file.path);
-            } catch (deleteError) {
-                logger.error('Error deleting uploaded file:', deleteError);
-            }
-        }
-        
         res.status(500).json({ error: 'Error uploading profile picture: ' + error.message });
     }
 });
@@ -1168,7 +1116,7 @@ app.delete('/schedules/:id', async (req, res) => {
 // ✅ FIXED: Add a catch-all route to serve index.html in production
 if (process.env.NODE_ENV === 'production') {
     app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, 'public', 'index.html')); // Adjust as needed
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
     });
 }
 
@@ -1187,7 +1135,7 @@ app.listen(PORT, () => {
     logger.info(`📧 Default admin credentials:`);
     logger.info(`   - Email: admin@gmail.com`);
     logger.info(`   - Password: admin`);
-    logger.info(`📁 File uploads directory: ${uploadsDir}`);
+    logger.info(`🖼️ Profile pictures: Stored as Base64 in MongoDB`);
     logger.info(`🎓 Student endpoints:`);
     logger.info(`   - http://localhost:${PORT}/users/students`);
     logger.info(`   - http://localhost:${PORT}/users/students/section/:section`);

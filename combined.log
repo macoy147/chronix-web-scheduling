@@ -3771,3 +3771,188 @@
 {"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
 {"body":{},"level":"info","message":"GET /js/admin-rooms.js","service":"chronix-backend"}
 {"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"level":"info","message":"🚀 Server running on port 3002","service":"chronix-backend"}
+{"level":"info","message":"🔧 Debug endpoints available:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/test","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/test-users","service":"chronix-backend"}
+{"level":"info","message":"📧 Default admin credentials:","service":"chronix-backend"}
+{"level":"info","message":"   - Email: admin@gmail.com","service":"chronix-backend"}
+{"level":"info","message":"   - Password: admin","service":"chronix-backend"}
+{"level":"info","message":"📁 File uploads directory: C:\\CHRONIX\\uploads","service":"chronix-backend"}
+{"level":"info","message":"🎓 Student endpoints:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/users/students","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/users/students/section/:section","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/users/students/year-level/:yearLevel","service":"chronix-backend"}
+{"level":"info","message":"📊 Dashboard endpoints:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/dashboard-counts","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/room-stats","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/students-per-section","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/students-per-room","service":"chronix-backend"}
+{"level":"info","message":"🔔 Notification endpoints:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/notifications/:userId","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/notifications/:id/read","service":"chronix-backend"}
+{"level":"info","message":"✅ Connected to MongoDB!","service":"chronix-backend"}
+{"level":"info","message":"✅ Subject indexes synchronized.","service":"chronix-backend"}
+{"level":"info","message":"✅ Admin user already exists","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /index.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/style.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/script.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/educ_animated1.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /auth.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/auth.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/educ_animated1.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{"email":"admin@gmail.com","password":"admin"},"level":"info","message":"POST /login","service":"chronix-backend"}
+{"email":"admin@gmail.com","level":"info","message":"🔐 Login attempt received:","password":"***","service":"chronix-backend","timestamp":"2025-11-23T19:09:39.860Z"}
+{"level":"info","message":"📧 Searching for user with email:","service":"chronix-backend"}
+{"email":"admin@gmail.com","id":"68f2578b54c010056928c9b2","inputPassword":"admin","level":"info","message":"✅ User found:","service":"chronix-backend","storedPassword":"admin"}
+{"level":"info","message":"✅ Password matches!","service":"chronix-backend"}
+{"level":"info","message":"🎉 Login successful for:","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-dashboard.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-dashboard.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-dashboard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /users/students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /uploads/profile-68f2578b54c010056928c9b2-1763924031263-331778121.jpg","service":"chronix-backend"}
+{"level":"info","message":"✅ Fetched 5 students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-subjects.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-subjects.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-subjects.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /uploads/profile-68f2578b54c010056928c9b2-1763924031263-331778121.jpg","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-sections.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-sections.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-sections.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /uploads/profile-68f2578b54c010056928c9b2-1763924031263-331778121.jpg","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-rooms.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-rooms.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-rooms.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-schedules.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-schedules.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-schedules.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /uploads/profile-68f2578b54c010056928c9b2-1763924031263-331778121.jpg","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-students.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-students.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-students.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_student_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /uploads/profile-68f2578b54c010056928c9b2-1763924031263-331778121.jpg","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /users/students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"level":"info","message":"✅ Fetched 5 students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-teachers.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-teachers.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-teachers.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_teacher_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /uploads/profile-68f2578b54c010056928c9b2-1763924031263-331778121.jpg","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-students.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-students.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-students.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_student_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /uploads/profile-68f2578b54c010056928c9b2-1763924031263-331778121.jpg","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /users/students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"level":"info","message":"✅ Fetched 5 students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-schedules.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-schedules.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-schedules.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_admin_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /uploads/profile-68f2578b54c010056928c9b2-1763924031263-331778121.jpg","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /auth.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/auth.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}

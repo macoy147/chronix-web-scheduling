@@ -1,13 +1,18 @@
-// public/js/admin-profile.js - UPDATED TO USE AuthGuard
+// public/js/admin-profile.js - UPDATED FOR BASE64 IMAGE SUPPORT
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
 
-// Profile picture helper
+// Profile picture helper - UPDATED FOR BASE64 SUPPORT
 const ProfilePictureHelper = {
     getProfilePictureUrl(profilePicturePath) {
         if (!profilePicturePath) {
             return '/img/default_admin_avatar.png';
+        }
+        
+        // Check if it's a base64 data URL
+        if (profilePicturePath.startsWith('data:image/')) {
+            return profilePicturePath;
         }
         
         if (profilePicturePath.startsWith('http')) {
@@ -18,6 +23,7 @@ const ProfilePictureHelper = {
             return profilePicturePath;
         }
         
+        // For backward compatibility with old file paths
         if (profilePicturePath.includes('profile-')) {
             return '/uploads/' + profilePicturePath;
         }
