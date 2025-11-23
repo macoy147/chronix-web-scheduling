@@ -4,60 +4,11 @@ import AuthGuard from './auth-guard.js';
 
 
 // Simple auth helper
-const AuthHelper = {
-    checkAuthentication(requiredRole = null) {
-        const isAuthenticated = sessionStorage.getItem('isAuthenticated');
-        const userRole = sessionStorage.getItem('userRole');
-        
-        console.log('Auth check:', { isAuthenticated, userRole, requiredRole });
-        
-        if (!isAuthenticated || isAuthenticated !== 'true') {
-            this.redirectToLogin();
-            return false;
-        }
-        
-        if (requiredRole && userRole !== requiredRole) {
-            this.redirectToLogin('Unauthorized access.');
-            return false;
-        }
-        
-        return true;
-    },
-    
-    redirectToLogin(message = 'Please sign in') {
-        sessionStorage.setItem('loginRedirectMessage', message);
-        window.location.href = 'auth.html?mode=signin';
-    },
-    
-    getCurrentUser() {
-        const userData = sessionStorage.getItem('currentUser');
-        return userData ? JSON.parse(userData) : null;
-    },
-    
-    getUserId() {
-        const user = this.getCurrentUser();
-        return user ? user._id : null;
-    },
-    
-    logout() {
-        sessionStorage.removeItem('currentUser');
-        sessionStorage.removeItem('isAuthenticated');
-        sessionStorage.removeItem('userRole');
-        sessionStorage.removeItem('userId');
-        window.location.href = 'auth.html?mode=signin';
-    },
-    
-    storeUserSession(userData) {
-        sessionStorage.setItem('currentUser', JSON.stringify(userData));
-        sessionStorage.setItem('isAuthenticated', 'true');
-        sessionStorage.setItem('userRole', userData.userrole);
-        sessionStorage.setItem('userId', userData._id);
-    }
-};
+ 
 
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
-    if (!AuthHelper.checkAuthentication('admin')) {
+    if (!AuthGuard.checkAuthentication('admin')) {
         return;
     }
 
@@ -90,13 +41,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            AuthHelper.logout();
+            AuthGuard.logout();
         });
     }
 
     // Update profile info
     function updateProfileInfo() {
-        const currentUser = AuthHelper.getCurrentUser();
+        const currentUser = AuthGuard.getCurrentUser();
         if (currentUser) {
             const firstName = currentUser.fullname.split(' ')[0];
             const profileName = document.getElementById('profileName');
@@ -115,12 +66,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data
     async function fetchUserData() {
         try {
-            const userId = AuthHelper.getUserId();
+            const userId = AuthGuard.getUserId();
             if (userId) {
                 const res = await fetch(`/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
-                    AuthHelper.storeUserSession(userData);
+                    AuthGuard.storeUserSession(userData);
                     updateProfileInfo();
                 }
             }

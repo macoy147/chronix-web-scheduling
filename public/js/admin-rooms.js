@@ -1,63 +1,10 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
-import AuthGuard from './auth-guard.js';
-
-
-// Simple auth helper
-const AuthHelper = {
-    checkAuthentication(requiredRole = null) {
-        const isAuthenticated = sessionStorage.getItem('isAuthenticated');
-        const userRole = sessionStorage.getItem('userRole');
-        
-        console.log('Auth check:', { isAuthenticated, userRole, requiredRole });
-        
-        if (!isAuthenticated || isAuthenticated !== 'true') {
-            this.redirectToLogin();
-            return false;
-        }
-        
-        if (requiredRole && userRole !== requiredRole) {
-            this.redirectToLogin('Unauthorized access.');
-            return false;
-        }
-        
-        return true;
-    },
-    
-    redirectToLogin(message = 'Please sign in') {
-        sessionStorage.setItem('loginRedirectMessage', message);
-        window.location.href = 'auth.html?mode=signin';
-    },
-    
-    getCurrentUser() {
-        const userData = sessionStorage.getItem('currentUser');
-        return userData ? JSON.parse(userData) : null;
-    },
-    
-    getUserId() {
-        const user = this.getCurrentUser();
-        return user ? user._id : null;
-    },
-    
-    logout() {
-        sessionStorage.removeItem('currentUser');
-        sessionStorage.removeItem('isAuthenticated');
-        sessionStorage.removeItem('userRole');
-        sessionStorage.removeItem('userId');
-        window.location.href = 'auth.html?mode=signin';
-    },
-    
-    storeUserSession(userData) {
-        sessionStorage.setItem('currentUser', JSON.stringify(userData));
-        sessionStorage.setItem('isAuthenticated', 'true');
-        sessionStorage.setItem('userRole', userData.userrole);
-        sessionStorage.setItem('userId', userData._id);
-    }
-};
+import AuthGuard from './auth-guard.js'; // Import AuthGuard
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication first
-    if (!AuthHelper.checkAuthentication('admin')) {
+    // Check authentication first - use AuthGuard consistently
+    if (!AuthGuard.checkAuthentication('admin')) {
         return;
     }
 
@@ -78,13 +25,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            AuthHelper.logout();
+            AuthGuard.logout(); // Use AuthGuard.logout()
         });
     }
 
     // Update profile name and avatar with actual user data
     function updateProfileInfo() {
-        const currentUser = AuthHelper.getCurrentUser();
+        const currentUser = AuthGuard.getCurrentUser(); // Use AuthGuard.getCurrentUser()
         if (currentUser) {
             // Get first name from fullname
             const firstName = currentUser.fullname.split(' ')[0];
@@ -106,13 +53,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data to get updated profile information
     async function fetchUserData() {
         try {
-            const userId = AuthHelper.getUserId();
+            const userId = AuthGuard.getUserId(); // Use AuthGuard.getUserId()
             if (userId) {
                 const res = await fetch(`/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
                     // Update session storage with fresh data
-                    AuthHelper.storeUserSession(userData);
+                    AuthGuard.storeUserSession(userData); // Use AuthGuard.storeUserSession()
                     updateProfileInfo();
                 }
             }
@@ -121,10 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initial profile update
-    updateProfileInfo();
-    fetchUserData();
-
+    // Rest of your existing code remains the same...
     // Bubble Notification
     function showBubbleMessage(msg, type = "success") {
         const bubble = document.getElementById('roomBubbleMessage');
