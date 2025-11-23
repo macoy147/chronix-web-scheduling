@@ -1,4 +1,4 @@
-// public/js/admin-profile.js - ENHANCED VERSION
+// public/js/admin-profile.js - ENHANCED VERSION WITH NOTIFICATIONS
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
@@ -93,6 +93,64 @@ const ProfilePictureHelper = {
     }
 };
 
+// Notification helper
+const NotificationHelper = {
+    // Show notification to user
+    showNotification(message, type = 'success', duration = 5000) {
+        const notification = document.getElementById('notification');
+        if (!notification) {
+            this.createNotificationElement();
+        }
+        
+        const notificationEl = document.getElementById('notification');
+        notificationEl.textContent = message;
+        notificationEl.className = `notification ${type} show`;
+        
+        // Auto hide after duration
+        setTimeout(() => {
+            notificationEl.classList.remove('show');
+        }, duration);
+        
+        // Also log to console
+        console.log(`🔔 ${type.toUpperCase()}: ${message}`);
+    },
+    
+    // Create notification element if it doesn't exist
+    createNotificationElement() {
+        const notification = document.createElement('div');
+        notification.id = 'notification';
+        notification.className = 'notification';
+        document.body.appendChild(notification);
+    },
+    
+    // Fetch user notifications
+    async fetchUserNotifications(userId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/notifications/${userId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch notifications');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+            return [];
+        }
+    },
+    
+    // Mark notification as read
+    async markNotificationAsRead(notificationId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
+                method: 'PUT'
+            });
+            return response.ok;
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+            return false;
+        }
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Admin Profile loaded');
     
@@ -100,6 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!AuthHelper.checkAuthentication('admin')) {
         return;
     }
+
+    // Initialize notification system
+    NotificationHelper.createNotificationElement();
 
     // Profile dropdown
     const profileDropdown = document.querySelector('.admin-profile-dropdown');
@@ -139,26 +200,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Notification system
-    function showNotification(message, type = 'success') {
-        const notification = document.getElementById('notification');
-        if (!notification) return;
-        
-        notification.textContent = message;
-        notification.className = `notification ${type}`;
-        notification.style.display = 'block';
-        
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    }
-
     // Load user profile data
     async function loadUserProfile() {
         try {
             const userId = AuthHelper.getUserId();
             if (!userId) {
-                showNotification('User not authenticated', 'error');
+                NotificationHelper.showNotification('User not authenticated', 'error');
                 return;
             }
 
@@ -176,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error loading user profile:', error);
-            showNotification('Failed to load profile data', 'error');
+            NotificationHelper.showNotification('Failed to load profile data', 'error');
         }
     }
 
@@ -254,9 +301,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                     reader.readAsDataURL(file);
                     
-                    showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
+                    NotificationHelper.showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
                 } catch (error) {
-                    showNotification(error.message, 'error');
+                    NotificationHelper.showNotification(error.message, 'error');
                     profilePictureInput.value = ''; // Clear the invalid file
                 }
             }
@@ -313,7 +360,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(errorData.error || 'Failed to update profile');
                 }
 
-                const updatedUser = await response.json();
+                const result = await response.json();
+                const updatedUser = result.user;
+                const changes = result.changes || [];
                 
                 // Update session storage
                 AuthHelper.storeUserSession(updatedUser);
@@ -324,15 +373,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update navigation profile info
                 updateProfileInfo();
                 
-                showNotification('Profile updated successfully!', 'success');
+                // Show detailed notification about changes
+                if (changes.length > 0) {
+                    NotificationHelper.showNotification(
+                        `Profile updated successfully! Changes: ${changes.join(', ')}`, 
+                        'success', 
+                        6000
+                    );
+                } else {
+                    NotificationHelper.showNotification('Profile updated successfully!', 'success');
+                }
+                
                 selectedFile = null; // Reset selected file
                 if (profilePictureInput) {
                     profilePictureInput.value = ''; // Clear the file input
                 }
                 
+                // Fetch and show recent notifications
+                setTimeout(() => {
+                    checkForNewNotifications(userId);
+                }, 1000);
+                
             } catch (error) {
                 console.error('Error updating profile:', error);
-                showNotification(error.message || 'Failed to update profile', 'error');
+                NotificationHelper.showNotification(error.message || 'Failed to update profile', 'error');
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = originalText;
@@ -359,6 +423,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Check for new notifications
+    async function checkForNewNotifications(userId) {
+        try {
+            const notifications = await NotificationHelper.fetchUserNotifications(userId);
+            const unreadNotifications = notifications.filter(n => !n.read);
+            
+            if (unreadNotifications.length > 0) {
+                // Show a summary of recent notifications
+                const recentNotifications = unreadNotifications.slice(0, 3);
+                recentNotifications.forEach(notification => {
+                    setTimeout(() => {
+                        NotificationHelper.showNotification(
+                            `📢 ${notification.title}: ${notification.message}`,
+                            'success',
+                            5000
+                        );
+                    }, 1000);
+                });
+                
+                // Mark them as read after showing
+                setTimeout(async () => {
+                    for (const notification of recentNotifications) {
+                        await NotificationHelper.markNotificationAsRead(notification._id);
+                    }
+                }, 6000);
+            }
+        } catch (error) {
+            console.error('Error checking notifications:', error);
+        }
+    }
+
     // Cancel changes
     const cancelBtn = document.getElementById('cancelBtn');
     if (cancelBtn) {
@@ -369,11 +464,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (profilePictureInput) {
                 profilePictureInput.value = '';
             }
-            showNotification('Changes cancelled', 'info');
+            NotificationHelper.showNotification('Changes cancelled', 'info');
         });
     }
 
     // Initial load
     updateProfileInfo();
     loadUserProfile();
+    
+    // Check for notifications on page load
+    const userId = AuthHelper.getUserId();
+    if (userId) {
+        setTimeout(() => {
+            checkForNewNotifications(userId);
+        }, 2000);
+    }
 });

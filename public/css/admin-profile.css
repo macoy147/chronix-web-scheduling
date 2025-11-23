@@ -463,3 +463,86 @@ body {
         padding: 20px;
     }
 }
+
+/* Enhanced Notification Styles */
+.notification {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 16px 24px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification.success {
+    background: #4BB543;
+    border-left: 4px solid #2E7D32;
+}
+
+.notification.error {
+    background: #D8000C;
+    border-left: 4px solid #B71C1C;
+}
+
+.notification.info {
+    background: #2196F3;
+    border-left: 4px solid #0D47A1;
+}
+
+.notification::before {
+    font-family: 'bootstrap-icons';
+    font-size: 1.2em;
+}
+
+.notification.success::before {
+    content: '\F26E'; /* bi-check-circle */
+}
+
+.notification.error::before {
+    content: '\F622'; /* bi-x-circle */
+}
+
+.notification.info::before {
+    content: '\F431'; /* bi-info-circle */
+}
+
+/* Profile change indicators */
+.field-changed {
+    border-color: var(--ctu-soft-gold) !important;
+    background-color: var(--tint-gold-bg) !important;
+    box-shadow: 0 0 0 3px rgba(242, 210, 131, 0.2) !important;
+}
+
+/* Loading states */
+.btn-loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-loading::after {
+    content: '';
+    animation: loading 1s infinite;
+}
+
+@keyframes loading {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+    100% { content: ''; }
+}

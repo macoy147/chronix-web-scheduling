@@ -1,4 +1,4 @@
-// server.js - UPDATED VERSION
+// server.js - UPDATED VERSION WITH NOTIFICATIONS
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -24,7 +24,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marcomontellano147
 
 // ✅ FIXED: Configure CORS for production
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Use your production URL
+    origin: process.env.FRONTEND_URL || 'http://localhost:3002', // Use your production URL
     credentials: true, // Allow cookies to be sent
     optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 };
@@ -229,6 +229,17 @@ const ScheduleSchema = new mongoose.Schema({
 });
 const Schedule = mongoose.model('Schedule', ScheduleSchema);
 
+// Notification Model - NEW: For tracking profile changes
+const NotificationSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    type: { type: String, required: true, enum: ['profile_update', 'password_change', 'picture_change'] },
+    title: { type: String, required: true },
+    message: { type: String, required: true },
+    read: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+});
+const Notification = mongoose.model('Notification', NotificationSchema);
+
 // Ensure indexes match schema
 Subject.syncIndexes().then(() => logger.info("✅ Subject indexes synchronized.")).catch(err => logger.error(err));
 
@@ -260,6 +271,50 @@ app.get('/test-users', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: 'Error fetching users' });
+    }
+});
+
+// --------------------- NOTIFICATION ROUTES ---------------------
+// Get notifications for user
+app.get('/notifications/:userId', async (req, res) => {
+    try {
+        const notifications = await Notification.find({ userId: req.params.userId })
+            .sort({ createdAt: -1 })
+            .limit(50);
+        res.json(notifications);
+    } catch (error) {
+        logger.error('Error fetching notifications:', error);
+        res.status(500).json({ error: 'Error fetching notifications' });
+    }
+});
+
+// Mark notification as read
+app.put('/notifications/:id/read', async (req, res) => {
+    try {
+        const notification = await Notification.findByIdAndUpdate(
+            req.params.id,
+            { read: true },
+            { new: true }
+        );
+        if (!notification) return res.status(404).json({ error: 'Notification not found' });
+        res.json({ message: 'Notification marked as read', notification });
+    } catch (error) {
+        logger.error('Error updating notification:', error);
+        res.status(500).json({ error: 'Error updating notification' });
+    }
+});
+
+// Mark all notifications as read
+app.put('/notifications/user/:userId/read-all', async (req, res) => {
+    try {
+        await Notification.updateMany(
+            { userId: req.params.userId, read: false },
+            { read: true }
+        );
+        res.json({ message: 'All notifications marked as read' });
+    } catch (error) {
+        logger.error('Error marking all notifications as read:', error);
+        res.status(500).json({ error: 'Error marking notifications as read' });
     }
 });
 
@@ -376,7 +431,7 @@ app.get('/user/:id', async (req, res) => {
     }
 });
 
-// Update user profile with file upload
+// Update user profile with file upload - ENHANCED WITH NOTIFICATIONS
 app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
     try {
         // ✅ IMPROVEMENT: Check for multer file validation errors
@@ -386,19 +441,52 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
 
         const { fullname, email, ctuid, birthdate, gender, section, room } = req.body;
 
+        // Get the current user data to compare changes
+        const currentUser = await User.findById(req.params.id);
+        if (!currentUser) return res.status(404).json({ error: 'User not found' });
+
         const updateFields = {};
-        if (fullname) updateFields.fullname = fullname;
-        if (email) updateFields.email = email;
-        if (ctuid) updateFields.ctuid = ctuid;
-        if (birthdate) updateFields.birthdate = birthdate;
-        if (gender) updateFields.gender = gender;
-        if (section !== undefined) updateFields.section = section;
-        if (room !== undefined) updateFields.room = room;
+        const changes = [];
+
+        if (fullname && fullname !== currentUser.fullname) {
+            updateFields.fullname = fullname;
+            changes.push(`name changed from "${currentUser.fullname}" to "${fullname}"`);
+        }
+        if (email && email !== currentUser.email) {
+            updateFields.email = email;
+            changes.push(`email changed from "${currentUser.email}" to "${email}"`);
+        }
+        if (ctuid && ctuid !== currentUser.ctuid) {
+            updateFields.ctuid = ctuid;
+            changes.push(`CTU ID changed from "${currentUser.ctuid}" to "${ctuid}"`);
+        }
+        if (birthdate && birthdate !== currentUser.birthdate) {
+            updateFields.birthdate = birthdate;
+            changes.push('birthdate updated');
+        }
+        if (gender && gender !== currentUser.gender) {
+            updateFields.gender = gender;
+            changes.push(`gender changed from "${currentUser.gender}" to "${gender}"`);
+        }
+        if (section !== undefined && section !== currentUser.section) {
+            updateFields.section = section;
+            changes.push(`section changed from "${currentUser.section}" to "${section}"`);
+        }
+        if (room !== undefined && room !== currentUser.room) {
+            updateFields.room = room;
+            changes.push(`room changed from "${currentUser.room}" to "${room}"`);
+        }
 
         // If file was uploaded, update profile picture path
         if (req.file) {
             updateFields.profilePicture = '/uploads/' + req.file.filename;
+            changes.push('profile picture updated');
             logger.info('✅ Profile picture uploaded:', req.file.filename);
+        }
+
+        // If no changes were made, return early
+        if (Object.keys(updateFields).length === 0 && !req.file) {
+            return res.status(400).json({ error: 'No changes detected' });
         }
 
         logger.info('🔄 Updating user with fields:', updateFields);
@@ -411,8 +499,24 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
 
         if (!updatedUser) return res.status(404).json({ error: 'User not found' });
 
+        // Create notification for profile changes
+        if (changes.length > 0) {
+            const notification = new Notification({
+                userId: req.params.id,
+                type: req.file ? 'picture_change' : 'profile_update',
+                title: 'Profile Updated',
+                message: `Your profile has been updated: ${changes.join(', ')}`
+            });
+            await notification.save();
+            logger.info('📢 Notification created for profile update');
+        }
+
         logger.info('✅ Profile updated successfully for user:', updatedUser.email);
-        res.json(updatedUser);
+        res.json({
+            user: updatedUser,
+            changes: changes,
+            message: changes.length > 0 ? `Profile updated: ${changes.join(', ')}` : 'Profile updated successfully'
+        });
 
     } catch (error) {
         logger.error('❌ Error updating user:', error);
@@ -445,7 +549,7 @@ app.delete('/user/:id', async (req, res) => {
     }
 });
 
-// Upload profile picture (standalone endpoint)
+// Upload profile picture (standalone endpoint) - ENHANCED WITH NOTIFICATIONS
 app.post('/upload-profile-picture/:id', upload.single('profilePicture'), async (req, res) => {
     try {
         if (!req.file) {
@@ -459,6 +563,15 @@ app.post('/upload-profile-picture/:id', upload.single('profilePicture'), async (
         );
 
         if (!updatedUser) return res.status(404).json({ error: 'User not found' });
+
+        // Create notification for profile picture change
+        const notification = new Notification({
+            userId: req.params.id,
+            type: 'picture_change',
+            title: 'Profile Picture Updated',
+            message: 'Your profile picture has been successfully updated'
+        });
+        await notification.save();
 
         res.json({
             message: 'Profile picture uploaded successfully',
@@ -1009,4 +1122,7 @@ app.listen(PORT, () => {
     logger.info(`   - http://localhost:${PORT}/room-stats`);
     logger.info(`   - http://localhost:${PORT}/students-per-section`);
     logger.info(`   - http://localhost:${PORT}/students-per-room`);
+    logger.info(`🔔 Notification endpoints:`);
+    logger.info(`   - http://localhost:${PORT}/notifications/:userId`);
+    logger.info(`   - http://localhost:${PORT}/notifications/:id/read`);
 });
