@@ -1,6 +1,8 @@
 // public/js/admin-dashboard.js - FIXED VERSION
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
+import AuthGuard from './auth-guard.js';
+
 
 // Simple auth helper since AuthGuard might not be loading properly
 const AuthHelper = {

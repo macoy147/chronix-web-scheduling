@@ -1,4 +1,4 @@
-// server.js - UPDATED VERSION WITH NOTIFICATIONS
+// server.js - FIXED PROFILE PICTURE UPLOAD
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -24,9 +24,9 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marcomontellano147
 
 // ✅ FIXED: Configure CORS for production
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3002', // Use your production URL
-    credentials: true, // Allow cookies to be sent
-    optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+    origin: process.env.FRONTEND_URL || 'http://localhost:3002',
+    credentials: true,
+    optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
 
@@ -54,8 +54,6 @@ if (process.env.NODE_ENV === 'production') {
 // Connect to MongoDB with updated options
 mongoose.connect(MONGODB_URI, {
     // Remove deprecated options
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true,
 }).then(() => {
     logger.info("✅ Connected to MongoDB!");
     // Check if admin user exists, if not create one
@@ -74,11 +72,15 @@ if (!fs.existsSync(uploadsDir)) {
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/');
+        cb(null, uploadsDir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'profile-' + req.params.id + '-' + uniqueSuffix + path.extname(file.originalname));
+        // Use user ID in filename for better organization
+        const userId = req.params.id || 'unknown';
+        const extension = path.extname(file.originalname);
+        const filename = `profile-${userId}-${uniqueSuffix}${extension}`;
+        cb(null, filename);
     }
 });
 const upload = multer({
@@ -90,7 +92,6 @@ const upload = multer({
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
-            // Multer attaches the error to the request object
             req.fileValidationError = 'Only image files are allowed!';
             cb(null, false);
         }
@@ -108,7 +109,7 @@ async function ensureAdminUser() {
                 email: 'admin@gmail.com',
                 userrole: 'admin',
                 ctuid: 'ADMIN001',
-                password: 'admin', // In production, this should be hashed
+                password: 'admin',
                 birthdate: '2000-01-01',
                 gender: 'male'
             });
@@ -121,6 +122,25 @@ async function ensureAdminUser() {
         }
     } catch (error) {
         logger.error('Error ensuring admin user:', error);
+    }
+}
+
+// ✅ NEW: Helper function to delete old profile picture
+async function deleteOldProfilePicture(userId) {
+    try {
+        const user = await User.findById(userId);
+        if (user && user.profilePicture && user.profilePicture.startsWith('/uploads/')) {
+            const oldFilename = user.profilePicture.replace('/uploads/', '');
+            const oldFilePath = path.join(uploadsDir, oldFilename);
+            
+            if (fs.existsSync(oldFilePath)) {
+                fs.unlinkSync(oldFilePath);
+                logger.info(`🗑️ Deleted old profile picture: ${oldFilename}`);
+            }
+        }
+    } catch (error) {
+        logger.error('Error deleting old profile picture:', error);
+        // Don't throw error, continue with update
     }
 }
 
@@ -163,7 +183,7 @@ const SectionSchema = new mongoose.Schema({
     yearLevel: { type: Number, required: true, min: 1, max: 4 },
     shift: { type: String, enum: ['Day', 'Night'], required: true },
     adviserTeacher: { type: String, default: '' },
-    totalEnrolled: { type: Number, default: 0 }, // Changed from capacity to totalEnrolled
+    totalEnrolled: { type: Number, default: 0 },
     academicYear: { type: String, required: true },
     semester: { type: String, enum: ["1st Semester", "2nd Semester", "Midyear"], required: true },
     status: { type: String, enum: ['Active', 'Archived'], default: 'Active' }
@@ -228,6 +248,7 @@ const ScheduleSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 const Schedule = mongoose.model('Schedule', ScheduleSchema);
+
 
 // Notification Model - NEW: For tracking profile changes
 const NotificationSchema = new mongoose.Schema({
@@ -424,6 +445,17 @@ app.get('/user/:id', async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        // Ensure profile picture URL is properly formatted
+        if (user.profilePicture && !user.profilePicture.startsWith('http')) {
+            // If it's a local file, make sure it has the correct path
+            if (user.profilePicture.startsWith('uploads/')) {
+                user.profilePicture = '/' + user.profilePicture;
+            } else if (!user.profilePicture.startsWith('/uploads/')) {
+                user.profilePicture = '/uploads/' + user.profilePicture;
+            }
+        }
+        
         res.json(user);
     } catch (error) {
         logger.error('Error fetching user:', error);
@@ -434,7 +466,7 @@ app.get('/user/:id', async (req, res) => {
 // Update user profile with file upload - ENHANCED WITH NOTIFICATIONS
 app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
     try {
-        // ✅ IMPROVEMENT: Check for multer file validation errors
+        // Check for multer file validation errors
         if (req.fileValidationError) {
             return res.status(400).json({ error: req.fileValidationError });
         }
@@ -479,9 +511,13 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
 
         // If file was uploaded, update profile picture path
         if (req.file) {
+            // Delete old profile picture first
+            await deleteOldProfilePicture(req.params.id);
+            
+            // Store the correct path for web access
             updateFields.profilePicture = '/uploads/' + req.file.filename;
             changes.push('profile picture updated');
-            logger.info('✅ Profile picture uploaded:', req.file.filename);
+            logger.info('✅ Profile picture uploaded and saved:', req.file.filename);
         }
 
         // If no changes were made, return early
@@ -494,7 +530,7 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
             updateFields,
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         if (!updatedUser) return res.status(404).json({ error: 'User not found' });
@@ -512,6 +548,8 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
         }
 
         logger.info('✅ Profile updated successfully for user:', updatedUser.email);
+        
+        // Return the complete updated user data
         res.json({
             user: updatedUser,
             changes: changes,
@@ -520,6 +558,17 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
 
     } catch (error) {
         logger.error('❌ Error updating user:', error);
+        
+        // If there was a file upload error, delete the uploaded file
+        if (req.file) {
+            try {
+                fs.unlinkSync(req.file.path);
+                logger.info('🗑️ Deleted uploaded file due to error:', req.file.filename);
+            } catch (deleteError) {
+                logger.error('Error deleting uploaded file:', deleteError);
+            }
+        }
+        
         res.status(500).json({ error: 'Error updating user: ' + error.message });
     }
 });
@@ -555,23 +604,39 @@ app.post('/upload-profile-picture/:id', upload.single('profilePicture'), async (
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
-        const profilePictureUrl = '/uploads/' + req.file.filename;
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.id,
-            { profilePicture: profilePictureUrl },
-            { new: true }
-        );
 
-        if (!updatedUser) return res.status(404).json({ error: 'User not found' });
+        const userId = req.params.id;
+        
+        // Check if user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            // Delete the uploaded file if user doesn't exist
+            fs.unlinkSync(req.file.path);
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Delete old profile picture
+        await deleteOldProfilePicture(userId);
+
+        const profilePictureUrl = '/uploads/' + req.file.filename;
+        
+        // Update user with new profile picture
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { profilePicture: profilePictureUrl },
+            { new: true, runValidators: true }
+        );
 
         // Create notification for profile picture change
         const notification = new Notification({
-            userId: req.params.id,
+            userId: userId,
             type: 'picture_change',
             title: 'Profile Picture Updated',
             message: 'Your profile picture has been successfully updated'
         });
         await notification.save();
+
+        logger.info('✅ Profile picture updated for user:', updatedUser.email);
 
         res.json({
             message: 'Profile picture uploaded successfully',
@@ -581,6 +646,16 @@ app.post('/upload-profile-picture/:id', upload.single('profilePicture'), async (
 
     } catch (error) {
         logger.error('Error uploading profile picture:', error);
+        
+        // Delete uploaded file on error
+        if (req.file) {
+            try {
+                fs.unlinkSync(req.file.path);
+            } catch (deleteError) {
+                logger.error('Error deleting uploaded file:', deleteError);
+            }
+        }
+        
         res.status(500).json({ error: 'Error uploading profile picture: ' + error.message });
     }
 });

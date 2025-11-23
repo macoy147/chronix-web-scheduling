@@ -1,6 +1,8 @@
 // admin-subjects.js - FIXED VERSION
 import API_BASE_URL from './api-config.js';
 import { handleApiError, showErrorNotification } from './error-handler.js';
+import AuthGuard from './auth-guard.js';
+
 
 // Simple auth helper
 const AuthHelper = {

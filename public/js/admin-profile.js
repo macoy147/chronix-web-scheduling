@@ -1,85 +1,33 @@
-// public/js/admin-profile.js - ENHANCED VERSION WITH NOTIFICATIONS
+// public/js/admin-profile.js - UPDATED TO USE AuthGuard
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
-
-// Simple auth helper
-const AuthHelper = {
-    checkAuthentication(requiredRole = null) {
-        const isAuthenticated = sessionStorage.getItem('isAuthenticated');
-        const userRole = sessionStorage.getItem('userRole');
-        
-        console.log('Auth check:', { isAuthenticated, userRole, requiredRole });
-        
-        if (!isAuthenticated || isAuthenticated !== 'true') {
-            this.redirectToLogin();
-            return false;
-        }
-        
-        if (requiredRole && userRole !== requiredRole) {
-            this.redirectToLogin('Unauthorized access.');
-            return false;
-        }
-        
-        return true;
-    },
-    
-    redirectToLogin(message = 'Please sign in') {
-        sessionStorage.setItem('loginRedirectMessage', message);
-        window.location.href = 'auth.html?mode=signin';
-    },
-    
-    getCurrentUser() {
-        const userData = sessionStorage.getItem('currentUser');
-        return userData ? JSON.parse(userData) : null;
-    },
-    
-    getUserId() {
-        const user = this.getCurrentUser();
-        return user ? user._id : null;
-    },
-    
-    logout() {
-        sessionStorage.removeItem('currentUser');
-        sessionStorage.removeItem('isAuthenticated');
-        sessionStorage.removeItem('userRole');
-        sessionStorage.removeItem('userId');
-        window.location.href = 'auth.html?mode=signin';
-    },
-    
-    storeUserSession(userData) {
-        sessionStorage.setItem('currentUser', JSON.stringify(userData));
-        sessionStorage.setItem('isAuthenticated', 'true');
-        sessionStorage.setItem('userRole', userData.userrole);
-        sessionStorage.setItem('userId', userData._id);
-    }
-};
+import AuthGuard from './auth-guard.js';
 
 // Profile picture helper
 const ProfilePictureHelper = {
-    // Get full profile picture URL
     getProfilePictureUrl(profilePicturePath) {
         if (!profilePicturePath) {
             return '/img/default_admin_avatar.png';
         }
         
-        // If it's already a full URL, return as is
         if (profilePicturePath.startsWith('http')) {
             return profilePicturePath;
         }
         
-        // If it's a relative path, make it absolute
         if (profilePicturePath.startsWith('/')) {
             return profilePicturePath;
         }
         
-        // Default fallback
+        if (profilePicturePath.includes('profile-')) {
+            return '/uploads/' + profilePicturePath;
+        }
+        
         return '/img/default_admin_avatar.png';
     },
     
-    // Validate file before upload
     validateFile(file) {
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 5 * 1024 * 1024;
         
         if (!validTypes.includes(file.type)) {
             throw new Error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
@@ -95,72 +43,45 @@ const ProfilePictureHelper = {
 
 // Notification helper
 const NotificationHelper = {
-    // Show notification to user
     showNotification(message, type = 'success', duration = 5000) {
-        const notification = document.getElementById('notification');
+        let notification = document.getElementById('notification');
         if (!notification) {
-            this.createNotificationElement();
+            notification = this.createNotificationElement();
         }
         
-        const notificationEl = document.getElementById('notification');
-        notificationEl.textContent = message;
-        notificationEl.className = `notification ${type} show`;
+        notification.textContent = message;
+        notification.className = `notification ${type} show`;
         
-        // Auto hide after duration
         setTimeout(() => {
-            notificationEl.classList.remove('show');
+            notification.classList.remove('show');
         }, duration);
         
-        // Also log to console
         console.log(`🔔 ${type.toUpperCase()}: ${message}`);
     },
     
-    // Create notification element if it doesn't exist
     createNotificationElement() {
         const notification = document.createElement('div');
         notification.id = 'notification';
         notification.className = 'notification';
         document.body.appendChild(notification);
-    },
-    
-    // Fetch user notifications
-    async fetchUserNotifications(userId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/notifications/${userId}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch notifications');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching notifications:', error);
-            return [];
-        }
-    },
-    
-    // Mark notification as read
-    async markNotificationAsRead(notificationId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
-                method: 'PUT'
-            });
-            return response.ok;
-        } catch (error) {
-            console.error('Error marking notification as read:', error);
-            return false;
-        }
+        return notification;
     }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Admin Profile loaded');
+    console.log('🏁 Admin Profile loaded - Initializing...');
     
-    // Check authentication first
-    if (!AuthHelper.checkAuthentication('admin')) {
+    // Use AuthGuard for authentication check
+    if (!AuthGuard.checkAuthentication('admin')) {
         return;
     }
 
     // Initialize notification system
     NotificationHelper.createNotificationElement();
+
+    // Debug: Log current user info
+    const currentUser = AuthGuard.getCurrentUser();
+    console.log('👤 Current user from AuthGuard:', currentUser);
 
     // Profile dropdown
     const profileDropdown = document.querySelector('.admin-profile-dropdown');
@@ -169,23 +90,24 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             profileDropdown.classList.toggle('open');
         });
+
         document.addEventListener('click', function() {
             profileDropdown.classList.remove('open');
         });
     }
 
-    // Logout functionality
+    // Logout functionality - Use AuthGuard's logout
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            AuthHelper.logout();
+            AuthGuard.logout();
         });
     }
 
     // Update profile name and avatar in navigation
     function updateProfileInfo() {
-        const currentUser = AuthHelper.getCurrentUser();
+        const currentUser = AuthGuard.getCurrentUser();
         if (currentUser) {
             const firstName = currentUser.fullname?.split(' ')[0] || 'Admin';
             const profileName = document.getElementById('profileName');
@@ -197,38 +119,61 @@ document.addEventListener('DOMContentLoaded', function() {
             if (profileAvatar) {
                 profileAvatar.src = ProfilePictureHelper.getProfilePictureUrl(currentUser.profilePicture);
             }
+            
+            console.log('🔄 Profile info updated in navigation');
         }
     }
 
     // Load user profile data
     async function loadUserProfile() {
         try {
-            const userId = AuthHelper.getUserId();
+            const userId = AuthGuard.getUserId();
             if (!userId) {
-                NotificationHelper.showNotification('User not authenticated', 'error');
+                console.error('❌ No user ID found from AuthGuard');
+                NotificationHelper.showNotification('User not authenticated. Please sign in again.', 'error');
+                setTimeout(() => AuthGuard.redirectToLogin(), 2000);
                 return;
             }
 
+            console.log('🔄 Loading user profile for ID:', userId);
+            
             const response = await fetch(`${API_BASE_URL}/user/${userId}`);
+            
+            if (response.status === 401) {
+                NotificationHelper.showNotification('Session expired. Please sign in again.', 'error');
+                setTimeout(() => AuthGuard.redirectToLogin(), 2000);
+                return;
+            }
+            
             if (!response.ok) {
-                throw new Error('Failed to fetch user data');
+                throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`);
             }
 
             const userData = await response.json();
+            console.log('✅ User data loaded:', userData);
+            
             populateProfileFields(userData);
             
-            // Update session storage with fresh data
-            AuthHelper.storeUserSession(userData);
+            // Update session storage with fresh data using AuthGuard
+            AuthGuard.storeUserSession(userData);
             updateProfileInfo();
             
         } catch (error) {
-            console.error('Error loading user profile:', error);
-            NotificationHelper.showNotification('Failed to load profile data', 'error');
+            console.error('❌ Error loading user profile:', error);
+            
+            if (error.message.includes('401') || error.message.includes('unauthorized')) {
+                NotificationHelper.showNotification('Session expired. Please sign in again.', 'error');
+                setTimeout(() => AuthGuard.redirectToLogin(), 2000);
+            } else {
+                NotificationHelper.showNotification('Failed to load profile data: ' + error.message, 'error');
+            }
         }
     }
 
     // Populate profile fields with user data
     function populateProfileFields(userData) {
+        console.log('📝 Populating profile fields with:', userData);
+        
         // Basic info
         const fullNameEl = document.getElementById('fullName');
         if (fullNameEl) fullNameEl.value = userData.fullname || '';
@@ -239,21 +184,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const userRoleEl = document.getElementById('userRole');
         if (userRoleEl) userRoleEl.textContent = userData.userrole ? userData.userrole.charAt(0).toUpperCase() + userData.userrole.slice(1) : 'Administrator';
         
-        // Profile picture - use helper function
+        // Profile picture
         const profilePicture = document.getElementById('profilePicture');
         if (profilePicture) {
-            profilePicture.src = ProfilePictureHelper.getProfilePictureUrl(userData.profilePicture);
+            const pictureUrl = ProfilePictureHelper.getProfilePictureUrl(userData.profilePicture);
+            console.log('🖼️ Setting profile picture to:', pictureUrl);
+            profilePicture.src = pictureUrl;
         }
 
         // Account details
-        const userIdEl = document.getElementById('userId');
-        if (userIdEl) userIdEl.textContent = userData._id || '-';
-        
-        const ctuidEl = document.getElementById('ctuid');
-        if (ctuidEl) ctuidEl.textContent = userData.ctuid || '-';
-        
-        const genderEl = document.getElementById('gender');
-        if (genderEl) genderEl.textContent = userData.gender || '-';
+        document.getElementById('userId').textContent = userData._id || '-';
+        document.getElementById('ctuid').textContent = userData.ctuid || '-';
+        document.getElementById('gender').textContent = userData.gender || '-';
         
         // Format birthdate
         const birthdateEl = document.getElementById('birthdate');
@@ -288,7 +230,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = e.target.files[0];
             if (file) {
                 try {
-                    // Validate file using helper
                     ProfilePictureHelper.validateFile(file);
                     selectedFile = file;
                     
@@ -304,13 +245,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     NotificationHelper.showNotification('Profile picture selected. Click "Save Changes" to upload.', 'success');
                 } catch (error) {
                     NotificationHelper.showNotification(error.message, 'error');
-                    profilePictureInput.value = ''; // Clear the invalid file
+                    profilePictureInput.value = '';
+                    selectedFile = null;
                 }
             }
         });
     }
 
-    // Save profile changes
+    // Save profile changes - USING AuthGuard
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     if (saveProfileBtn) {
         saveProfileBtn.addEventListener('click', async function() {
@@ -318,13 +260,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalText = saveBtn.innerHTML;
             
             try {
+                const userId = AuthGuard.getUserId();
+                if (!userId) {
+                    throw new Error('User not authenticated. Please sign in again.');
+                }
+
+                console.log('🔄 Starting profile update for user:', userId);
+
                 saveBtn.disabled = true;
                 saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
-
-                const userId = AuthHelper.getUserId();
-                if (!userId) {
-                    throw new Error('User not authenticated');
-                }
 
                 const formData = new FormData();
                 
@@ -348,24 +292,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Add profile picture if selected
                 if (selectedFile) {
                     formData.append('profilePicture', selectedFile);
+                    console.log('📤 Uploading profile picture:', selectedFile.name);
                 }
 
+                console.log('🔄 Saving profile changes to server...');
+                
                 const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
                     method: 'PUT',
                     body: formData
                 });
 
+                if (response.status === 401) {
+                    throw new Error('Session expired. Please sign in again.');
+                }
+
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to update profile');
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch {
+                        errorData = { error: errorText };
+                    }
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
                 }
 
                 const result = await response.json();
                 const updatedUser = result.user;
                 const changes = result.changes || [];
                 
-                // Update session storage
-                AuthHelper.storeUserSession(updatedUser);
+                console.log('✅ Profile update successful:', updatedUser);
+                
+                // Update session storage using AuthGuard
+                AuthGuard.storeUserSession(updatedUser);
                 
                 // Update all profile pictures
                 updateAllProfilePictures(updatedUser.profilePicture);
@@ -373,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update navigation profile info
                 updateProfileInfo();
                 
-                // Show detailed notification about changes
+                // Show detailed notification
                 if (changes.length > 0) {
                     NotificationHelper.showNotification(
                         `Profile updated successfully! Changes: ${changes.join(', ')}`, 
@@ -384,19 +343,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     NotificationHelper.showNotification('Profile updated successfully!', 'success');
                 }
                 
-                selectedFile = null; // Reset selected file
+                selectedFile = null;
                 if (profilePictureInput) {
-                    profilePictureInput.value = ''; // Clear the file input
+                    profilePictureInput.value = '';
                 }
                 
-                // Fetch and show recent notifications
-                setTimeout(() => {
-                    checkForNewNotifications(userId);
-                }, 1000);
-                
             } catch (error) {
-                console.error('Error updating profile:', error);
-                NotificationHelper.showNotification(error.message || 'Failed to update profile', 'error');
+                console.error('❌ Error updating profile:', error);
+                
+                if (error.message.includes('Session expired') || error.message.includes('not authenticated')) {
+                    NotificationHelper.showNotification(error.message, 'error');
+                    setTimeout(() => AuthGuard.redirectToLogin(), 2000);
+                } else {
+                    NotificationHelper.showNotification(error.message || 'Failed to update profile', 'error');
+                }
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerHTML = originalText;
@@ -409,48 +369,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!profilePicturePath) return;
         
         const imageUrl = ProfilePictureHelper.getProfilePictureUrl(profilePicturePath);
+        console.log('🔄 Updating all profile pictures to:', imageUrl);
         
-        // Update profile view avatar
         const profilePicture = document.getElementById('profilePicture');
         if (profilePicture) {
             profilePicture.src = imageUrl;
         }
         
-        // Update navigation avatar
         const navAvatar = document.getElementById('profileAvatar');
         if (navAvatar) {
             navAvatar.src = imageUrl;
-        }
-    }
-
-    // Check for new notifications
-    async function checkForNewNotifications(userId) {
-        try {
-            const notifications = await NotificationHelper.fetchUserNotifications(userId);
-            const unreadNotifications = notifications.filter(n => !n.read);
-            
-            if (unreadNotifications.length > 0) {
-                // Show a summary of recent notifications
-                const recentNotifications = unreadNotifications.slice(0, 3);
-                recentNotifications.forEach(notification => {
-                    setTimeout(() => {
-                        NotificationHelper.showNotification(
-                            `📢 ${notification.title}: ${notification.message}`,
-                            'success',
-                            5000
-                        );
-                    }, 1000);
-                });
-                
-                // Mark them as read after showing
-                setTimeout(async () => {
-                    for (const notification of recentNotifications) {
-                        await NotificationHelper.markNotificationAsRead(notification._id);
-                    }
-                }, 6000);
-            }
-        } catch (error) {
-            console.error('Error checking notifications:', error);
         }
     }
 
@@ -458,7 +386,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelBtn = document.getElementById('cancelBtn');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function() {
-            // Reload the profile data to reset any changes
             loadUserProfile();
             selectedFile = null;
             if (profilePictureInput) {
@@ -472,11 +399,5 @@ document.addEventListener('DOMContentLoaded', function() {
     updateProfileInfo();
     loadUserProfile();
     
-    // Check for notifications on page load
-    const userId = AuthHelper.getUserId();
-    if (userId) {
-        setTimeout(() => {
-            checkForNewNotifications(userId);
-        }, 2000);
-    }
+    console.log('✅ Admin Profile initialization complete');
 });
