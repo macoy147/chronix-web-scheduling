@@ -1,0 +1,27 @@
+{
+    "name": "CHRONIX Admin Dashboard",
+    "short_name": "CHRONIX",
+    "description": "CTU CHRONIX Academic Management System - Admin Dashboard",
+    "start_url": "/admin-dashboard.html",
+    "display": "standalone",
+    "background_color": "#F4F7F9",
+    "theme_color": "#002D62",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/img/img/CHRONIX_LOGO.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/img/img/CHRONIX_LOGO.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["education", "productivity"],
+    "lang": "en-US",
+    "scope": "/"
+}

@@ -1,11 +1,45 @@
-// public/js/admin-dashboard.js - FIXED VERSION
+// public/js/admin-dashboard.js - ENHANCED VERSION
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
 
-
-// Simple auth helper since AuthGuard might not be loading properly
- 
+// Data caching with TTL
+const cache = {
+    set: (key, data, ttl = 5 * 60 * 1000) => {
+        try {
+            const item = {
+                data,
+                expiry: Date.now() + ttl
+            };
+            localStorage.setItem(`dashboard_${key}`, JSON.stringify(item));
+        } catch (error) {
+            console.warn('Cache set failed:', error);
+        }
+    },
+    get: (key) => {
+        try {
+            const item = localStorage.getItem(`dashboard_${key}`);
+            if (!item) return null;
+            
+            const { data, expiry } = JSON.parse(item);
+            if (Date.now() > expiry) {
+                localStorage.removeItem(`dashboard_${key}`);
+                return null;
+            }
+            return data;
+        } catch (error) {
+            console.warn('Cache get failed:', error);
+            return null;
+        }
+    },
+    clear: (key) => {
+        try {
+            localStorage.removeItem(`dashboard_${key}`);
+        } catch (error) {
+            console.warn('Cache clear failed:', error);
+        }
+    }
+};
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Admin Dashboard loaded');
@@ -35,150 +69,230 @@ document.addEventListener('DOMContentLoaded', function() {
             studentDistributionType: 'section',
             roomChartType: 'status',
             scheduleDensityType: 'day'
-        }
+        },
+        isLoading: false,
+        isOnline: navigator.onLine
     };
 
     // Initialize the dashboard
     initializeDashboard();
 
-    // Profile dropdown functionality
+    // Setup online/offline detection
+    setupConnectionMonitoring();
+
+    // Profile dropdown functionality with enhanced animations
     const profileDropdown = document.querySelector('.admin-profile-dropdown');
     if (profileDropdown) {
         profileDropdown.addEventListener('click', function(e) {
             e.stopPropagation();
-            profileDropdown.classList.toggle('open');
+            const isOpen = profileDropdown.classList.toggle('open');
+            profileDropdown.setAttribute('aria-expanded', isOpen);
+            
+            // Add ripple effect
+            createRipple(e, this);
+        });
+
+        // Keyboard navigation for profile dropdown
+        profileDropdown.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const isOpen = profileDropdown.classList.toggle('open');
+                profileDropdown.setAttribute('aria-expanded', isOpen);
+            } else if (e.key === 'Escape') {
+                profileDropdown.classList.remove('open');
+                profileDropdown.setAttribute('aria-expanded', 'false');
+            }
         });
 
         document.addEventListener('click', function() {
             profileDropdown.classList.remove('open');
+            profileDropdown.setAttribute('aria-expanded', 'false');
         });
     }
 
-    // Logout functionality
+    // Logout functionality with confirmation
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            AuthGuard.logout();
+            
+            if (confirm('Are you sure you want to logout?')) {
+                showNotification('Logging out...', 'info');
+                setTimeout(() => {
+                    AuthGuard.logout();
+                }, 1000);
+            }
         });
     }
 
-    // Refresh button functionality
+    // Enhanced refresh button functionality
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', function() {
+        refreshBtn.addEventListener('click', function(e) {
+            createRipple(e, this);
             refreshDashboardData();
         });
     }
 
-    // Filter event listeners
+    // Filter event listeners with smooth transitions
     const studentDistributionType = document.getElementById('studentDistributionType');
     if (studentDistributionType) {
         studentDistributionType.addEventListener('change', function() {
-            dashboardState.filters.studentDistributionType = this.value;
-            renderStudentDistributionChart();
+            dashboardState.filters.studentDistributionType = sanitizeChartFilter('studentDistributionType', this.value);
+            animateChartTransition('studentDistributionChart');
+            setTimeout(() => renderStudentDistributionChart(), 300);
+            trackUserInteraction('filter_change', 'student_distribution', this.value);
         });
     }
 
     const roomChartType = document.getElementById('roomChartType');
     if (roomChartType) {
         roomChartType.addEventListener('change', function() {
-            dashboardState.filters.roomChartType = this.value;
-            renderRoomUtilizationChart();
+            dashboardState.filters.roomChartType = sanitizeChartFilter('roomChartType', this.value);
+            animateChartTransition('roomUtilizationChart');
+            setTimeout(() => renderRoomUtilizationChart(), 300);
+            trackUserInteraction('filter_change', 'room_utilization', this.value);
         });
     }
 
     const scheduleDensityType = document.getElementById('scheduleDensityType');
     if (scheduleDensityType) {
         scheduleDensityType.addEventListener('change', function() {
-            dashboardState.filters.scheduleDensityType = this.value;
-            renderScheduleDensityChart();
+            dashboardState.filters.scheduleDensityType = sanitizeChartFilter('scheduleDensityType', this.value);
+            animateChartTransition('scheduleDensityChart');
+            setTimeout(() => renderScheduleDensityChart(), 300);
+            trackUserInteraction('filter_change', 'schedule_density', this.value);
         });
     }
 
-    // Update profile info
+    // Update profile info with animation
     function updateProfileInfo() {
         const currentUser = AuthGuard.getCurrentUser();
         if (currentUser) {
             const firstName = currentUser.fullname.split(' ')[0];
             const profileName = document.getElementById('profileName');
             if (profileName) {
-                profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down"></i>`;
+                profileName.style.opacity = '0';
+                setTimeout(() => {
+                    profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down" aria-hidden="true"></i>`;
+                    profileName.style.opacity = '1';
+                }, 200);
             }
 
             const profileAvatar = document.getElementById('profileAvatar');
             if (profileAvatar) {
-                if (currentUser.profilePicture) {
-                    profileAvatar.src = currentUser.profilePicture.startsWith('http') 
-                        ? currentUser.profilePicture 
-                        : currentUser.profilePicture;
-                } else {
-                    profileAvatar.src = '/img/default_admin_avatar.png';
-                }
+                profileAvatar.style.opacity = '0';
+                setTimeout(() => {
+                    if (currentUser.profilePicture) {
+                        profileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                            ? currentUser.profilePicture 
+                            : currentUser.profilePicture;
+                    } else {
+                        profileAvatar.src = '/img/default_admin_avatar.png';
+                    }
+                    profileAvatar.style.opacity = '1';
+                }, 200);
             }
         }
     }
 
-    // Initialize dashboard
+    // Initialize dashboard with loading animation
     async function initializeDashboard() {
         showLoadingOverlay();
         updateProfileInfo();
         
         try {
-            await loadAllData();
-            initializeDashboardComponents();
+            // Try to load from cache first
+            const cachedData = cache.get('dashboard_data');
+            if (cachedData && dashboardState.isOnline) {
+                console.log('Loading data from cache');
+                dashboardState.data = { ...cachedData, lastUpdate: new Date() };
+                await initializeDashboardComponents();
+                showNotification('Loaded cached data', 'info');
+            }
+
+            // Always try to fetch fresh data
+            if (dashboardState.isOnline) {
+                await loadAllData();
+                await initializeDashboardComponents();
+            }
+            
             setupAutoRefresh();
+            setupKeyboardShortcuts();
+            addPageAnimations();
+            initializeLazyCharts();
         } catch (error) {
             console.error('Failed to initialize dashboard:', error);
-            showError('Failed to load dashboard data. Please check your connection and try again.');
+            if (!dashboardState.isOnline && !cache.get('dashboard_data')) {
+                showError('You are offline and no cached data is available.');
+            } else {
+                showError('Failed to load dashboard data. Please check your connection and try again.');
+            }
         } finally {
-            hideLoadingOverlay();
+            setTimeout(() => hideLoadingOverlay(), 500);
         }
     }
 
-    // Load all data from MongoDB
+    // Setup connection monitoring
+    function setupConnectionMonitoring() {
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        function updateConnectionStatus() {
+            dashboardState.isOnline = navigator.onLine;
+            
+            if (connectionStatus) {
+                if (dashboardState.isOnline) {
+                    connectionStatus.textContent = 'Back online';
+                    connectionStatus.className = 'connection-status online';
+                    setTimeout(() => {
+                        connectionStatus.textContent = '';
+                        connectionStatus.className = 'connection-status';
+                    }, 3000);
+                } else {
+                    connectionStatus.textContent = 'You are currently offline';
+                    connectionStatus.className = 'connection-status offline';
+                }
+            }
+            
+            if (dashboardState.isOnline) {
+                // Try to refresh data when coming back online
+                refreshDashboardData();
+            }
+        }
+
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        updateConnectionStatus();
+    }
+
+    // Load all data from MongoDB with enhanced error handling and retry mechanism
     async function loadAllData() {
+        if (!dashboardState.isOnline) {
+            throw new Error('No internet connection');
+        }
+
         try {
             console.log('Starting data load from server...');
             
-            // Load students
-            const studentsResponse = await fetch('/users/students');
-            if (!studentsResponse.ok) throw new Error('Failed to fetch students');
-            const studentsData = await studentsResponse.json();
-            const students = Array.isArray(studentsData) ? studentsData : [];
-            console.log(`Loaded ${students.length} students`);
+            // Load all data concurrently for better performance
+            const [studentsResponse, teachersResponse, roomsResponse, schedulesResponse, subjectsResponse, sectionsResponse] = await Promise.all([
+                loadDataWithRetry('/users/students'),
+                loadDataWithRetry('/teachers'),
+                loadDataWithRetry('/rooms'),
+                loadDataWithRetry('/schedules'),
+                loadDataWithRetry('/subjects'),
+                loadDataWithRetry('/sections')
+            ]);
 
-            // Load teachers
-            const teachersResponse = await fetch('/teachers');
-            if (!teachersResponse.ok) throw new Error('Failed to fetch teachers');
-            const teachers = await teachersResponse.json();
-            console.log(`Loaded ${teachers.length} teachers`);
+            // Parse data
+            const students = Array.isArray(studentsResponse) ? studentsResponse : [];
+            const teachers = Array.isArray(teachersResponse) ? teachersResponse : [];
+            const rooms = Array.isArray(roomsResponse) ? roomsResponse : [];
+            const schedules = Array.isArray(schedulesResponse) ? schedulesResponse : [];
+            const subjects = Array.isArray(subjectsResponse) ? subjectsResponse : [];
+            const sections = Array.isArray(sectionsResponse) ? sectionsResponse : [];
 
-            // Load rooms
-            const roomsResponse = await fetch('/rooms');
-            if (!roomsResponse.ok) throw new Error('Failed to fetch rooms');
-            const rooms = await roomsResponse.json();
-            console.log(`Loaded ${rooms.length} rooms`);
-
-            // Load schedules
-            const schedulesResponse = await fetch('/schedules');
-            if (!schedulesResponse.ok) throw new Error('Failed to fetch schedules');
-            const schedules = await schedulesResponse.json();
-            console.log(`Loaded ${schedules.length} schedules`);
-
-            // Load subjects
-            const subjectsResponse = await fetch('/subjects');
-            if (!subjectsResponse.ok) throw new Error('Failed to fetch subjects');
-            const subjects = await subjectsResponse.json();
-            console.log(`Loaded ${subjects.length} subjects`);
-
-            // Load sections
-            const sectionsResponse = await fetch('/sections');
-            if (!sectionsResponse.ok) throw new Error('Failed to fetch sections');
-            const sections = await sectionsResponse.json();
-            console.log(`Loaded ${sections.length} sections`);
-
-            dashboardState.data = {
+            const newData = {
                 students,
                 teachers,
                 rooms,
@@ -188,72 +302,145 @@ document.addEventListener('DOMContentLoaded', function() {
                 lastUpdate: new Date()
             };
 
+            dashboardState.data = newData;
+            
+            // Cache the data
+            cache.set('dashboard_data', newData);
+
             console.log('All data loaded successfully');
+            trackUserInteraction('data_load', 'dashboard', 'success');
 
         } catch (error) {
             console.error('Error loading dashboard data:', error);
+            trackUserInteraction('data_load', 'dashboard', 'error');
             throw error;
         }
     }
 
-    // Initialize dashboard components
-    function initializeDashboardComponents() {
+    // Retry mechanism for API calls
+    async function loadDataWithRetry(url, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    return await response.json();
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                if (i === retries - 1) throw error;
+                console.warn(`Attempt ${i + 1} failed, retrying...`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+            }
+        }
+        throw new Error(`Failed to load data from ${url} after ${retries} attempts`);
+    }
+
+    // Lazy loading for charts
+    function initializeLazyCharts() {
+        const chartObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const chartId = entry.target.id;
+                    if (chartId === 'studentDistributionChart' && !dashboardState.charts.studentDistribution) {
+                        renderStudentDistributionChart();
+                    } else if (chartId === 'roomUtilizationChart' && !dashboardState.charts.roomUtilization) {
+                        renderRoomUtilizationChart();
+                    } else if (chartId === 'scheduleDensityChart' && !dashboardState.charts.scheduleDensity) {
+                        renderScheduleDensityChart();
+                    }
+                    
+                    chartObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.chart-wrapper canvas').forEach(canvas => {
+            chartObserver.observe(canvas);
+        });
+    }
+
+    // Initialize dashboard components with animations
+    async function initializeDashboardComponents() {
         updateKPICards();
         updateRecentActivity();
         renderAllCharts();
         updateLastUpdated();
+        initializeTooltips();
     }
 
-    // Update KPI cards with real data
+    // Update KPI cards with animated counters
     function updateKPICards() {
         const { students, teachers, rooms, schedules } = dashboardState.data;
 
-        // Total Students
-        const totalStudentsEl = document.getElementById('totalStudents');
-        if (totalStudentsEl) totalStudentsEl.textContent = students.length;
-        updateTrend('studentsTrend', students.length, 0);
-
-        // Total Teachers
-        const totalTeachersEl = document.getElementById('totalTeachers');
-        if (totalTeachersEl) totalTeachersEl.textContent = teachers.length;
-        updateTrend('teachersTrend', teachers.length, 0);
-
-        // Available Rooms
+        // Animate counters
+        animateCounter('totalStudents', students.length);
+        animateCounter('totalTeachers', teachers.length);
+        
         const availableRooms = rooms.filter(room => room.status === 'Available').length;
         const totalRooms = rooms.length;
-        const availableRoomsEl = document.getElementById('availableRooms');
-        if (availableRoomsEl) availableRoomsEl.textContent = availableRooms;
-        const totalRoomsEl = document.getElementById('totalRooms');
-        if (totalRoomsEl) totalRoomsEl.textContent = totalRooms;
-        updateTrend('roomsTrend', availableRooms, 0);
+        animateCounter('availableRooms', availableRooms);
+        animateCounter('totalRooms', totalRooms);
+        
+        animateCounter('activeSchedules', schedules.length);
 
-        // Active Schedules
-        const activeSchedulesEl = document.getElementById('activeSchedules');
-        if (activeSchedulesEl) activeSchedulesEl.textContent = schedules.length;
+        // Update trends with animations
+        updateTrend('studentsTrend', students.length, 0);
+        updateTrend('teachersTrend', teachers.length, 0);
+        updateTrend('roomsTrend', availableRooms, 0);
         updateTrend('schedulesTrend', schedules.length, 0);
     }
 
-    // Update trend indicators
+    // Animate counter numbers
+    function animateCounter(elementId, targetValue) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        const duration = 1000;
+        const startValue = 0;
+        const startTime = performance.now();
+        
+        function updateCounter(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+            const currentValue = Math.floor(startValue + (targetValue - startValue) * easeOutQuart);
+            
+            element.textContent = currentValue.toLocaleString();
+            
+            if (progress < 1) {
+                requestAnimationFrame(updateCounter);
+            }
+        }
+        
+        requestAnimationFrame(updateCounter);
+    }
+
+    // Update trend indicators with animations
     function updateTrend(elementId, currentValue, previousValue) {
         const trendElement = document.getElementById(elementId);
         if (!trendElement) return;
         
         const difference = currentValue - previousValue;
         
-        if (difference > 0) {
-            trendElement.innerHTML = `<i class="bi bi-arrow-up"></i> <span>+${difference}</span>`;
-            trendElement.className = 'kpi-trend positive';
-        } else if (difference < 0) {
-            trendElement.innerHTML = `<i class="bi bi-arrow-down"></i> <span>${difference}</span>`;
-            trendElement.className = 'kpi-trend negative';
-        } else {
-            trendElement.innerHTML = `<i class="bi bi-dash"></i> <span>No change</span>`;
-            trendElement.className = 'kpi-trend neutral';
-        }
+        trendElement.style.opacity = '0';
+        setTimeout(() => {
+            if (difference > 0) {
+                trendElement.innerHTML = `<i class="bi bi-arrow-up" aria-hidden="true"></i> <span>+${difference}</span>`;
+                trendElement.className = 'kpi-trend positive';
+            } else if (difference < 0) {
+                trendElement.innerHTML = `<i class="bi bi-arrow-down" aria-hidden="true"></i> <span>${difference}</span>`;
+                trendElement.className = 'kpi-trend negative';
+            } else {
+                trendElement.innerHTML = `<i class="bi bi-dash" aria-hidden="true"></i> <span>No change</span>`;
+                trendElement.className = 'kpi-trend neutral';
+            }
+            trendElement.style.opacity = '1';
+        }, 200);
     }
 
-    // [Keep all the chart rendering functions the same as before...]
-    // Student Distribution Chart
+    // Enhanced Student Distribution Chart
     function renderStudentDistributionChart() {
         const ctx = document.getElementById('studentDistributionChart');
         if (!ctx) return;
@@ -261,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const context = ctx.getContext('2d');
         const type = dashboardState.filters.studentDistributionType;
         
-        // Destroy existing chart
+        // Destroy existing chart with animation
         if (dashboardState.charts.studentDistribution) {
             dashboardState.charts.studentDistribution.destroy();
         }
@@ -273,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const sectionData = aggregateStudentsBySection();
                 labels = sectionData.labels;
                 data = sectionData.data;
-                backgroundColor = generateCTUColors(labels.length);
+                backgroundColor = generateCTUColors(labels.length, 0.8);
                 break;
 
             case 'year':
@@ -287,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const programData = aggregateStudentsByProgram();
                 labels = programData.labels;
                 data = programData.data;
-                backgroundColor = generateCTUColors(labels.length);
+                backgroundColor = generateCTUColors(labels.length, 0.8);
                 break;
         }
 
@@ -301,16 +488,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     backgroundColor: backgroundColor,
                     borderColor: backgroundColor.map(color => color.replace('0.8', '1')),
                     borderWidth: 0,
-                    borderRadius: 6,
-                    maxBarThickness: 40
+                    borderRadius: 8,
+                    maxBarThickness: 50
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 45, 98, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `Students: ${context.parsed.y.toLocaleString()}`;
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -319,7 +523,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: false
                         },
                         ticks: {
-                            color: '#555'
+                            color: '#555',
+                            font: {
+                                size: 12
+                            }
                         }
                     },
                     y: {
@@ -329,6 +536,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         ticks: {
                             color: '#555',
+                            font: {
+                                size: 12
+                            },
                             stepSize: Math.max(1, Math.ceil(Math.max(...data) / 5))
                         }
                     }
@@ -337,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Room Utilization Chart
+    // Enhanced Room Utilization Chart
     function renderRoomUtilizationChart() {
         const ctx = document.getElementById('roomUtilizationChart');
         if (!ctx) return;
@@ -363,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const buildingData = aggregateRoomsByBuilding();
                 labels = buildingData.labels;
                 data = buildingData.data;
-                backgroundColor = generateCTUColors(labels.length);
+                backgroundColor = generateCTUColors(labels.length, 0.8);
                 break;
 
             case 'type':
@@ -382,23 +592,48 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: data,
                     backgroundColor: backgroundColor,
                     borderColor: '#FFFFFF',
-                    borderWidth: 2,
-                    hoverOffset: 8
+                    borderWidth: 3,
+                    hoverOffset: 15,
+                    hoverBorderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '60%',
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
+                cutout: '65%',
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: {
                             color: '#555',
                             font: {
-                                size: 12
+                                size: 12,
+                                weight: '500'
                             },
-                            padding: 15
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 45, 98, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
                         }
                     }
                 }
@@ -406,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Schedule Density Chart
+    // Enhanced Schedule Density Chart
     function renderScheduleDensityChart() {
         const ctx = document.getElementById('scheduleDensityChart');
         if (!ctx) return;
@@ -446,15 +681,40 @@ document.addEventListener('DOMContentLoaded', function() {
                     backgroundColor: backgroundColor,
                     borderColor: backgroundColor.map(color => color.replace('0.7', '1')),
                     borderWidth: 0,
-                    borderRadius: 6
+                    borderRadius: 8,
+                    maxBarThickness: 50
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart',
+                    delay: (context) => {
+                        let delay = 0;
+                        if (context.type === 'data' && context.mode === 'default') {
+                            delay = context.dataIndex * 100;
+                        }
+                        return delay;
+                    }
+                },
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 45, 98, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `Schedules: ${context.parsed.y.toLocaleString()}`;
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -463,7 +723,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             display: false
                         },
                         ticks: {
-                            color: '#555'
+                            color: '#555',
+                            font: {
+                                size: 12
+                            }
                         }
                     },
                     y: {
@@ -473,6 +736,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         ticks: {
                             color: '#555',
+                            font: {
+                                size: 12
+                            },
                             stepSize: Math.max(1, Math.ceil(Math.max(...data) / 5))
                         }
                     }
@@ -481,7 +747,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // [Keep all the data aggregation functions the same...]
+    // Data aggregation functions
     function aggregateStudentsBySection() {
         const sectionCounts = {};
         dashboardState.data.students.forEach(student => {
@@ -653,7 +919,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Update recent activity
+    // Enhanced recent activity with animations
     function updateRecentActivity() {
         const activityContainer = document.getElementById('recentActivity');
         if (!activityContainer) return;
@@ -781,18 +1047,26 @@ document.addEventListener('DOMContentLoaded', function() {
             ));
         }
 
-        activityContainer.innerHTML = recentActivities.map(activity => `
-            <div class="activity-item ${activity.type}">
-                <i class="bi bi-${activity.icon}"></i>
-                <div class="activity-content">
-                    <span class="activity-text">${activity.text}</span>
-                    <span class="activity-time">${activity.time}</span>
+        // Fade out current activities
+        activityContainer.style.opacity = '0';
+        
+        setTimeout(() => {
+            activityContainer.innerHTML = recentActivities.map((activity, index) => `
+                <div class="activity-item ${activity.type}" style="animation-delay: ${index * 0.1}s" tabindex="0">
+                    <i class="bi bi-${activity.icon}" aria-hidden="true"></i>
+                    <div class="activity-content">
+                        <span class="activity-text">${activity.text}</span>
+                        <span class="activity-time">${activity.time}</span>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
+            
+            // Fade in new activities
+            activityContainer.style.opacity = '1';
+        }, 300);
     }
 
-    // Enhanced utility function to format time ago
+    // Enhanced time formatting
     function formatTimeAgo(dateString) {
         if (!dateString) return 'Unknown time';
         
@@ -817,39 +1091,172 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Update last updated timestamp
+    // Update last updated timestamp with animation
     function updateLastUpdated() {
         const lastUpdatedElement = document.getElementById('lastUpdated');
         if (lastUpdatedElement && dashboardState.data.lastUpdate) {
-            lastUpdatedElement.textContent = `Last updated: ${dashboardState.data.lastUpdate.toLocaleTimeString()}`;
+            lastUpdatedElement.style.opacity = '0';
+            setTimeout(() => {
+                lastUpdatedElement.textContent = `Last updated: ${dashboardState.data.lastUpdate.toLocaleTimeString()}`;
+                lastUpdatedElement.style.opacity = '1';
+            }, 200);
         }
     }
 
+    // Enhanced refresh functionality
     async function refreshDashboardData() {
+        if (dashboardState.isLoading || !dashboardState.isOnline) {
+            showNotification('Cannot refresh while offline or already refreshing', 'error');
+            return;
+        }
+        
+        dashboardState.isLoading = true;
         const refreshBtn = document.getElementById('refreshBtn');
         if (refreshBtn) {
             refreshBtn.classList.add('loading');
+            refreshBtn.disabled = true;
         }
         
         try {
             await loadAllData();
-            initializeDashboardComponents();
+            await initializeDashboardComponents();
             showNotification('Dashboard updated successfully', 'success');
+            trackUserInteraction('manual_refresh', 'dashboard', 'success');
         } catch (error) {
             console.error('Error refreshing dashboard:', error);
             showNotification('Failed to refresh dashboard data', 'error');
+            trackUserInteraction('manual_refresh', 'dashboard', 'error');
         } finally {
+            dashboardState.isLoading = false;
             if (refreshBtn) {
                 refreshBtn.classList.remove('loading');
+                refreshBtn.disabled = false;
             }
         }
     }
 
+    // Setup auto-refresh with user notification
     function setupAutoRefresh() {
-        // Auto-refresh every 5 minutes
+        // Auto-refresh every 5 minutes only when online
         setInterval(() => {
-            refreshDashboardData();
+            if (!document.hidden && dashboardState.isOnline) {
+                showNotification('Auto-refreshing dashboard...', 'info');
+                refreshDashboardData();
+            }
         }, 5 * 60 * 1000);
+    }
+
+    // Setup keyboard shortcuts
+    function setupKeyboardShortcuts() {
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + R to refresh
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                refreshDashboardData();
+            }
+            
+            // Escape to close dropdowns
+            if (e.key === 'Escape') {
+                document.querySelector('.admin-profile-dropdown')?.classList.remove('open');
+            }
+            
+            // Focus management for accessibility
+            if (e.key === 'Tab') {
+                // Ensure focus is visible
+                document.documentElement.classList.add('keyboard-navigation');
+            }
+        });
+
+        document.addEventListener('mousedown', function() {
+            document.documentElement.classList.remove('keyboard-navigation');
+        });
+    }
+
+    // Add page animations
+    function addPageAnimations() {
+        // Add entrance animations to cards
+        const cards = document.querySelectorAll('.kpi-card, .chart-container, .actions-card, .activity-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    }
+
+    // Initialize tooltips
+    function initializeTooltips() {
+        const tooltipElements = document.querySelectorAll('[data-tooltip]');
+        tooltipElements.forEach(element => {
+            element.addEventListener('mouseenter', function(e) {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'custom-tooltip';
+                tooltip.textContent = this.getAttribute('data-tooltip');
+                document.body.appendChild(tooltip);
+                
+                const rect = this.getBoundingClientRect();
+                tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+                tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+                
+                setTimeout(() => tooltip.classList.add('show'), 10);
+            });
+            
+            element.addEventListener('mouseleave', function() {
+                const tooltip = document.querySelector('.custom-tooltip');
+                if (tooltip) {
+                    tooltip.classList.remove('show');
+                    setTimeout(() => tooltip.remove(), 200);
+                }
+            });
+
+            element.addEventListener('focus', function(e) {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'custom-tooltip';
+                tooltip.textContent = this.getAttribute('data-tooltip');
+                document.body.appendChild(tooltip);
+                
+                const rect = this.getBoundingClientRect();
+                tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+                tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+                
+                setTimeout(() => tooltip.classList.add('show'), 10);
+            });
+
+            element.addEventListener('blur', function() {
+                const tooltip = document.querySelector('.custom-tooltip');
+                if (tooltip) {
+                    tooltip.classList.remove('show');
+                    setTimeout(() => tooltip.remove(), 200);
+                }
+            });
+        });
+    }
+
+    // Animate chart transitions
+    function animateChartTransition(chartId) {
+        const chartContainer = document.getElementById(chartId)?.closest('.chart-container');
+        if (chartContainer) {
+            chartContainer.style.opacity = '0.5';
+            chartContainer.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                chartContainer.style.opacity = '1';
+                chartContainer.style.transform = 'scale(1)';
+            }, 300);
+        }
+    }
+
+    // Input sanitization for security
+    function sanitizeChartFilter(type, value) {
+        const allowedValues = {
+            studentDistributionType: ['section', 'year', 'program'],
+            roomChartType: ['status', 'building', 'type'],
+            scheduleDensityType: ['day', 'type']
+        };
+        
+        return allowedValues[type]?.includes(value) ? value : allowedValues[type][0];
     }
 
     // Utility functions
@@ -870,52 +1277,82 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // UI Utility Functions
+    // Create ripple effect
+    function createRipple(event, element) {
+        const ripple = document.createElement('span');
+        ripple.classList.add('ripple');
+        
+        const rect = element.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = event.clientX - rect.left - size / 2;
+        const y = event.clientY - rect.top - size / 2;
+        
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        
+        element.appendChild(ripple);
+        
+        setTimeout(() => {
+            ripple.remove();
+        }, 600);
+    }
+
+    // Enhanced UI Utility Functions
     function showLoadingOverlay() {
         const loadingOverlay = document.getElementById('loadingOverlay');
         if (loadingOverlay) {
             loadingOverlay.style.display = 'flex';
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.opacity = '1';
+            }, 10);
         }
     }
 
     function hideLoadingOverlay() {
         const loadingOverlay = document.getElementById('loadingOverlay');
         if (loadingOverlay) {
-            loadingOverlay.style.display = 'none';
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+            }, 300);
         }
     }
 
+    // Enhanced notification system
     function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(n => n.remove());
+        
         // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 5px;
-            color: white;
-            z-index: 10000;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            font-family: 'Inter', sans-serif;
+        notification.setAttribute('role', 'alert');
+        notification.setAttribute('aria-live', 'polite');
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" aria-hidden="true"></i>
+                <span>${message}</span>
+            </div>
         `;
         
-        if (type === 'success') {
-            notification.style.backgroundColor = '#4BB543';
-        } else {
-            notification.style.backgroundColor = '#D8000C';
-        }
-
         document.body.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
 
         // Remove after 3 seconds
         setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
         }, 3000);
     }
 
@@ -923,10 +1360,31 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification(message, 'error');
     }
 
-    // Render all charts
+    // Render all charts with staggered animation
     function renderAllCharts() {
-        renderStudentDistributionChart();
-        renderRoomUtilizationChart();
-        renderScheduleDensityChart();
+        // Charts are now lazy loaded via initializeLazyCharts
     }
+
+    // Analytics tracking
+    function trackUserInteraction(action, category, label) {
+        // Basic analytics tracking - can be extended with Google Analytics, etc.
+        console.log(`User Interaction: ${action} - ${category} - ${label}`);
+        
+        if (typeof gtag !== 'undefined') {
+            gtag('event', action, {
+                event_category: category,
+                event_label: label
+            });
+        }
+    }
+
+    // Add CSS for animations
+    const animationStyles = document.createElement('style');
+    animationStyles.textContent = `
+        .keyboard-navigation *:focus {
+            outline: 2px solid var(--ctu-soft-gold) !important;
+            outline-offset: 2px !important;
+        }
+    `;
+    document.head.appendChild(animationStyles);
 });
