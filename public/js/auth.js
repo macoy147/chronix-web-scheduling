@@ -1,4 +1,5 @@
-// public/js/auth.js - UPDATED VERSION
+// public/js/auth.js - UPDATED VERSION WITH IMPROVED NOTIFICATIONS
+
 import API_BASE_URL from './api-config.js';
 
 // Simple session storage helper
@@ -100,10 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Load dropdown data
         loadRoomsAndSections();
-
         // Setup event listeners
         setupEventListeners();
-
         // Add loading animation
         addLoadingAnimation();
     }
@@ -123,13 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Password visibility toggles
         setupPasswordToggles();
-
         // Form submissions
         setupFormHandlers();
-
         // User role change handler
         setupUserRoleHandler();
-
         // Add keyboard navigation
         setupKeyboardNavigation();
     }
@@ -157,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (registerForm) {
             registerForm.addEventListener('submit', handleRegistration);
         }
-
         // Login form
         if (loginForm) {
             loginForm.addEventListener('submit', handleLogin);
@@ -293,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Notification system with enhanced styling
+    // Enhanced Messenger-style notification system
     function showNotification(message, type = "success") {
         // Remove existing notification
         const existingNotif = document.getElementById("customNotif");
@@ -304,77 +299,153 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create new notification
         const notif = document.createElement("div");
         notif.id = "customNotif";
-        notif.className = `custom-notif ${type}`;
+        notif.className = `messenger-notif ${type}`;
+        
+        // Create notification content with icon
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
         notif.innerHTML = `
-            <div class="notification-content">
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-                <span>${message}</span>
+            <div class="notif-icon">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="notif-content">
+                <span class="notif-message">${message}</span>
             </div>
         `;
         
-        // Add enhanced styling
+        // Add messenger-style styling
         notif.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 16px 24px;
-            border-radius: 12px;
+            max-width: 320px;
+            min-width: 280px;
+            padding: 12px 16px;
+            border-radius: 18px;
             color: white;
             z-index: 10000;
             font-weight: 500;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            display: block;
+            font-size: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
             font-family: 'Inter', sans-serif;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: slideInRight 0.3s ease, pulse 2s infinite;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateX(100%) scale(0.8);
+            opacity: 0;
+            animation: messengerSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         `;
         
+        // Set background based on type
         if (type === "success") {
-            notif.style.background = 'linear-gradient(135deg, #27ae60, #229954)';
+            notif.style.background = 'linear-gradient(135deg, #00C851, #007E33)';
         } else {
-            notif.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+            notif.style.background = 'linear-gradient(135deg, #FF4444, #CC0000)';
         }
 
-        // Add notification content styling
+        // Add messenger-style animations
         const style = document.createElement('style');
         style.textContent = `
-            .notification-content {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-            .notification-content i {
-                font-size: 1.2em;
-            }
-            @keyframes slideInRight {
-                from {
-                    transform: translateX(100%);
+            @keyframes messengerSlideIn {
+                0% {
+                    transform: translateX(100%) scale(0.8);
                     opacity: 0;
                 }
-                to {
-                    transform: translateX(0);
+                60% {
+                    transform: translateX(-10px) scale(1.02);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateX(0) scale(1);
                     opacity: 1;
                 }
             }
-            @keyframes pulse {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.02); }
+            
+            @keyframes messengerSlideOut {
+                0% {
+                    transform: translateX(0) scale(1);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateX(100%) scale(0.8);
+                    opacity: 0;
+                }
+            }
+            
+            @keyframes messengerPulse {
+                0%, 100% { 
+                    transform: scale(1); 
+                }
+                50% { 
+                    transform: scale(1.05); 
+                }
+            }
+            
+            .messenger-notif {
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            
+            .messenger-notif:hover {
+                transform: translateY(-2px) scale(1.02);
+                box-shadow: 0 6px 25px rgba(0,0,0,0.2), 0 3px 12px rgba(0,0,0,0.15);
+            }
+            
+            .notif-icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.2);
+                flex-shrink: 0;
+            }
+            
+            .notif-icon i {
+                font-size: 12px;
+            }
+            
+            .notif-content {
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .notif-message {
+                display: block;
+                line-height: 1.4;
+                word-wrap: break-word;
             }
         `;
-        document.head.appendChild(style);
+        
+        if (!document.getElementById('messenger-notif-styles')) {
+            style.id = 'messenger-notif-styles';
+            document.head.appendChild(style);
+        }
 
         document.body.appendChild(notif);
 
-        // Remove after 4 seconds
+        // Add click to dismiss
+        notif.addEventListener('click', () => {
+            dismissNotification(notif);
+        });
+
+        // Auto-dismiss after 4 seconds with messenger-style animation
         setTimeout(() => {
-            notif.style.animation = 'slideOutRight 0.3s ease forwards';
+            dismissNotification(notif);
+        }, 4000);
+    }
+
+    function dismissNotification(notif) {
+        if (notif && notif.parentNode) {
+            notif.style.animation = 'messengerSlideOut 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards';
             setTimeout(() => {
                 if (notif.parentNode) {
                     notif.parentNode.removeChild(notif);
                 }
             }, 300);
-        }, 4000);
+        }
     }
 
     // Enhanced registration form handler
@@ -485,7 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const email = form.querySelector('input[type="email"]').value.trim().toLowerCase();
         const password = form.querySelector('input[type="password"]').value;
-
         console.log('Login attempt:', { email });
 
         // Basic validation
@@ -613,16 +683,6 @@ document.addEventListener('DOMContentLoaded', () => {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
-        }
-        @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
         }
     `;
     document.head.appendChild(style);

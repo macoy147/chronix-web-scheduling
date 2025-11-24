@@ -613,35 +613,70 @@ select option {
     transform: translateY(-50%) scale(0.95);
 }
 
-/* --- Notification Styling --- */
-.custom-notif {
+/* --- Enhanced Messenger-style Notification Styling --- */
+.messenger-notif {
     position: fixed;
-    top: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    min-width: 250px;
-    max-width: 80vw;
-    padding: 16px 24px;
-    font-size: 1em;
-    border-radius: 10px;
-    color: var(--ctu-white);
-    box-shadow: var(--shadow-large);
-    z-index: 9999;
-    display: none;
-    opacity: 0.97;
-    text-align: center;
+    top: 20px;
+    right: 20px;
+    max-width: 280px;
+    min-width: 240px;
+    padding: 10px 14px;
+    border-radius: 16px;
+    color: white;
+    z-index: 10000;
+    font-weight: 500;
+    font-size: 13px;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.12), 0 1px 6px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-family: var(--font-family-primary);
-    transition: all var(--transition-fast) var(--transition-easing);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transform: translateX(100%) scale(0.85);
+    opacity: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.custom-notif.error {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
+.messenger-notif:hover {
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.12);
 }
 
-.custom-notif.success {
-    background: linear-gradient(135deg, #27ae60, #229954);
+.messenger-notif.success {
+    background: linear-gradient(135deg, #00C851, #007E33);
+}
+
+.messenger-notif.error {
+    background: linear-gradient(135deg, #FF4444, #CC0000);
+}
+
+.notif-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+}
+
+.notif-icon i {
+    font-size: 10px;
+}
+
+.notif-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-message {
+    display: block;
+    line-height: 1.3;
+    word-wrap: break-word;
+    font-size: 13px;
 }
 
 /* --- COMPACT: Two Fields in a Row with Reduced Spacing --- */
@@ -808,6 +843,26 @@ select option {
     .row-two-fields {
         flex-direction: column;
         gap: 0;
+    }
+
+    /* Mobile notification adjustments */
+    .messenger-notif {
+        top: 15px;
+        right: 15px;
+        left: 15px;
+        max-width: none;
+        min-width: auto;
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+
+    .notif-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .notif-icon i {
+        font-size: 9px;
     }
 }
 
