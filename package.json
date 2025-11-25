@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "echo 'Frontend build not required'"
+    "build": "echo 'Frontend build not required'",
+    "build-css": "sass public/css/splash-screen.scss public/css/splash-screen.css --no-source-map",
+    "watch-css": "sass --watch public/css/splash-screen.scss public/css/splash-screen.css --no-source-map",
+    "dev-with-css": "npm run build-css && nodemon server.js"
   },
   "engines": {
     "node": "20.x"
@@ -25,6 +28,7 @@
     "winston": "^3.18.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "sass": "^1.94.2"
   }
 }

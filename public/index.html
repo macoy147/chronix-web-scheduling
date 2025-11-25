@@ -145,5 +145,16 @@
     </footer>
 
     <script src="/js/script.js"></script>
+ <script>
+    // Check if user has seen splash screen recently
+    const hasSeenSplash = sessionStorage.getItem('splashSeen');
+    
+    if (!hasSeenSplash) {
+        // Set flag and redirect to splash screen
+        sessionStorage.setItem('splashSeen', 'true');
+        window.location.href = '/splash-screen.html';
+    }
+</script>
   </body>
+  
 </html>

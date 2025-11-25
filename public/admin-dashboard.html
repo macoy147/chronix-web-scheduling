@@ -306,22 +306,63 @@
     
     <!-- Register Service Worker for PWA -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                    })
-                    .catch(function(error) {
-                        console.log('ServiceWorker registration failed: ', error);
-                    });
-            });
+// Mobile detection and redirection
+function isMobileDevice() {
+    return window.innerWidth <= 768 || 
+           /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
 
-            // Listen for updates
-            navigator.serviceWorker.addEventListener('controllerchange', function() {
-                window.location.reload();
-            });
+// Prevent redirect loops and multiple rapid redirects
+let lastRedirectTime = 0;
+const REDIRECT_COOLDOWN = 1000; // 1 second cooldown
+
+function shouldRedirectToMobile() {
+    const now = Date.now();
+    if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+        return false; // Too soon since last redirect
+    }
+    
+    return isMobileDevice() && !window.location.pathname.includes('-mobile');
+}
+
+function shouldRedirectToDesktop() {
+    const now = Date.now();
+    if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+        return false; // Too soon since last redirect
+    }
+    
+    return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+}
+
+// Initial redirect check
+if (shouldRedirectToMobile()) {
+    lastRedirectTime = Date.now();
+    console.log('Redirecting to mobile version...');
+    window.location.href = '/admin-dashboard-mobile.html';
+}
+
+// Handle resize events with debouncing
+let resizeTimeout;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
+        // Redirect to mobile if needed
+        if (shouldRedirectToMobile()) {
+            lastRedirectTime = Date.now();
+            console.log('Screen resized - redirecting to mobile version...');
+            window.location.href = '/admin-dashboard-mobile.html';
         }
-    </script>
+        // Redirect to desktop if needed
+        else if (shouldRedirectToDesktop()) {
+            lastRedirectTime = Date.now();
+            console.log('Screen resized - redirecting to desktop version...');
+            window.location.href = '/admin-dashboard.html';
+        }
+    }, 250); // Wait 250ms after resize stops
+});
+
+// Also add this to your admin-dashboard-mobile.html for bidirectional redirects
+</script>
 </body>
 </html>
+

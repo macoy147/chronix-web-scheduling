@@ -1126,6 +1126,20 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
+// Serve splash screen
+app.get('/splash-screen.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'splash-screen.html'));
+});
+// Serve splash screen CSS (compiled from SCSS)
+app.get('/css/splash-screen.css', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'css', 'splash-screen.css'));
+});
+
+// Serve splash screen JS
+app.get('/js/splash-screen.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'js', 'splash-screen.js'));
+});
+
 // --------------------- SERVER START ---------------------
 app.listen(PORT, () => {
     logger.info(`🚀 Server running on port ${PORT}`);
