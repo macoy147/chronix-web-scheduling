@@ -1,10 +1,26 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 
+// Smooth navigation function
+window.smoothNavigate = function(url) {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.5s ease';
+    
+    setTimeout(() => {
+        window.location.href = url;
+    }, 500);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     const header = document.querySelector('.ctu-header');
     const ctaButton = document.querySelector('.cta-button');
-    const transitionOverlay = document.getElementById('transition-overlay');
+    
+    // Fade in page on load
+    document.body.style.opacity = '0';
+    setTimeout(() => {
+        document.body.style.transition = 'opacity 0.8s ease';
+        document.body.style.opacity = '1';
+    }, 100);
     
     // Header scroll effect
     window.addEventListener('scroll', () => {
@@ -20,9 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
         ctaButton.addEventListener('click', (e) => {
             console.log('Get Started button clicked!');
             createRipple(e, ctaButton);
-            // Navigation is handled by onclick attribute in HTML
         });
     }
+
+    // Add smooth transition to navigation links
+    document.querySelectorAll('.smooth-transition').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            smoothNavigate(href);
+        });
+    });
 
     // Animate stats on scroll
     const statsSection = document.querySelector('.stats-section');
@@ -64,20 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
         footer.innerHTML = `&copy; ${currentYear} CHRONIX. BSIT 3A - GROUP 4 | Marco Montellano | Rheina Ompoy | Raniza Pepito | Kenneth Brian Tangkay`;
     }
 
-    // Add smooth transition effect when navigating away
-    document.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', (e) => {
-            // Only apply transition to internal links
-            if (link.href && link.href.startsWith(window.location.origin)) {
-                e.preventDefault();
-                transitionOverlay.classList.add('active');
-                
-                setTimeout(() => {
-                    window.location.href = link.href;
-                }, 800);
-            }
-        });
-    });
 });
 
 // Create ripple effect for buttons
