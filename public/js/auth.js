@@ -85,6 +85,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const debugToggle = document.getElementById('debugToggle');
 
+    // Mobile detection and optimizations
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isMobile) {
+        document.body.classList.add('mobile-device');
+        // Prevent double-tap zoom on iOS
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    }
+
+    if (isIOS) {
+        document.body.classList.add('ios-device');
+        // Fix iOS viewport height issue
+        const setVH = () => {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        };
+        setVH();
+        window.addEventListener('resize', setVH);
+        window.addEventListener('orientationchange', setVH);
+    }
+
     // Initialize the page
     initializePage();
 
@@ -207,6 +236,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
+        // Add touch feedback for mobile
+        if (isMobile) {
+            document.querySelectorAll('.auth-button, .home-button, .toggle-password').forEach(element => {
+                element.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.95)';
+                }, { passive: true });
+                
+                element.addEventListener('touchend', function() {
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 100);
+                }, { passive: true });
+            });
+        }
     }
 
     function addLoadingAnimation() {
@@ -222,6 +266,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 form.style.transform = 'translateY(0)';
             }, 100);
         });
+
+        // Add mobile-specific input improvements
+        if (isMobile) {
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                // Prevent zoom on focus for iOS
+                input.addEventListener('focus', function() {
+                    this.style.fontSize = '16px';
+                });
+                
+                // Add visual feedback on touch
+                input.addEventListener('touchstart', function() {
+                    this.style.borderColor = 'var(--ctu-soft-gold)';
+                }, { passive: true });
+                
+                input.addEventListener('touchend', function() {
+                    setTimeout(() => {
+                        if (document.activeElement !== this) {
+                            this.style.borderColor = '';
+                        }
+                    }, 200);
+                }, { passive: true });
+            });
+        }
     }
 
     // Function to set the container class for sliding
@@ -240,6 +308,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = new URL(window.location);
         url.searchParams.set('mode', isSignUp ? 'signup' : 'signin');
         window.history.replaceState({}, '', url);
+
+        // Scroll to top on mobile when switching forms
+        if (isMobile) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Blur any focused input to hide mobile keyboard
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+        }
     }
 
     // Load rooms and sections from server

@@ -4,6 +4,7 @@ import { handleApiError } from './error-handler.js';
 document.addEventListener('DOMContentLoaded', () => {
     const header = document.querySelector('.ctu-header');
     const ctaButton = document.querySelector('.cta-button');
+    const transitionOverlay = document.getElementById('transition-overlay');
     
     // Header scroll effect
     window.addEventListener('scroll', () => {
@@ -62,6 +63,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (footer) {
         footer.innerHTML = `&copy; ${currentYear} CHRONIX. BSIT 3A - GROUP 4 | Marco Montellano | Rheina Ompoy | Raniza Pepito | Kenneth Brian Tangkay`;
     }
+
+    // Add smooth transition effect when navigating away
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            // Only apply transition to internal links
+            if (link.href && link.href.startsWith(window.location.origin)) {
+                e.preventDefault();
+                transitionOverlay.classList.add('active');
+                
+                setTimeout(() => {
+                    window.location.href = link.href;
+                }, 800);
+            }
+        });
+    });
 });
 
 // Create ripple effect for buttons
@@ -89,19 +105,17 @@ function animateStats() {
     const statNumbers = document.querySelectorAll('.stat-number');
     
     statNumbers.forEach(stat => {
-        const text = stat.innerText;
-        const target = parseInt(text.replace(/\D/g, ''));
-        const suffix = text.replace(/\d+/g, '');
+        const target = parseInt(stat.getAttribute('data-target'));
         let current = 0;
         const increment = target / 50;
         
         const timer = setInterval(() => {
             current += increment;
             if (current >= target) {
-                stat.innerText = text;
+                stat.innerText = target;
                 clearInterval(timer);
             } else {
-                stat.innerText = Math.floor(current) + suffix;
+                stat.innerText = Math.floor(current);
             }
         }, 30);
     });

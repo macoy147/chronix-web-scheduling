@@ -728,13 +728,22 @@ select option {
 
 /* --- Responsive Design --- */
 @media (max-width: 768px) {
+    body {
+        padding: 10px;
+        min-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
     .auth-container {
-        min-height: 80vh;
-        width: 95%;
+        min-height: auto;
+        width: 100%;
+        max-width: 100%;
         display: flex;
         flex-direction: column;
-        max-width: 400px;
-        border-radius: 15px;
+        border-radius: 20px;
+        margin: 0;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     }
     
     .form-container, .overlay-container {
@@ -746,33 +755,47 @@ select option {
         transform: none !important;
         opacity: 1 !important;
         filter: none !important;
+        border: none;
     }
     
     .overlay-container {
         order: -1;
         width: 100%;
-        height: 180px;
-        border-radius: 15px 15px 0 0;
+        height: auto;
+        min-height: 120px;
+        border-radius: 20px 20px 0 0;
+        background: linear-gradient(135deg, var(--ctu-deep-blue) 0%, rgba(0, 45, 98, 0.95) 100%);
     }
 
     .overlay, .overlay-panel {
         width: 100%;
         left: 0;
         transform: none !important;
-        background: var(--ctu-deep-blue) !important;
+        background: transparent !important;
     }
     
     .auth-container.right-panel-active .sign-up-container {
         transform: translateY(0);
         z-index: 2; 
         opacity: 1;
+        display: flex;
+    }
+
+    .auth-container.right-panel-active .sign-in-container {
+        display: none;
     }
     
     .sign-in-container, .sign-up-container {
         height: auto;
-        padding-bottom: 25px;
+        padding-bottom: 20px;
         width: 100%;
         order: 1;
+        border-radius: 0 0 20px 20px;
+        display: flex;
+    }
+
+    .sign-up-container {
+        display: none;
     }
     
     .overlay-right, .overlay-left {
@@ -782,9 +805,11 @@ select option {
     .overlay-panel {
         display: flex;
         flex-direction: row;
-        justify-content: space-around;
+        justify-content: center;
         align-items: center;
         height: 100%;
+        padding: 15px 20px;
+        gap: 10px;
     }
     
     .overlay-panel h1, .overlay-panel p {
@@ -792,9 +817,15 @@ select option {
     }
     
     #signInMobile, #signUpMobile {
-        display: block;
-        font-size: 1em;
-        padding: 10px 20px;
+        display: flex !important;
+        font-size: 0.85em;
+        padding: 12px 20px;
+        white-space: nowrap;
+        width: auto;
+        min-width: auto;
+        border-radius: 25px;
+        justify-content: center;
+        align-items: center;
     }
 
     .auth-container.right-panel-active .overlay-right {
@@ -803,66 +834,242 @@ select option {
 
     /* Mobile adjustments for return button */
     .return-home-btn {
-        top: 10px;
-        left: 10px;
+        top: 15px;
+        left: 15px;
+        z-index: 1001;
     }
 
     .home-button {
-        padding: 10px 18px;
-        font-size: 12px;
+        padding: 10px 16px;
+        font-size: 11px;
+        gap: 6px;
+        border-radius: 20px;
+    }
+
+    .home-button i {
+        font-size: 10px;
     }
 
     /* Mobile adjustments for logos */
     .auth-logos-container {
-        gap: 12px;
+        gap: 10px;
+        margin-bottom: 12px;
+        margin-top: 0;
     }
     
     .auth-logo {
-        width: 35px;
-        height: 35px;
+        width: 32px;
+        height: 32px;
     }
     
     .auth-logo.chronix-logo {
-        width: 35px;
-        height: 35px;
+        width: 32px;
+        height: 32px;
     }
 
     /* Mobile form adjustments */
     form {
-        padding: 25px 30px;
+        padding: 20px 25px;
+        justify-content: flex-start;
+        overflow-y: auto;
+        max-height: none;
     }
 
     /* Mobile form title adjustments */
     form h1 {
-        font-size: 1.5em;
-        padding: 5px 16px;
-        margin-bottom: 8px;
+        font-size: 1.4em;
+        padding: 8px 18px;
+        margin-bottom: 12px;
+    }
+
+    /* Improved input styling for mobile */
+    input, select {
+        padding: 12px 14px;
+        margin: 5px 0;
+        font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 10px;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    /* Better touch targets for mobile */
+    .auth-button {
+        padding: 14px 30px;
+        font-size: 13px;
+        width: 100%;
+        margin-top: 12px;
+        border-radius: 25px;
+        min-height: 48px; /* Better touch target */
     }
 
     /* Stack fields vertically on small screens */
     .row-two-fields {
         flex-direction: column;
         gap: 0;
+        margin: 5px 0;
+    }
+
+    .row-two-fields select,
+    .row-two-fields .birthdate-input-wrapper,
+    .row-two-fields input {
+        width: 100%;
+    }
+
+    /* Password wrapper mobile adjustments */
+    .password-wrapper {
+        margin: 5px 0;
+    }
+
+    .password-wrapper input {
+        padding-right: 45px;
+    }
+
+    .toggle-password {
+        right: 14px;
+        padding: 8px;
+        font-size: 1.2em;
+    }
+
+    /* Forgot link mobile styling */
+    .forgot-link {
+        font-size: 14px;
+        margin: 12px 0;
+        display: inline-block;
     }
 
     /* Mobile notification adjustments */
     .messenger-notif {
-        top: 15px;
-        right: 15px;
-        left: 15px;
+        top: 10px;
+        right: 10px;
+        left: 10px;
         max-width: none;
         min-width: auto;
-        font-size: 12px;
-        padding: 8px 12px;
+        font-size: 13px;
+        padding: 10px 14px;
+        border-radius: 12px;
     }
 
     .notif-icon {
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
     }
 
     .notif-icon i {
-        font-size: 9px;
+        font-size: 10px;
+    }
+
+    /* Improve scrolling on mobile */
+    .auth-container {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Better calendar icon positioning on mobile */
+    .birthdate-input-wrapper input[type="date"] {
+        padding-right: 40px;
+    }
+
+    .birthdate-input-wrapper .calendar-icon {
+        right: 12px;
+        font-size: 1.1em;
+    }
+}
+
+/* Extra small devices (phones in portrait, less than 375px) */
+@media (max-width: 374px) {
+    body {
+        padding: 5px;
+    }
+
+    .auth-container {
+        border-radius: 15px;
+    }
+
+    .overlay-container {
+        border-radius: 15px 15px 0 0;
+        min-height: 100px;
+    }
+
+    .sign-in-container, .sign-up-container {
+        border-radius: 0 0 15px 15px;
+    }
+
+    form {
+        padding: 15px 20px;
+    }
+
+    form h1 {
+        font-size: 1.3em;
+        padding: 6px 14px;
+    }
+
+    input, select {
+        padding: 10px 12px;
+        font-size: 15px;
+    }
+
+    .auth-button {
+        padding: 12px 24px;
+        font-size: 12px;
+    }
+
+    #signInMobile, #signUpMobile {
+        font-size: 0.8em;
+        padding: 10px 16px;
+    }
+
+    .home-button {
+        padding: 8px 12px;
+        font-size: 10px;
+    }
+
+    .messenger-notif {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+}
+
+/* Landscape mode for mobile devices */
+@media (max-width: 768px) and (orientation: landscape) {
+    body {
+        padding: 10px 20px;
+    }
+
+    .auth-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .overlay-container {
+        min-height: 100px;
+    }
+
+    .overlay-panel {
+        padding: 10px 20px;
+    }
+
+    form {
+        padding: 15px 30px;
+    }
+
+    .row-two-fields {
+        flex-direction: row;
+        gap: 10px;
+    }
+}
+
+/* Tablet devices (portrait, 768px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .auth-container {
+        max-width: 700px;
+        width: 85%;
+    }
+
+    form {
+        padding: 25px 35px;
+    }
+
+    input, select {
+        font-size: 15px;
     }
 }
 
@@ -919,4 +1126,93 @@ button:focus-visible {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--ctu-deep-blue);
+}
+
+/* --- Mobile-specific optimizations --- */
+.mobile-device input,
+.mobile-device select,
+.mobile-device textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+}
+
+.mobile-device .auth-button {
+    -webkit-tap-highlight-color: rgba(242, 210, 131, 0.3);
+}
+
+/* iOS-specific fixes */
+.ios-device input,
+.ios-device select {
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 10px;
+}
+
+.ios-device .auth-container {
+    min-height: calc(var(--vh, 1vh) * 100);
+}
+
+/* Prevent text selection on buttons for better mobile UX */
+.auth-button,
+.home-button,
+.toggle-password {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* Improve touch targets */
+@media (hover: none) and (pointer: coarse) {
+    .auth-button,
+    .home-button,
+    input,
+    select {
+        min-height: 44px; /* Apple's recommended minimum touch target */
+    }
+    
+    .toggle-password {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* Smooth scrolling for mobile */
+@media (max-width: 768px) {
+    html {
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    body {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Active state for better mobile feedback */
+.auth-button:active,
+.home-button:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+}
+
+/* Prevent horizontal scroll on mobile */
+@media (max-width: 768px) {
+    body, html {
+        overflow-x: hidden;
+        width: 100%;
+        position: relative;
+    }
+}
+
+/* Better focus states for mobile */
+@media (max-width: 768px) {
+    input:focus,
+    select:focus {
+        transform: none;
+        box-shadow: 0 0 0 3px rgba(242, 210, 131, 0.4);
+    }
 }

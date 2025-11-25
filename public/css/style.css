@@ -37,15 +37,32 @@ body {
     background-position: center;
     background-color: var(--ctu-lightest-gray); /* Fallback color */
     
-    
     color: var(--ctu-text-secondary);
+}
+
+/* Transition Overlay */
+.transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--ctu-deep-blue);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+}
+
+.transition-overlay.active {
+    opacity: 1;
+    pointer-events: all;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
-    
 }
 
 /* 1. Header Styling (Semi-transparent for a frosted glass effect) */
@@ -77,6 +94,23 @@ body {
     font-size: 2em; 
     font-weight: 800;
     color: var(--ctu-deep-blue);
+    position: relative;
+    overflow: hidden;
+}
+
+.logo-text::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--ctu-soft-gold), var(--ctu-light-blue));
+    transition: width 0.3s ease;
+}
+
+.logo-text:hover::after {
+    width: 100%;
 }
 
 .ctu-header nav a {
@@ -89,6 +123,23 @@ body {
     font-weight: 600;
     display: inline-flex;
     align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.ctu-header nav a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.ctu-header nav a:hover::before {
+    left: 100%;
 }
 
 .ctu-header nav a:hover {
@@ -131,13 +182,11 @@ body {
 
 .hero-section::before {
     content: '';
-    position:sticky;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    
-    background: linear-gradient(135deg, rgba(0, 45, 98, 0.7) 0%, rgba(242, 210, 131, 0.5) 100%);
     z-index: 1;
     animation: gradientShift 10s ease infinite;
 }
@@ -145,6 +194,60 @@ body {
 @keyframes gradientShift {
     0%, 100% { opacity: 0.7; }
     50% { opacity: 0.9; }
+}
+
+/* Floating Elements */
+.floating-elements {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.floating-shape {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    filter: blur(1px);
+}
+
+.shape-1 {
+    width: 80px;
+    height: 80px;
+    top: 20%;
+    left: 10%;
+    animation: float 15s ease-in-out infinite;
+}
+
+.shape-2 {
+    width: 120px;
+    height: 120px;
+    top: 60%;
+    left: 80%;
+    animation: float 20s ease-in-out infinite reverse;
+}
+
+.shape-3 {
+    width: 60px;
+    height: 60px;
+    top: 80%;
+    left: 20%;
+    animation: float 12s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    33% {
+        transform: translateY(-20px) rotate(120deg);
+    }
+    66% {
+        transform: translateY(10px) rotate(240deg);
+    }
 }
 
 .hero-text-glass {
@@ -162,7 +265,7 @@ body {
     color: var(--ctu-white);
     text-shadow: 1px 1px 4px rgba(0,0,0,0.55);
     position: relative;
-    z-index: 2;
+    z-index: 3;
     animation: fadeInUp 1s ease-out;
 }
 
@@ -359,6 +462,11 @@ body {
     margin-bottom: 15px;
     color: var(--ctu-soft-gold);
     text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .feature-card h3 {
@@ -404,8 +512,6 @@ body {
     color: var(--ctu-white);
     margin-bottom: 50px;
     position: relative;
-    /*background: rgba(77, 62, 62, 0.1);*/
-
 }
 
 .section-title::after {
@@ -433,7 +539,23 @@ body {
     backdrop-filter: blur(5px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
-    
+    position: relative;
+    overflow: hidden;
+}
+
+.testimonial-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.testimonial-card:hover::before {
+    left: 100%;
 }
 
 .testimonial-card p {
