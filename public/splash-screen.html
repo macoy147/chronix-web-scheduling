@@ -980,6 +980,9 @@
             }
 
             redirectToMain() {
+                // Set flag to prevent splash screen from showing again
+                sessionStorage.setItem('splashSeen', 'true');
+                
                 // Add fade out animation
                 document.body.style.animation = 'fadeOut 0.5s ease forwards';
                 
