@@ -487,6 +487,19 @@ body::before {
     gap: 24px;
 }
 
+@media (max-width: 1200px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
 .kpi-card {
     background: white;
     border-radius: 16px;
@@ -625,6 +638,13 @@ body::before {
     gap: 24px;
 }
 
+@media (max-width: 900px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
 .chart-container {
     background: white;
     border-radius: 16px;
@@ -707,11 +727,18 @@ body::before {
 .chart-wrapper {
     position: relative;
     height: 300px;
+    min-height: 300px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .chart-wrapper canvas {
     width: 100% !important;
     height: 100% !important;
+    max-width: 100%;
+    display: block !important;
 }
 
 /* Enhanced Actions & Activity Section */
@@ -1146,15 +1173,44 @@ body::before {
     }
     
     .chart-container {
-        padding: 16px;
+        padding: 20px 16px;
+        margin-bottom: 16px;
     }
     
     .chart-wrapper {
-        height: 250px;
+        height: 320px !important;
+        min-height: 320px;
+        position: relative;
+        width: 100%;
+    }
+    
+    .chart-wrapper canvas {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 320px;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .chart-filter {
+        width: 100%;
+        padding: 10px 14px;
+        font-size: 0.9em;
     }
     
     .admin-dashboard-main {
         transform: scale(1);
+        padding-bottom: 30px;
     }
     
     .connection-status {
@@ -1162,26 +1218,55 @@ body::before {
         right: 10px;
         font-size: 0.7em;
     }
+    
+    /* Ensure charts are visible and scrollable */
+    .charts-section {
+        overflow-x: hidden;
+        overflow-y: visible;
+    }
 }
 
 @media (max-width: 480px) {
     .kpi-card {
-        padding: 16px;
+        padding: 18px 16px;
     }
     
     .kpi-value {
-        font-size: 1.8em;
+        font-size: 2em;
     }
     
     .charts-grid {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
     
     .chart-wrapper {
-        height: 200px;
+        height: 280px !important;
+        min-height: 280px;
+    }
+    
+    .chart-wrapper canvas {
+        max-height: 280px;
+    }
+    
+    .chart-container {
+        padding: 16px 12px;
+    }
+    
+    .chart-header h3 {
+        font-size: 1em;
     }
     
     .actions-card, .activity-card {
+        padding: 16px;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .action-btn {
         padding: 16px;
     }
 }

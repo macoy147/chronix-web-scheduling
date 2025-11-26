@@ -8084,3 +8084,46 @@
 {"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
 {"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
 {"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"level":"info","message":"🚀 Server running on port 3002","service":"chronix-backend"}
+{"level":"info","message":"🔧 Debug endpoints available:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/test","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/test-users","service":"chronix-backend"}
+{"level":"info","message":"📧 Default admin credentials:","service":"chronix-backend"}
+{"level":"info","message":"   - Email: admin@gmail.com","service":"chronix-backend"}
+{"level":"info","message":"   - Password: admin","service":"chronix-backend"}
+{"level":"info","message":"🖼️ Profile pictures: Stored as Base64 in MongoDB","service":"chronix-backend"}
+{"level":"info","message":"🎓 Student endpoints:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/users/students","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/users/students/section/:section","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/users/students/year-level/:yearLevel","service":"chronix-backend"}
+{"level":"info","message":"📊 Dashboard endpoints:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/dashboard-counts","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/room-stats","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/students-per-section","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/students-per-room","service":"chronix-backend"}
+{"level":"info","message":"🔔 Notification endpoints:","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/notifications/:userId","service":"chronix-backend"}
+{"level":"info","message":"   - http://localhost:3002/notifications/:id/read","service":"chronix-backend"}
+{"level":"info","message":"✅ Connected to MongoDB!","service":"chronix-backend"}
+{"level":"info","message":"✅ Admin user already exists","service":"chronix-backend"}
+{"level":"info","message":"✅ Subject indexes synchronized.","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /index.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/style.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/script.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/educ_animated1.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /splash-screen.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /favicon.ico","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /index.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/style.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/script.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/educ_animated1.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /auth.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/auth.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/educ_animated1.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
