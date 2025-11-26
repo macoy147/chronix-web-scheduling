@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONIX - Manage Schedules (Mobile)</title>
+    <meta name="description" content="CTU CHRONIX Schedule Management - Mobile Version">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/css/admin-schedules.css" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style">
+    
+    <link rel="stylesheet" href="/css/admin-schedules.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#002D62">
+    <link rel="manifest" href="/manifest.json">
+    
+    <style>
+        /* Mobile-specific styles */
+        :root {
+            --mobile-padding: 16px;
+            --mobile-nav-height: 60px;
+            --mobile-bottom-nav-height: 70px;
+        }
+        
+        /* Prevent horizontal scrolling */
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+        
+        /* Mobile Navigation - Swipeable Slider */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--ctu-deep-blue);
+            height: var(--mobile-bottom-nav-height);
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .mobile-nav-items {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 0 12px;
+            gap: 8px;
+        }
+        
+        .mobile-nav-items::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            min-width: 70px;
+            padding: 8px 12px;
+            color: var(--ctu-white);
+            text-decoration: none;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all var(--transition-fast) ease;
+            border-radius: 8px;
+        }
+        
+        .mobile-nav-item.active {
+            background: var(--ctu-soft-gold);
+            color: var(--ctu-deep-blue);
+        }
+        
+        .mobile-nav-item i {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--ctu-deep-blue);
+            height: var(--mobile-nav-height);
+            z-index: 1000;
+            padding: 0 var(--mobile-padding);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mobile-header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+        
+        .mobile-logo-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .mobile-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .mobile-app-title {
+            color: var(--ctu-soft-gold);
+            font-weight: 700;
+            font-size: 1rem;
+            margin-left: 4px;
+        }
+        
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            color: var(--ctu-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background var(--transition-fast) ease;
+        }
+        
+        .mobile-menu-btn:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Mobile Side Menu - Same as other mobile pages */
+        .mobile-side-menu {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 85%;
+            max-width: 320px;
+            height: 100%;
+            background: var(--ctu-deep-blue);
+            z-index: 2000;
+            transition: left var(--transition-medium) ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 0;
+        }
+        
+        .mobile-side-menu.open {
+            left: 0;
+        }
+        
+        .mobile-side-menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .mobile-side-menu-close {
+            background: none;
+            border: none;
+            color: var(--ctu-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .mobile-side-menu-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 20px 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-profile-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .mobile-profile-info {
+            flex: 1;
+        }
+        
+        .mobile-profile-name {
+            color: var(--ctu-white);
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .mobile-profile-role {
+            color: var(--ctu-soft-gold);
+            font-size: 0.85rem;
+        }
+        
+        .mobile-side-menu-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mobile-side-menu-links li {
+            margin: 0;
+        }
+        
+        .mobile-side-menu-links a {
+            display: flex;
+            align-items: center;
+            color: var(--ctu-white);
+            text-decoration: none;
+            padding: 16px 20px;
+            transition: all var(--transition-fast) ease;
+            font-weight: 500;
+        }
+        
+        .mobile-side-menu-links a i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .mobile-side-menu-links a.active,
+        .mobile-side-menu-links a:active {
+            background: var(--ctu-soft-gold);
+            color: var(--ctu-deep-blue);
+        }
+        
+        .mobile-side-menu-footer {
+            padding: 20px;
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-logout-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background: none;
+            border: none;
+            color: var(--ctu-white);
+            padding: 12px 0;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .mobile-logout-btn i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+        
+        /* Mobile Main Content */
+        .mobile-main-content {
+            display: none;
+            padding: 12px;
+            padding-bottom: calc(var(--mobile-bottom-nav-height) + 12px);
+            min-height: 100vh;
+            background: var(--ctu-lightest-gray);
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+        
+        /* Mobile Schedules Header */
+        .mobile-schedules-header {
+            margin-bottom: 20px;
+        }
+        
+        .mobile-schedules-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 16px;
+        }
+        
+        /* Mobile Filters */
+        .mobile-filters {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .mobile-filter-row {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .mobile-filter-select {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e5e8eb;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #fff;
+            font-family: inherit;
+        }
+        
+        .mobile-shift-toggle {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .mobile-shift-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--ctu-light-blue);
+            background: #fff;
+            color: var(--ctu-light-blue);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .mobile-shift-btn.active {
+            background: var(--ctu-light-blue);
+            color: #fff;
+        }
+        
+        .mobile-shift-btn:active {
+            transform: scale(0.98);
+        }
+        
+        /* Mobile Create Button */
+        .mobile-create-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--ctu-red-accent) 0%, #7a0009 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95em;
+            font-weight: 600;
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all .3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(163, 0, 12, 0.3);
+            margin-bottom: 20px;
+        }
+        
+        .mobile-create-btn:active {
+            transform: scale(0.98);
+        }
+        
+        /* Mobile Schedule Cards */
+        .mobile-schedules-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .mobile-day-group {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .mobile-day-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ctu-light-blue);
+        }
+        
+        .mobile-schedule-card {
+            background: #f8f9fb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--ctu-light-blue);
+        }
+        
+        .mobile-schedule-card.lab {
+            border-left-color: var(--ctu-soft-gold);
+        }
+        
+        .mobile-schedule-time {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ctu-red-accent);
+            margin-bottom: 6px;
+        }
+        
+        .mobile-schedule-subject {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 4px;
+        }
+        
+        .mobile-schedule-details {
+            font-size: 0.85rem;
+            color: var(--ctu-text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .mobile-schedule-actions {
+            display: flex;
+            gap: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e5e8eb;
+        }
+        
+        .mobile-schedule-action-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .mobile-schedule-action-btn.edit {
+            background: #f2d28333;
+            color: #c19b26;
+        }
+        
+        .mobile-schedule-action-btn.delete {
+            background: #ffe2b4;
+            color: #d8000c;
+        }
+        
+        .mobile-schedule-action-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Mobile Overlay */
+        .mobile-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            display: none;
+        }
+        
+        .mobile-overlay.open {
+            display: block;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .admin-nav, .admin-schedules-main {
+                display: none;
+            }
+            
+            .mobile-header, .mobile-main-content, .mobile-nav {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <div class="mobile-header-content">
+            <div class="mobile-logo-container">
+                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
+                <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
+                <span class="mobile-app-title">CHRONIX</span>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Side Menu -->
+    <div class="mobile-side-menu" id="mobileSideMenu">
+        <div class="mobile-side-menu-header">
+            <div class="mobile-logo-container">
+                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
+                <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
+                <span class="mobile-app-title">CHRONIX</span>
+            </div>
+            <button class="mobile-side-menu-close" id="mobileSideMenuClose" aria-label="Close menu">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        
+        <div class="mobile-side-menu-profile">
+            <img id="mobileProfileAvatar" src="/img/default_admin_avatar.png" alt="Admin Avatar" class="mobile-profile-img">
+            <div class="mobile-profile-info">
+                <div class="mobile-profile-name" id="mobileProfileName">Admin User</div>
+                <div class="mobile-profile-role">Administrator</div>
+            </div>
+        </div>
+        
+        <ul class="mobile-side-menu-links" role="navigation">
+            <li>
+                <a href="admin-dashboard.html">
+                    <i class="bi bi-speedometer2"></i> 
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-subjects.html">
+                    <i class="bi bi-book"></i> 
+                    <span>Subjects</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-sections.html">
+                    <i class="bi bi-layers"></i> 
+                    <span>Sections</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-rooms.html">
+                    <i class="bi bi-door-open"></i> 
+                    <span>Rooms</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="active" aria-current="page">
+                    <i class="bi bi-calendar-event"></i> 
+                    <span>Schedules</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-students.html">
+                    <i class="bi bi-mortarboard"></i> 
+                    <span>Students</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-teachers.html">
+                    <i class="bi bi-person-badge"></i> 
+                    <span>Teachers</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-profile.html">
+                    <i class="bi bi-person"></i> 
+                    <span>Profile</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="mobile-side-menu-footer">
+            <button class="mobile-logout-btn" id="mobileLogoutBtn">
+                <i class="bi bi-box-arrow-right"></i> 
+                <span>Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- Mobile Main Content -->
+    <main class="mobile-main-content" role="main">
+        <!-- Schedules Header -->
+        <div class="mobile-schedules-header">
+            <h1 class="mobile-schedules-title">Manage Schedules</h1>
+            
+            <!-- Filters -->
+            <div class="mobile-filters">
+                <div class="mobile-filter-row">
+                    <select id="mobileYearLevelSelect" class="mobile-filter-select">
+                        <option value="">Select Year Level</option>
+                        <option value="1">Year 1</option>
+                        <option value="2">Year 2</option>
+                        <option value="3">Year 3</option>
+                        <option value="4">Year 4</option>
+                    </select>
+                </div>
+                <div class="mobile-shift-toggle">
+                    <button class="mobile-shift-btn active" id="mobileDayShiftBtn">
+                        <i class="bi bi-sun"></i> Day
+                    </button>
+                    <button class="mobile-shift-btn" id="mobileNightShiftBtn">
+                        <i class="bi bi-moon"></i> Night
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Create Button -->
+            <button class="mobile-create-btn" id="mobileOpenScheduleModal">
+                <i class="bi bi-plus-circle"></i> 
+                <span>Create New Schedule</span>
+            </button>
+        </div>
+
+        <!-- Schedules List -->
+        <div class="mobile-schedules-list" id="mobileSchedulesList">
+            <!-- Populated by JavaScript -->
+            <div style="text-align: center; padding: 40px 20px; color: #999;">
+                <i class="bi bi-hourglass-split" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                <span>Select year level to view schedules...</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" role="navigation" aria-label="Mobile navigation">
+        <div class="mobile-nav-items">
+            <a href="admin-dashboard.html" class="mobile-nav-item">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="admin-subjects.html" class="mobile-nav-item">
+                <i class="bi bi-book"></i>
+                <span>Subjects</span>
+            </a>
+            <a href="admin-sections.html" class="mobile-nav-item">
+                <i class="bi bi-layers"></i>
+                <span>Sections</span>
+            </a>
+            <a href="admin-rooms.html" class="mobile-nav-item">
+                <i class="bi bi-door-open"></i>
+                <span>Rooms</span>
+            </a>
+            <a href="#" class="mobile-nav-item active" aria-current="page">
+                <i class="bi bi-calendar-event"></i>
+                <span>Schedules</span>
+            </a>
+            <a href="admin-students.html" class="mobile-nav-item">
+                <i class="bi bi-mortarboard"></i>
+                <span>Students</span>
+            </a>
+            <a href="admin-teachers.html" class="mobile-nav-item">
+                <i class="bi bi-person-badge"></i>
+                <span>Teachers</span>
+            </a>
+        </div>
+    </nav>
+
+
+    <!-- Hidden desktop elements for JavaScript compatibility -->
+    <div style="display: none;">
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div id="subjectAssignmentContainer"></div>
+    </div>
+
+    <!-- Modals from desktop version -->
+    <div id="scheduleModal" class="modal-overlay" style="display:none;">
+     
+      <!-- Modal content will be handled by desktop JavaScript -->
+    </div>
+
+    <div id="scheduleBubbleMessage" class="schedule-bubble-message"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="/js/api-config.js"></script>
+    <script type="module" src="/js/error-handler.js"></script>
+    <script type="module" src="/js/auth-guard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script type="module" src="/js/admin-schedules.js"></script>
+    
+    <!-- Mobile-specific JavaScript -->
+    <script type="module">
+    import AuthGuard from '/js/auth-guard.js';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Mobile Admin Schedules loaded');
+        
+        // Check authentication first
+        if (!AuthGuard.checkAuthentication('admin')) {
+            return;
+        }
+
+        // Mobile menu functionality
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileSideMenu = document.getElementById('mobileSideMenu');
+        const mobileSideMenuClose = document.getElementById('mobileSideMenuClose');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        
+        function openMobileMenu() {
+            mobileSideMenu.classList.add('open');
+            mobileOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeMobileMenu() {
+            mobileSideMenu.classList.remove('open');
+            mobileOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        
+        mobileMenuBtn.addEventListener('click', openMobileMenu);
+        mobileSideMenuClose.addEventListener('click', closeMobileMenu);
+        mobileOverlay.addEventListener('click', closeMobileMenu);
+        
+        // Close menu when clicking on links
+        document.querySelectorAll('.mobile-side-menu-links a').forEach(link => {
+            link.addEventListener('click', closeMobileMenu);
+        });
+        
+        // Mobile logout functionality
+        const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+        if (mobileLogoutBtn) {
+            mobileLogoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                if (confirm('Are you sure you want to logout?')) {
+                    AuthGuard.logout();
+                }
+            });
+        }
+        
+        // Update mobile profile info
+        function updateMobileProfileInfo() {
+            const currentUser = AuthGuard.getCurrentUser();
+            if (currentUser) {
+                const mobileProfileName = document.getElementById('mobileProfileName');
+                if (mobileProfileName) {
+                    mobileProfileName.textContent = currentUser.fullname;
+                }
+
+                const mobileProfileAvatar = document.getElementById('mobileProfileAvatar');
+                if (mobileProfileAvatar) {
+                    if (currentUser.profilePicture) {
+                        mobileProfileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                            ? currentUser.profilePicture 
+                            : currentUser.profilePicture;
+                    } else {
+                        mobileProfileAvatar.src = '/img/default_admin_avatar.png';
+                    }
+                }
+            }
+        }
+        
+        updateMobileProfileInfo();
+        
+        // Mobile shift toggle
+        const mobileDayShiftBtn = document.getElementById('mobileDayShiftBtn');
+        const mobileNightShiftBtn = document.getElementById('mobileNightShiftBtn');
+        let currentShift = 'day'; // lowercase to match database
+        
+        mobileDayShiftBtn.addEventListener('click', () => {
+            currentShift = 'day';
+            mobileDayShiftBtn.classList.add('active');
+            mobileNightShiftBtn.classList.remove('active');
+            loadMobileSchedules();
+        });
+        
+        mobileNightShiftBtn.addEventListener('click', () => {
+            currentShift = 'night';
+            mobileNightShiftBtn.classList.add('active');
+            mobileDayShiftBtn.classList.remove('active');
+            loadMobileSchedules();
+        });
+        
+        // Mobile year level selector
+        const mobileYearLevelSelect = document.getElementById('mobileYearLevelSelect');
+        let currentYearLevel = '';
+        
+        mobileYearLevelSelect.addEventListener('change', () => {
+            currentYearLevel = mobileYearLevelSelect.value;
+            loadMobileSchedules();
+        });
+        
+        let allMobileSchedules = [];
+        
+        function displayMobileSchedules(schedules) {
+            const mobileSchedulesList = document.getElementById('mobileSchedulesList');
+            if (!mobileSchedulesList) return;
+            
+            if (!schedules || schedules.length === 0) {
+                mobileSchedulesList.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #999;">
+                        <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                        <span>No schedules found for the selected filters.</span>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Group schedules by day
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const groupedSchedules = {};
+            
+            days.forEach(day => {
+                groupedSchedules[day] = schedules.filter(s => s.day === day);
+            });
+            
+            mobileSchedulesList.innerHTML = '';
+            
+            days.forEach(day => {
+                const daySchedules = groupedSchedules[day];
+                if (daySchedules.length > 0) {
+                    const dayGroup = document.createElement('div');
+                    dayGroup.className = 'mobile-day-group';
+                    
+                    let dayHTML = `<div class="mobile-day-header">${day}</div>`;
+                    
+                    daySchedules.forEach(schedule => {
+                        const isLab = schedule.subjectType === 'Lab';
+                        dayHTML += `
+                            <div class="mobile-schedule-card ${isLab ? 'lab' : ''}">
+                                <div class="mobile-schedule-time">
+                                    ${schedule.startTime} - ${schedule.endTime}
+                                </div>
+                                <div class="mobile-schedule-subject">
+                                    ${schedule.subjectCode || 'N/A'}
+                                </div>
+                                <div class="mobile-schedule-details">
+                                    <div><i class="bi bi-person"></i> ${schedule.teacherName || 'No teacher'}</div>
+                                    <div><i class="bi bi-door-open"></i> ${schedule.roomName || 'No room'}</div>
+                                    <div><i class="bi bi-layers"></i> ${schedule.sectionName || 'No section'}</div>
+                                </div>
+                                <div class="mobile-schedule-actions">
+                                    <button class="mobile-schedule-action-btn edit" data-id="${schedule._id}">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    <button class="mobile-schedule-action-btn delete" data-id="${schedule._id}">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    dayGroup.innerHTML = dayHTML;
+                    mobileSchedulesList.appendChild(dayGroup);
+                }
+            });
+            
+            // Attach event listeners
+            attachMobileScheduleListeners();
+        }
+        
+        function attachMobileScheduleListeners() {
+            const mobileSchedulesList = document.getElementById('mobileSchedulesList');
+            if (!mobileSchedulesList) return;
+            
+            // Edit buttons
+            mobileSchedulesList.querySelectorAll('.edit').forEach(btn => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-id');
+                    // Trigger desktop edit function if available
+                    if (window.openEditScheduleModal) {
+                        window.openEditScheduleModal(id);
+                    } else {
+                        alert('Edit functionality will be available soon');
+                    }
+                };
+            });
+            
+            // Delete buttons
+            mobileSchedulesList.querySelectorAll('.delete').forEach(btn => {
+                btn.onclick = async () => {
+                    const id = btn.getAttribute('data-id');
+                    const schedule = allMobileSchedules.find(s => s._id === id);
+                    
+                    if (confirm(`Are you sure you want to delete this schedule?\n${schedule?.subjectCode || 'Schedule'} on ${schedule?.day || ''}`)) {
+                        try {
+                            const res = await fetch(`/schedules/${id}`, {
+                                method: 'DELETE'
+                            });
+                            
+                            if (res.ok) {
+                                showBubbleMessage('Schedule deleted successfully!', 'success');
+                                loadMobileSchedules();
+                            } else {
+                                const result = await res.json();
+                                showBubbleMessage(result.error || 'Failed to delete schedule', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting schedule:', error);
+                            showBubbleMessage('Network error. Please try again.', 'error');
+                        }
+                    }
+                };
+            });
+        }
+        
+        // Load schedules for mobile
+        async function loadMobileSchedules() {
+            if (!currentYearLevel) {
+                const mobileSchedulesList = document.getElementById('mobileSchedulesList');
+                if (mobileSchedulesList) {
+                    mobileSchedulesList.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px; color: #999;">
+                            <i class="bi bi-funnel" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                            <span>Select year level to view schedules...</span>
+                        </div>
+                    `;
+                }
+                return;
+            }
+            
+            try {
+                const res = await fetch('/schedules');
+                const data = await res.json();
+                
+                console.log('Fetched schedules:', data);
+                console.log('Filtering by yearLevel:', currentYearLevel, 'shift:', currentShift);
+                
+                // Filter by year level and shift
+                allMobileSchedules = Array.isArray(data) ? data.filter(schedule => {
+                    // Handle both string and number year levels
+                    const yearMatch = schedule.yearLevel == currentYearLevel || 
+                                     schedule.yearLevel === parseInt(currentYearLevel);
+                    
+                    // Handle case-insensitive shift matching
+                    const shiftMatch = schedule.shift && 
+                                      schedule.shift.toLowerCase() === currentShift.toLowerCase();
+                    
+                    console.log('Schedule:', schedule.subjectCode, 'Year:', schedule.yearLevel, 'Shift:', schedule.shift, 
+                               'YearMatch:', yearMatch, 'ShiftMatch:', shiftMatch);
+                    
+                    return yearMatch && shiftMatch;
+                }) : [];
+                
+                console.log('Filtered schedules:', allMobileSchedules.length);
+                displayMobileSchedules(allMobileSchedules);
+            } catch (error) {
+                console.error('Error loading schedules:', error);
+                const mobileSchedulesList = document.getElementById('mobileSchedulesList');
+                if (mobileSchedulesList) {
+                    mobileSchedulesList.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px; color: #d8000c;">
+                            <i class="bi bi-exclamation-triangle" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                            <span>Error loading schedules.</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        // Notification system
+        function showBubbleMessage(msg, type = "success") {
+            const bubble = document.getElementById('scheduleBubbleMessage');
+            if (!bubble) return;
+            
+            bubble.textContent = msg;
+            bubble.classList.remove("show", "success", "error");
+            bubble.classList.add(type);
+            void bubble.offsetWidth;
+            bubble.classList.add("show");
+            
+            setTimeout(() => {
+                bubble.classList.remove("show");
+            }, 3000);
+        }
+        
+        // Mobile create button
+        const mobileOpenScheduleModal = document.getElementById('mobileOpenScheduleModal');
+        const openScheduleModal = document.getElementById('openScheduleModal');
+        if (mobileOpenScheduleModal && openScheduleModal) {
+            mobileOpenScheduleModal.addEventListener('click', () => {
+                openScheduleModal.click();
+            });
+        }
+        
+        // Make bottom navigation swipeable
+        const mobileNavItems = document.querySelector('.mobile-nav-items');
+        if (mobileNavItems) {
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            mobileNavItems.addEventListener('mousedown', (e) => {
+                isDown = true;
+                startX = e.pageX - mobileNavItems.offsetLeft;
+                scrollLeft = mobileNavItems.scrollLeft;
+            });
+
+            mobileNavItems.addEventListener('mouseleave', () => {
+                isDown = false;
+            });
+
+            mobileNavItems.addEventListener('mouseup', () => {
+                isDown = false;
+            });
+
+            mobileNavItems.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - mobileNavItems.offsetLeft;
+                const walk = (x - startX) * 2;
+                mobileNavItems.scrollLeft = scrollLeft - walk;
+            });
+
+            // Touch events for mobile
+            let touchStartX = 0;
+            let touchScrollLeft = 0;
+
+            mobileNavItems.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].pageX;
+                touchScrollLeft = mobileNavItems.scrollLeft;
+            }, { passive: true });
+
+            mobileNavItems.addEventListener('touchmove', (e) => {
+                const touchX = e.touches[0].pageX;
+                const walk = (touchStartX - touchX) * 1.5;
+                mobileNavItems.scrollLeft = touchScrollLeft + walk;
+            }, { passive: true });
+        }
+    });
+    </script>
+    
+    <!-- Mobile detection and redirection -->
+    <script>
+    // Mobile detection and redirection
+    function isMobileDevice() {
+        return window.innerWidth <= 768 || 
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // Prevent redirect loops and multiple rapid redirects
+    let lastRedirectTime = 0;
+    const REDIRECT_COOLDOWN = 1000; // 1 second cooldown
+
+    function shouldRedirectToMobile() {
+        const now = Date.now();
+        if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+            return false;
+        }
+        
+        return isMobileDevice() && !window.location.pathname.includes('-mobile');
+    }
+
+    function shouldRedirectToDesktop() {
+        const now = Date.now();
+        if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+            return false;
+        }
+        
+        return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+    }
+
+    // Initial redirect check - redirect to desktop if screen is large
+    if (shouldRedirectToDesktop()) {
+        lastRedirectTime = Date.now();
+        console.log('Redirecting to desktop version...');
+        window.location.href = '/admin-schedules.html';
+    }
+
+    // Handle resize events with debouncing
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (shouldRedirectToMobile()) {
+                lastRedirectTime = Date.now();
+                console.log('Screen resized - redirecting to mobile version...');
+                window.location.href = '/admin-schedules-mobile.html';
+            }
+            else if (shouldRedirectToDesktop()) {
+                lastRedirectTime = Date.now();
+                console.log('Screen resized - redirecting to desktop version...');
+                window.location.href = '/admin-schedules.html';
+            }
+        }, 250);
+    });
+    </script>
+</body>
+</html>

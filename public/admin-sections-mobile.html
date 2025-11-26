@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHRONIX - Manage Rooms (Mobile)</title>
-    <meta name="description" content="CTU CHRONIX Room Management - Mobile Version">
+    <title>CHRONIX - Manage Sections (Mobile)</title>
+    <meta name="description" content="CTU CHRONIX Section Management - Mobile Version">
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="/css/admin-rooms.css" as="style">
+    <link rel="preload" href="/css/admin-sections.css" as="style">
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style">
     
-    <link rel="stylesheet" href="/css/admin-rooms.css">
+    <link rel="stylesheet" href="/css/admin-sections.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
@@ -288,57 +288,22 @@
             box-sizing: border-box;
         }
         
-        /* Mobile Rooms Header */
-        .mobile-rooms-header {
+        /* Mobile Sections Header */
+        .mobile-sections-header {
             margin-bottom: 20px;
         }
         
-        .mobile-rooms-title {
+        .mobile-sections-title {
             font-size: 1.5rem;
             font-weight: 800;
             color: var(--ctu-deep-blue);
             margin-bottom: 16px;
         }
         
-        /* Mobile Search Box */
-        .mobile-search-box {
-            position: relative;
-            margin-bottom: 16px;
-        }
-        
-        .mobile-search-box i {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--ctu-text-secondary);
-            font-size: 1.1em;
-            pointer-events: none;
-        }
-        
-        .mobile-search-box input {
-            width: 100%;
-            padding: 12px 16px 12px 45px;
-            border: 2px solid #e5e8eb;
-            border-radius: 10px;
-            font-size: 0.95em;
-            background: #fff;
-            transition: all 0.3s ease;
-            font-family: inherit;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-        
-        .mobile-search-box input:focus {
-            outline: none;
-            border-color: var(--ctu-light-blue);
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(62, 142, 222, 0.12);
-        }
-        
         /* Mobile Create Button */
         .mobile-create-btn {
             width: 100%;
-            background: linear-gradient(135deg, var(--ctu-light-blue) 0%, #2E7ECE 100%);
+            background: linear-gradient(135deg, var(--ctu-light-blue) 0%, var(--ctu-deep-blue) 100%);
             color: #fff;
             border: none;
             border-radius: 10px;
@@ -359,14 +324,14 @@
             transform: scale(0.98);
         }
         
-        /* Mobile Room Cards */
-        .mobile-rooms-list {
+        /* Mobile Section Cards */
+        .mobile-sections-list {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
         
-        .mobile-room-card {
+        .mobile-section-card {
             background: white;
             border-radius: 12px;
             padding: 16px;
@@ -376,7 +341,7 @@
             overflow: hidden;
         }
         
-        .mobile-room-card::before {
+        .mobile-section-card::before {
             content: '';
             position: absolute;
             top: 0;
@@ -386,66 +351,76 @@
             background: var(--ctu-light-blue);
         }
         
-        .mobile-room-header {
+        .mobile-section-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 12px;
         }
         
-        .mobile-room-name {
+        .mobile-section-name {
             font-size: 1.1rem;
             font-weight: 700;
             color: var(--ctu-deep-blue);
             margin-bottom: 4px;
         }
         
-        .mobile-room-building {
+        .mobile-section-program {
             font-size: 0.85rem;
             color: var(--ctu-text-secondary);
+            font-weight: 500;
         }
         
-        .mobile-room-status {
+        .mobile-section-status {
             padding: 4px 10px;
             border-radius: 12px;
             font-size: 0.75rem;
             font-weight: 600;
-            text-transform: uppercase;
             white-space: nowrap;
         }
         
-        .mobile-room-details {
+        .mobile-section-status.active {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .mobile-section-status.archived {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .mobile-section-details {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
             margin-bottom: 12px;
         }
         
-        .mobile-room-detail {
+        .mobile-section-detail {
             display: flex;
             flex-direction: column;
         }
         
-        .mobile-room-detail-label {
+        .mobile-section-detail-label {
             font-size: 0.75rem;
             color: var(--ctu-text-secondary);
             margin-bottom: 4px;
         }
         
-        .mobile-room-detail-value {
+        .mobile-section-detail-value {
             font-size: 0.9rem;
             font-weight: 600;
             color: var(--ctu-text-primary);
         }
         
-        .mobile-room-actions {
+        .mobile-section-actions {
             display: flex;
             gap: 8px;
             padding-top: 12px;
             border-top: 1px solid #f1f3f6;
         }
         
-        .mobile-room-action-btn {
+        .mobile-section-action-btn {
             flex: 1;
             padding: 10px;
             border: none;
@@ -460,17 +435,17 @@
             gap: 6px;
         }
         
-        .mobile-room-action-btn.edit {
+        .mobile-section-action-btn.edit {
             background: #f2d28333;
             color: #c19b26;
         }
         
-        .mobile-room-action-btn.delete {
+        .mobile-section-action-btn.delete {
             background: #ffe2b4;
             color: #d8000c;
         }
         
-        .mobile-room-action-btn:active {
+        .mobile-section-action-btn:active {
             transform: scale(0.95);
         }
         
@@ -552,13 +527,13 @@
                 </a>
             </li>
             <li>
-                <a href="admin-sections.html">
+                <a href="#" class="active" aria-current="page">
                     <i class="bi bi-layers"></i> 
                     <span>Sections</span>
                 </a>
             </li>
             <li>
-                <a href="#" class="active" aria-current="page">
+                <a href="admin-rooms.html">
                     <i class="bi bi-door-open"></i> 
                     <span>Rooms</span>
                 </a>
@@ -602,29 +577,23 @@
 
     <!-- Mobile Main Content -->
     <main class="mobile-main-content" role="main">
-        <!-- Rooms Header -->
-        <div class="mobile-rooms-header">
-            <h1 class="mobile-rooms-title">Manage Rooms</h1>
-            
-            <!-- Search Box -->
-            <div class="mobile-search-box">
-                <i class="bi bi-search"></i>
-                <input type="text" id="mobileRoomSearch" placeholder="Search rooms..." />
-            </div>
+        <!-- Sections Header -->
+        <div class="mobile-sections-header">
+            <h1 class="mobile-sections-title">Manage Sections</h1>
             
             <!-- Create Button -->
-            <button class="mobile-create-btn" id="mobileOpenRoomModal">
+            <button class="mobile-create-btn" id="mobileOpenSectionModal">
                 <i class="bi bi-plus-circle"></i> 
-                <span>Create New Room</span>
+                <span>Create New Section</span>
             </button>
         </div>
 
-        <!-- Rooms List -->
-        <div class="mobile-rooms-list" id="mobileRoomsList">
+        <!-- Sections List -->
+        <div class="mobile-sections-list" id="mobileSectionsList">
             <!-- Populated by JavaScript -->
             <div style="text-align: center; padding: 40px 20px; color: #999;">
                 <i class="bi bi-hourglass-split" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                <span>Loading rooms...</span>
+                <span>Loading sections...</span>
             </div>
         </div>
     </main>
@@ -640,11 +609,11 @@
                 <i class="bi bi-book"></i>
                 <span>Subjects</span>
             </a>
-            <a href="admin-sections.html" class="mobile-nav-item">
+            <a href="#" class="mobile-nav-item active" aria-current="page">
                 <i class="bi bi-layers"></i>
                 <span>Sections</span>
             </a>
-            <a href="#" class="mobile-nav-item active" aria-current="page">
+            <a href="admin-rooms.html" class="mobile-nav-item">
                 <i class="bi bi-door-open"></i>
                 <span>Rooms</span>
             </a>
@@ -665,92 +634,115 @@
 
     <!-- Hidden desktop table for JavaScript compatibility -->
     <div style="display: none;">
-        <table class="rooms-table">
-            <tbody id="roomsTableBody"></tbody>
+        <table class="sections-table">
+            <tbody id="sectionsTableBody"></tbody>
         </table>
     </div>
 
-    <!-- Modal for Creating/Editing Room -->
-    <div id="roomModal" class="modal-overlay" style="display:none;">
+
+    <!-- Modal for Creating/Editing Section -->
+    <div id="sectionModal" class="modal-overlay" style="display:none;">
         <div class="modal-content horizontal-modal">
-            <h3>Create New Room</h3>
-            <form id="roomForm">
+            <h3 id="sectionModalTitle">Create New Section</h3>
+            <form id="sectionForm">
                 <div class="horizontal-grid">
                     <div class="form-row">
-                        <input type="text" name="roomName" placeholder="Room Name" required />
+                        <input type="text" name="sectionName" placeholder="Section Name" required />
                     </div>
                     <div class="form-row">
-                        <select name="building" required>
-                            <option value="" disabled selected>Building</option>
-                            <option value="College of Technology(CoTe) Building">College of Technology(CoTe) Building</option>
-                            <option value="College of Education(CoEd) Building">College of Education(CoEd) Building</option>
+                        <select name="programID" required>
+                            <option value="" disabled selected>Program</option>
+                            <option value="BSIT">BSIT</option>
+                            <option value="BIT-ELECTRONIX">BIT-ELECTRONIX</option>
+                            <option value="BIT-AUTOMOTIVE">BIT-AUTOMOTIVE</option>
+                            <option value="BIT-COMPUTER TECHNOLOGY">BIT-COMPUTER TECHNOLOGY</option>
+                            <option value="BSIE">BSIE</option>
+                            <option value="BTLEd">BTLEd</option>
+                            <option value="BEED">BEED</option>
+                            <option value="BSFi">BSFi</option>
+                            <option value="BSHM">BSHM</option>
+                            <option value="BSEd-MATH">BSEd-MATH</option>
                         </select>
                     </div>
                     <div class="form-row">
-                        <select name="roomType" required>
-                            <option value="" disabled selected>Room Type</option>
-                            <option value="Lecture">Lecture</option>
-                            <option value="Lab">Lab</option>
-                            <option value="Computer Lab">Computer Lab</option>
+                        <select name="yearLevel" required>
+                            <option value="" disabled selected>Year Level</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
                         </select>
                     </div>
                     <div class="form-row">
-                        <input type="number" name="capacity" min="1" max="200" placeholder="Capacity" required />
-                    </div>
-                    <div class="form-row">
-                        <select name="daySection" id="daySectionSelect">
-                            <option value="None">None</option>
+                        <select name="shift" required>
+                            <option value="" disabled selected>Shift</option>
+                            <option value="Day">Day</option>
+                            <option value="Night">Night</option>
                         </select>
                     </div>
                     <div class="form-row">
-                        <select name="nightSection" id="nightSectionSelect">
-                            <option value="None">None</option>
+                        <select name="adviserTeacher" id="adviserTeacherSelect">
+                            <option value="">No Adviser yet</option>
+                            <!-- Teachers populated by JS -->
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="number" name="totalEnrolled" min="0" placeholder="Total Enrolled Students" required />
+                    </div>
+                    <div class="form-row">
+                        <select name="academicYear" required id="academicYearSelect"></select>
+                    </div>
+                    <div class="form-row">
+                        <select name="semester" required>
+                            <option value="" disabled selected>Semester</option>
+                            <option value="1st Semester">1st Semester</option>
+                            <option value="2nd Semester">2nd Semester</option>
+                            <option value="Midyear">Midyear</option>
                         </select>
                     </div>
                     <div class="form-row">
                         <select name="status" required>
-                            <option value="Available">Available</option>
-                            <option value="Under Maintenance">Under Maintenance</option>
-                            <option value="Occupied">Occupied</option>
+                            <option value="Active">Active</option>
+                            <option value="Archived">Archived</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-actions" style="grid-column: 1 / -1;">
-                    <button type="button" class="modal-cancel" id="closeRoomModal">Cancel</button>
-                    <button type="submit" class="modal-submit">Create</button>
+                    <button type="button" class="modal-cancel" id="closeSectionModal">Cancel</button>
+                    <button type="submit" class="modal-submit" id="submitSectionBtn">Create</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteRoomModal" class="modal-overlay" style="display:none;">
+    <div id="deleteSectionModal" class="modal-overlay" style="display:none;">
         <div class="modal-content" style="max-width:340px;">
-            <h3 style="margin-bottom:16px;">Delete Room</h3>
+            <h3 style="margin-bottom:16px;">Delete Section</h3>
             <div id="deleteModalText" style="font-size:1em;margin-bottom:24px;">
-                Are you sure you want to delete this room?
+                Are you sure you want to delete this section?
             </div>
             <div class="modal-actions">
-                <button type="button" class="modal-cancel" id="cancelDeleteRoomBtn">Cancel</button>
-                <button type="button" class="modal-submit" id="confirmDeleteRoomBtn" style="background:#d8000c;">Delete</button>
+                <button type="button" class="modal-cancel" id="cancelDeleteSectionBtn">Cancel</button>
+                <button type="button" class="modal-submit" id="confirmDeleteSectionBtn" style="background:#d8000c;">Delete</button>
             </div>
         </div>
     </div>
 
-    <div id="roomBubbleMessage" class="room-bubble-message"></div>
+    <div id="sectionBubbleMessage" class="section-bubble-message"></div>
 
     <!-- Scripts -->
     <script type="module" src="/js/api-config.js"></script>
     <script type="module" src="/js/error-handler.js"></script>
     <script type="module" src="/js/auth-guard.js"></script>
-    <script type="module" src="/js/admin-rooms.js"></script>
+    <script type="module" src="/js/admin-sections.js"></script>
     
     <!-- Mobile-specific JavaScript -->
     <script type="module">
     import AuthGuard from '/js/auth-guard.js';
 
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Mobile Admin Rooms loaded');
+        console.log('Mobile Admin Sections loaded');
         
         // Check authentication first
         if (!AuthGuard.checkAuthentication('admin')) {
@@ -820,212 +812,219 @@
         
         updateMobileProfileInfo();
         
-        // Mobile search functionality
-        const mobileSearchInput = document.getElementById('mobileRoomSearch');
-        if (mobileSearchInput) {
-            mobileSearchInput.addEventListener('input', function(e) {
-                const searchTerm = e.target.value.toLowerCase().trim();
-                filterMobileRooms(searchTerm);
-            });
-        }
+        let allMobileSections = [];
+        let allTeachers = [];
         
-        let allMobileRooms = [];
-        
-        function filterMobileRooms(searchTerm) {
-            if (!searchTerm) {
-                displayMobileRooms(allMobileRooms);
-                return;
-            }
+        function displayMobileSections(sections) {
+            const mobileSectionsList = document.getElementById('mobileSectionsList');
+            if (!mobileSectionsList) return;
             
-            const filtered = allMobileRooms.filter(room => {
-                return (
-                    (room.roomName || '').toLowerCase().includes(searchTerm) ||
-                    (room.building || '').toLowerCase().includes(searchTerm) ||
-                    (room.roomType || '').toLowerCase().includes(searchTerm) ||
-                    (room.daySection || '').toLowerCase().includes(searchTerm) ||
-                    (room.nightSection || '').toLowerCase().includes(searchTerm) ||
-                    (room.status || '').toLowerCase().includes(searchTerm) ||
-                    (room.capacity || '').toString().includes(searchTerm)
-                );
-            });
-            
-            displayMobileRooms(filtered);
-        }
-        
-        function displayMobileRooms(rooms) {
-            const mobileRoomsList = document.getElementById('mobileRoomsList');
-            if (!mobileRoomsList) return;
-            
-            if (!rooms || rooms.length === 0) {
-                mobileRoomsList.innerHTML = `
+            if (!sections || sections.length === 0) {
+                mobileSectionsList.innerHTML = `
                     <div style="text-align: center; padding: 40px 20px; color: #999;">
                         <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                        <span>No rooms found.</span>
+                        <span>No sections found.</span>
                     </div>
                 `;
                 return;
             }
             
-            mobileRoomsList.innerHTML = '';
-            rooms.forEach(room => {
-                const statusClass = getStatusClass(room.status);
+            mobileSectionsList.innerHTML = '';
+            sections.forEach(section => {
+                // Find adviser teacher name
+                let adviserName = 'No Adviser';
+                if (section.adviserTeacher) {
+                    const adviser = allTeachers.find(teacher => teacher._id === section.adviserTeacher);
+                    adviserName = adviser ? adviser.fullname : section.adviserTeacher;
+                }
+
                 const card = document.createElement('div');
-                card.className = 'mobile-room-card';
+                card.className = 'mobile-section-card';
                 card.innerHTML = `
-                    <div class="mobile-room-header">
+                    <div class="mobile-section-header">
                         <div>
-                            <div class="mobile-room-name">${room.roomName || ''}</div>
-                            <div class="mobile-room-building">${room.building || ''}</div>
+                            <div class="mobile-section-name">${section.sectionName || ''}</div>
+                            <div class="mobile-section-program">${section.programID || ''}</div>
                         </div>
-                        <span class="mobile-room-status ${statusClass}">${room.status || 'Available'}</span>
+                        <span class="mobile-section-status ${section.status.toLowerCase()}">${section.status || 'Active'}</span>
                     </div>
-                    <div class="mobile-room-details">
-                        <div class="mobile-room-detail">
-                            <div class="mobile-room-detail-label">Room Type</div>
-                            <div class="mobile-room-detail-value">${room.roomType || '-'}</div>
+                    <div class="mobile-section-details">
+                        <div class="mobile-section-detail">
+                            <div class="mobile-section-detail-label">Year Level</div>
+                            <div class="mobile-section-detail-value">Year ${section.yearLevel || ''}</div>
                         </div>
-                        <div class="mobile-room-detail">
-                            <div class="mobile-room-detail-label">Capacity</div>
-                            <div class="mobile-room-detail-value">${room.capacity || 0}</div>
+                        <div class="mobile-section-detail">
+                            <div class="mobile-section-detail-label">Shift</div>
+                            <div class="mobile-section-detail-value">${section.shift || '-'}</div>
                         </div>
-                        <div class="mobile-room-detail">
-                            <div class="mobile-room-detail-label">Day Section</div>
-                            <div class="mobile-room-detail-value">${room.daySection || 'None'}</div>
+                        <div class="mobile-section-detail">
+                            <div class="mobile-section-detail-label">Adviser</div>
+                            <div class="mobile-section-detail-value">${adviserName}</div>
                         </div>
-                        <div class="mobile-room-detail">
-                            <div class="mobile-room-detail-label">Night Section</div>
-                            <div class="mobile-room-detail-value">${room.nightSection || 'None'}</div>
+                        <div class="mobile-section-detail">
+                            <div class="mobile-section-detail-label">Total Enrolled</div>
+                            <div class="mobile-section-detail-value">${section.totalEnrolled || '0'}</div>
+                        </div>
+                        <div class="mobile-section-detail">
+                            <div class="mobile-section-detail-label">Academic Year</div>
+                            <div class="mobile-section-detail-value">${section.academicYear || '-'}</div>
+                        </div>
+                        <div class="mobile-section-detail">
+                            <div class="mobile-section-detail-label">Semester</div>
+                            <div class="mobile-section-detail-value">${section.semester || '-'}</div>
                         </div>
                     </div>
-                    <div class="mobile-room-actions">
-                        <button class="mobile-room-action-btn edit" data-id="${room._id}">
+                    <div class="mobile-section-actions">
+                        <button class="mobile-section-action-btn edit" data-id="${section._id}">
                             <i class="bi bi-pencil"></i> Edit
                         </button>
-                        <button class="mobile-room-action-btn delete" data-id="${room._id}">
+                        <button class="mobile-section-action-btn delete" data-id="${section._id}">
                             <i class="bi bi-trash"></i> Delete
                         </button>
                     </div>
                 `;
-                mobileRoomsList.appendChild(card);
+                mobileSectionsList.appendChild(card);
             });
             
-            // Attach event listeners - directly handle actions
-            mobileRoomsList.querySelectorAll('.edit').forEach(btn => {
+            // Attach event listeners
+            mobileSectionsList.querySelectorAll('.edit').forEach(btn => {
                 btn.onclick = async () => {
                     const id = btn.getAttribute('data-id');
+                    const section = allMobileSections.find(s => s._id === id);
                     
-                    try {
-                        const res = await fetch('/rooms');
-                        if (!res.ok) throw new Error('Failed to fetch rooms');
+                    if (!section) return;
+                    
+                    // Populate form
+                    if (sectionForm) {
+                        sectionForm.sectionName.value = section.sectionName || '';
+                        sectionForm.programID.value = section.programID || '';
+                        sectionForm.yearLevel.value = section.yearLevel || '';
+                        sectionForm.shift.value = section.shift || '';
+                        sectionForm.adviserTeacher.value = section.adviserTeacher || '';
+                        sectionForm.totalEnrolled.value = section.totalEnrolled || '';
+                        sectionForm.academicYear.value = section.academicYear || '';
+                        sectionForm.semester.value = section.semester || '';
+                        sectionForm.status.value = section.status || 'Active';
                         
-                        const data = await res.json();
-                        const room = data.find(r => r._id === id);
-                        
-                        if (!room) return;
-                        
-                        // Populate form
-                        if (roomForm) {
-                            roomForm.roomName.value = room.roomName || '';
-                            roomForm.building.value = room.building || '';
-                            roomForm.roomType.value = room.roomType || '';
-                            roomForm.capacity.value = room.capacity || 0;
-                            roomForm.status.value = room.status || 'Available';
-                            
-                            // Set edit mode
-                            roomForm.dataset.editMode = 'true';
-                            roomForm.dataset.editingId = id;
-                        }
-                        
-                        // Fill section dropdowns with current values
-                        await fillSectionDropdowns(room.daySection || "None", room.nightSection || "None");
-                        
-                        if (roomModalTitle) roomModalTitle.textContent = 'Edit Room';
-                        if (submitRoomBtn) submitRoomBtn.textContent = 'Save Changes';
-                        if (roomModal) roomModal.style.display = 'flex';
-                        
-                    } catch (error) {
-                        console.error('Error opening edit modal:', error);
-                        showBubbleMessage('Error loading room data', 'error');
+                        // Set edit mode
+                        sectionForm.dataset.editMode = 'true';
+                        sectionForm.dataset.editingId = id;
                     }
+                    
+                    if (sectionModalTitle) sectionModalTitle.textContent = 'Edit Section';
+                    if (submitSectionBtn) submitSectionBtn.textContent = 'Save Changes';
+                    if (sectionModal) sectionModal.style.display = 'flex';
                 };
             });
             
-            mobileRoomsList.querySelectorAll('.delete').forEach(btn => {
+            mobileSectionsList.querySelectorAll('.delete').forEach(btn => {
                 btn.onclick = async () => {
                     const id = btn.getAttribute('data-id');
-                    const deleteModal = document.getElementById('deleteRoomModal');
+                    const deleteModal = document.getElementById('deleteSectionModal');
                     const deleteModalText = document.getElementById('deleteModalText');
-                    const confirmDeleteBtn = document.getElementById('confirmDeleteRoomBtn');
+                    const confirmDeleteBtn = document.getElementById('confirmDeleteSectionBtn');
                     
-                    try {
-                        const res = await fetch('/rooms');
-                        if (res.ok) {
-                            const data = await res.json();
-                            const room = data.find(r => r._id === id);
-                            
-                            if (deleteModalText) {
-                                deleteModalText.textContent = room
-                                    ? `Are you sure you want to delete "${room.roomName}"? This action cannot be undone.`
-                                    : 'Are you sure you want to delete this room? This action cannot be undone.';
-                            }
-                            
-                            // Store the ID for deletion
-                            if (confirmDeleteBtn) {
-                                confirmDeleteBtn.dataset.deleteId = id;
-                            }
-                            
-                            if (deleteModal) deleteModal.style.display = 'flex';
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
+                    const section = allMobileSections.find(s => s._id === id);
+                    
+                    if (deleteModalText) {
+                        deleteModalText.textContent = section
+                            ? `Are you sure you want to delete section "${section.sectionName}"? This action cannot be undone.`
+                            : 'Are you sure you want to delete this section? This action cannot be undone.';
                     }
+                    
+                    // Store the ID for deletion
+                    if (confirmDeleteBtn) {
+                        confirmDeleteBtn.dataset.deleteId = id;
+                    }
+                    
+                    if (deleteModal) deleteModal.style.display = 'flex';
                 };
             });
         }
         
-        function getStatusClass(status) {
-            switch (status) {
-                case 'Available': return 'status-available';
-                case 'Under Maintenance': return 'status-maintenance';
-                case 'Occupied': return 'status-occupied';
-                default: return 'status-available';
-            }
-        }
-        
-        // Load rooms for mobile
-        async function loadMobileRooms() {
+        // Load sections and teachers for mobile
+        async function loadMobileSections() {
             try {
-                const res = await fetch('/rooms');
-                const data = await res.json();
-                allMobileRooms = Array.isArray(data) ? data : [];
-                displayMobileRooms(allMobileRooms);
+                const [sectionsRes, teachersRes] = await Promise.all([
+                    fetch('/sections'),
+                    fetch('/teachers')
+                ]);
+                
+                const sectionsData = await sectionsRes.json();
+                const teachersData = await teachersRes.json();
+                
+                allMobileSections = Array.isArray(sectionsData) ? sectionsData : [];
+                allTeachers = Array.isArray(teachersData) ? teachersData : [];
+                
+                displayMobileSections(allMobileSections);
+                populateAdviserDropdown();
+                populateAcademicYearDropdown();
             } catch (error) {
-                console.error('Error loading rooms:', error);
-                const mobileRoomsList = document.getElementById('mobileRoomsList');
-                if (mobileRoomsList) {
-                    mobileRoomsList.innerHTML = `
+                console.error('Error loading sections:', error);
+                const mobileSectionsList = document.getElementById('mobileSectionsList');
+                if (mobileSectionsList) {
+                    mobileSectionsList.innerHTML = `
                         <div style="text-align: center; padding: 40px 20px; color: #d8000c;">
                             <i class="bi bi-exclamation-triangle" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                            <span>Error loading rooms.</span>
+                            <span>Error loading sections.</span>
                         </div>
                     `;
                 }
             }
         }
         
-        loadMobileRooms();
+        // Populate adviser dropdown
+        function populateAdviserDropdown() {
+            const select = document.getElementById('adviserTeacherSelect');
+            if (!select) return;
+            
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            
+            allTeachers.forEach(teacher => {
+                const option = document.createElement('option');
+                option.value = teacher._id;
+                option.textContent = teacher.fullname;
+                select.appendChild(option);
+            });
+        }
         
-        // Mobile create button and modal handlers
-        const mobileOpenRoomModal = document.getElementById('mobileOpenRoomModal');
-        const roomModal = document.getElementById('roomModal');
-        const roomForm = document.getElementById('roomForm');
-        const roomModalTitle = roomModal ? roomModal.querySelector('h3') : null;
-        const submitRoomBtn = roomForm ? roomForm.querySelector('.modal-submit') : null;
-        const closeRoomModal = document.getElementById('closeRoomModal');
+        // Populate academic year dropdown
+        function populateAcademicYearDropdown() {
+            const select = document.getElementById('academicYearSelect');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="" disabled selected>Academic Year</option>';
+            
+            const currentYear = new Date().getFullYear();
+            const academicYears = [
+                `${currentYear-1}-${currentYear}`,
+                `${currentYear}-${currentYear+1}`,
+                `${currentYear+1}-${currentYear+2}`
+            ];
+            
+            academicYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                select.appendChild(option);
+            });
+        }
+        
+        loadMobileSections();
+        
+        // Mobile create button
+        const mobileOpenSectionModal = document.getElementById('mobileOpenSectionModal');
+        const sectionModal = document.getElementById('sectionModal');
+        const sectionForm = document.getElementById('sectionForm');
+        const sectionModalTitle = document.getElementById('sectionModalTitle');
+        const submitSectionBtn = document.getElementById('submitSectionBtn');
+        const closeSectionModal = document.getElementById('closeSectionModal');
         
         // Notification system
         function showBubbleMessage(msg, type = "success") {
-            const bubble = document.getElementById('roomBubbleMessage');
+            const bubble = document.getElementById('sectionBubbleMessage');
             if (!bubble) return;
             
             bubble.textContent = msg;
@@ -1039,94 +1038,69 @@
             }, 3000);
         }
         
-        // Fetch sections for dropdowns
-        async function fillSectionDropdowns(selectedDay = "None", selectedNight = "None") {
-            const daySelect = document.getElementById('daySectionSelect');
-            const nightSelect = document.getElementById('nightSectionSelect');
-            
-            if (!daySelect || !nightSelect) return;
-            
-            daySelect.innerHTML = '<option value="None">None</option>';
-            nightSelect.innerHTML = '<option value="None">None</option>';
-            
-            try {
-                const res = await fetch('/sections');
-                const data = await res.json();
-                
-                data.forEach(section => {
-                    const dayOption = document.createElement('option');
-                    dayOption.value = section.sectionName;
-                    dayOption.textContent = section.sectionName;
-                    if (section.sectionName === selectedDay) dayOption.selected = true;
-                    daySelect.appendChild(dayOption);
-                    
-                    const nightOption = document.createElement('option');
-                    nightOption.value = section.sectionName;
-                    nightOption.textContent = section.sectionName;
-                    if (section.sectionName === selectedNight) nightOption.selected = true;
-                    nightSelect.appendChild(nightOption);
-                });
-            } catch (error) {
-                console.error('Error loading sections:', error);
-            }
-        }
-        
-        if (mobileOpenRoomModal) {
-            mobileOpenRoomModal.addEventListener('click', async () => {
-                if (roomForm) {
-                    roomForm.reset();
-                    delete roomForm.dataset.editMode;
-                    delete roomForm.dataset.editingId;
+        if (mobileOpenSectionModal) {
+            mobileOpenSectionModal.addEventListener('click', () => {
+                if (sectionForm) {
+                    sectionForm.reset();
+                    delete sectionForm.dataset.editMode;
+                    delete sectionForm.dataset.editingId;
                 }
-                await fillSectionDropdowns();
-                if (roomModalTitle) roomModalTitle.textContent = 'Create New Room';
-                if (submitRoomBtn) submitRoomBtn.textContent = 'Create';
-                if (roomModal) roomModal.style.display = 'flex';
+                if (sectionModalTitle) sectionModalTitle.textContent = 'Create New Section';
+                if (submitSectionBtn) submitSectionBtn.textContent = 'Create Section';
+                if (sectionModal) sectionModal.style.display = 'flex';
             });
         }
         
         // Close modal handlers
-        if (closeRoomModal) {
-            closeRoomModal.addEventListener('click', () => {
-                if (roomModal) roomModal.style.display = 'none';
+        if (closeSectionModal) {
+            closeSectionModal.addEventListener('click', () => {
+                if (sectionModal) sectionModal.style.display = 'none';
             });
         }
         
-        if (roomModal) {
-            roomModal.addEventListener('click', (e) => {
-                if (e.target === roomModal) {
-                    roomModal.style.display = 'none';
+        if (sectionModal) {
+            sectionModal.addEventListener('click', (e) => {
+                if (e.target === sectionModal) {
+                    sectionModal.style.display = 'none';
                 }
             });
         }
         
         // Form submission handler
-        if (roomForm) {
-            roomForm.addEventListener('submit', async (e) => {
+        if (sectionForm) {
+            sectionForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 const formData = {
-                    roomName: roomForm.roomName.value.trim(),
-                    building: roomForm.building.value,
-                    roomType: roomForm.roomType.value,
-                    capacity: parseInt(roomForm.capacity.value) || 0,
-                    daySection: roomForm.daySection.value,
-                    nightSection: roomForm.nightSection.value,
-                    status: roomForm.status.value
+                    sectionName: sectionForm.sectionName.value.trim(),
+                    programID: sectionForm.programID.value,
+                    yearLevel: parseInt(sectionForm.yearLevel.value),
+                    shift: sectionForm.shift.value,
+                    adviserTeacher: sectionForm.adviserTeacher.value,
+                    totalEnrolled: parseInt(sectionForm.totalEnrolled.value),
+                    academicYear: sectionForm.academicYear.value,
+                    semester: sectionForm.semester.value,
+                    status: sectionForm.status.value
                 };
                 
                 // Validation
-                if (!formData.roomName || !formData.building || !formData.roomType || !formData.capacity) {
+                if (!formData.sectionName || !formData.programID || !formData.yearLevel || !formData.shift || 
+                    !formData.totalEnrolled || !formData.academicYear || !formData.semester) {
                     showBubbleMessage('Please fill all required fields', 'error');
+                    return;
+                }
+
+                if (formData.totalEnrolled < 0) {
+                    showBubbleMessage('Total enrolled cannot be negative', 'error');
                     return;
                 }
                 
                 try {
-                    let url = '/rooms';
+                    let url = '/sections';
                     let method = 'POST';
                     
-                    const editMode = roomForm.dataset.editMode === 'true';
-                    const editingId = roomForm.dataset.editingId;
+                    const editMode = sectionForm.dataset.editMode === 'true';
+                    const editingId = sectionForm.dataset.editingId;
                     
                     if (editMode && editingId) {
                         url += `/${editingId}`;
@@ -1141,81 +1115,79 @@
                         body: JSON.stringify(formData)
                     });
                     
-                    const result = await res.json();
-                    
                     if (res.ok) {
                         showBubbleMessage(
-                            editMode ? 'Room updated successfully!' : 'Room created successfully!', 
+                            editMode ? 'Section updated successfully!' : 'Section created successfully!', 
                             'success'
                         );
-                        if (roomModal) roomModal.style.display = 'none';
-                        if (roomForm) roomForm.reset();
-                        loadMobileRooms();
+                        if (sectionModal) sectionModal.style.display = 'none';
+                        if (sectionForm) sectionForm.reset();
+                        loadMobileSections();
                     } else {
-                        showBubbleMessage(result.error || 'Failed to save room', 'error');
+                        const error = await res.json();
+                        showBubbleMessage(error.error || 'Failed to save section', 'error');
                     }
                 } catch (error) {
-                    console.error('Error saving room:', error);
+                    console.error('Error saving section:', error);
                     showBubbleMessage('Network error. Please check your connection.', 'error');
                 }
             });
         }
         
         // Delete confirmation modal handlers
-        const deleteRoomModal = document.getElementById('deleteRoomModal');
-        const cancelDeleteRoomBtn = document.getElementById('cancelDeleteRoomBtn');
-        const confirmDeleteRoomBtn = document.getElementById('confirmDeleteRoomBtn');
+        const deleteSectionModal = document.getElementById('deleteSectionModal');
+        const cancelDeleteSectionBtn = document.getElementById('cancelDeleteSectionBtn');
+        const confirmDeleteSectionBtn = document.getElementById('confirmDeleteSectionBtn');
         
-        if (cancelDeleteRoomBtn) {
-            cancelDeleteRoomBtn.addEventListener('click', () => {
-                if (deleteRoomModal) deleteRoomModal.style.display = 'none';
+        if (cancelDeleteSectionBtn) {
+            cancelDeleteSectionBtn.addEventListener('click', () => {
+                if (deleteSectionModal) deleteSectionModal.style.display = 'none';
             });
         }
         
-        if (confirmDeleteRoomBtn) {
-            confirmDeleteRoomBtn.addEventListener('click', async () => {
-                const deleteId = confirmDeleteRoomBtn.dataset.deleteId;
+        if (confirmDeleteSectionBtn) {
+            confirmDeleteSectionBtn.addEventListener('click', async () => {
+                const deleteId = confirmDeleteSectionBtn.dataset.deleteId;
                 if (!deleteId) return;
                 
                 try {
-                    const res = await fetch(`/rooms/${deleteId}`, {
+                    const res = await fetch(`/sections/${deleteId}`, {
                         method: 'DELETE'
                     });
                     
-                    const result = await res.json();
-                    
                     if (res.ok) {
-                        showBubbleMessage('Room deleted successfully!', 'success');
-                        loadMobileRooms();
+                        showBubbleMessage('Section deleted successfully!', 'success');
+                        loadMobileSections();
                     } else {
-                        showBubbleMessage(result.error || 'Failed to delete room', 'error');
+                        const error = await res.json();
+                        showBubbleMessage(error.error || 'Failed to delete section', 'error');
                     }
                 } catch (error) {
-                    console.error('Error deleting room:', error);
+                    console.error('Error deleting section:', error);
                     showBubbleMessage('Network error. Please try again.', 'error');
                 }
                 
-                if (deleteRoomModal) deleteRoomModal.style.display = 'none';
-                delete confirmDeleteRoomBtn.dataset.deleteId;
+                if (deleteSectionModal) deleteSectionModal.style.display = 'none';
+                delete confirmDeleteSectionBtn.dataset.deleteId;
             });
         }
         
-        if (deleteRoomModal) {
-            deleteRoomModal.addEventListener('click', (e) => {
-                if (e.target === deleteRoomModal) {
-                    deleteRoomModal.style.display = 'none';
+        if (deleteSectionModal) {
+            deleteSectionModal.addEventListener('click', (e) => {
+                if (e.target === deleteSectionModal) {
+                    deleteSectionModal.style.display = 'none';
                 }
             });
         }
         
-        // Reload mobile rooms when desktop table is updated
+        // Reload mobile sections when desktop table is updated
         const observer = new MutationObserver(() => {
-            loadMobileRooms();
+            loadMobileSections();
         });
         
-        const roomsTableBody = document.getElementById('roomsTableBody');
-        if (roomsTableBody) {
-            observer.observe(roomsTableBody, { childList: true, subtree: true });
+        const sectionsTableBody = document.getElementById('sectionsTableBody');
+        if (sectionsTableBody) {
+            observer.observe(sectionsTableBody, { childList: true, subtree: true });
         }
         
         // Make bottom navigation swipeable
@@ -1280,7 +1252,7 @@
     function shouldRedirectToMobile() {
         const now = Date.now();
         if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
-            return false; // Too soon since last redirect
+            return false;
         }
         
         return isMobileDevice() && !window.location.pathname.includes('-mobile');
@@ -1289,7 +1261,7 @@
     function shouldRedirectToDesktop() {
         const now = Date.now();
         if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
-            return false; // Too soon since last redirect
+            return false;
         }
         
         return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
@@ -1299,7 +1271,7 @@
     if (shouldRedirectToDesktop()) {
         lastRedirectTime = Date.now();
         console.log('Redirecting to desktop version...');
-        window.location.href = '/admin-rooms.html';
+        window.location.href = '/admin-sections.html';
     }
 
     // Handle resize events with debouncing
@@ -1307,19 +1279,17 @@
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(function() {
-            // Redirect to mobile if needed
             if (shouldRedirectToMobile()) {
                 lastRedirectTime = Date.now();
                 console.log('Screen resized - redirecting to mobile version...');
-                window.location.href = '/admin-rooms-mobile.html';
+                window.location.href = '/admin-sections-mobile.html';
             }
-            // Redirect to desktop if needed
             else if (shouldRedirectToDesktop()) {
                 lastRedirectTime = Date.now();
                 console.log('Screen resized - redirecting to desktop version...');
-                window.location.href = '/admin-rooms.html';
+                window.location.href = '/admin-sections.html';
             }
-        }, 250); // Wait 250ms after resize stops
+        }, 250);
     });
     </script>
 </body>
