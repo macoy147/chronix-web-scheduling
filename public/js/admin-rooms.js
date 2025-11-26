@@ -29,23 +29,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Update profile name and avatar with actual user data
+    // Update profile name and avatar with actual user data (with animations)
     function updateProfileInfo() {
-        const currentUser = AuthGuard.getCurrentUser(); // Use AuthGuard.getCurrentUser()
+        const currentUser = AuthGuard.getCurrentUser();
         if (currentUser) {
             // Get first name from fullname
             const firstName = currentUser.fullname.split(' ')[0];
             const profileName = document.getElementById('profileName');
             if (profileName) {
-                profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down"></i>`;
+                profileName.style.opacity = '0';
+                setTimeout(() => {
+                    profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down"></i>`;
+                    profileName.style.opacity = '1';
+                }, 200);
             }
 
-            // Update profile picture if available
+            // Update profile picture with animation
             const profileAvatar = document.getElementById('profileAvatar');
-            if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = currentUser.profilePicture.startsWith('http') 
-                    ? currentUser.profilePicture 
-                    : currentUser.profilePicture;
+            if (profileAvatar) {
+                profileAvatar.style.opacity = '0';
+                setTimeout(() => {
+                    if (currentUser.profilePicture) {
+                        profileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                            ? currentUser.profilePicture 
+                            : currentUser.profilePicture;
+                    } else {
+                        profileAvatar.src = '/img/default_admin_avatar.png';
+                    }
+                    profileAvatar.style.opacity = '1';
+                }, 200);
             }
         }
     }
@@ -53,20 +65,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch user data to get updated profile information
     async function fetchUserData() {
         try {
-            const userId = AuthGuard.getUserId(); // Use AuthGuard.getUserId()
+            const userId = AuthGuard.getUserId();
             if (userId) {
                 const res = await fetch(`/user/${userId}`);
                 if (res.ok) {
                     const userData = await res.json();
                     // Update session storage with fresh data
-                    AuthGuard.storeUserSession(userData); // Use AuthGuard.storeUserSession()
+                    sessionStorage.setItem('currentUser', JSON.stringify(userData));
                     updateProfileInfo();
                 }
             }
         } catch (error) {
             console.error('Error fetching user data:', error);
+            // Still update profile with cached data
+            updateProfileInfo();
         }
     }
+    
+    // Initialize profile on page load
+    updateProfileInfo();
+    fetchUserData();
 
     // Rest of your existing code remains the same...
     // Bubble Notification
@@ -164,36 +182,16 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const res = await fetch('/rooms');
             const data = await res.json();
-            if (Array.isArray(data) && data.length) {
-                tbody.innerHTML = '';
-                data.forEach(room => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${room.roomName || ''}</td>
-                        <td>${room.building || ''}</td>
-                        <td>${room.roomType || ''}</td>
-                        <td>${room.capacity || 0}</td>
-                        <td>${room.daySection || 'None'}</td>
-                        <td>${room.nightSection || 'None'}</td>
-                        <td><span class="status-badge ${getStatusClass(room.status)}">${room.status || 'Available'}</span></td>
-                        <td>
-                            <span class="action-link edit" data-id="${room._id}" title="Edit"><i class="bi bi-pencil"></i></span>
-                            <span class="action-link delete" data-id="${room._id}" title="Delete"><i class="bi bi-trash"></i></span>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                tbody.querySelectorAll('.edit').forEach(btn => {
-                    btn.onclick = () => openEditModal(btn.getAttribute('data-id'));
-                });
-                tbody.querySelectorAll('.delete').forEach(btn => {
-                    btn.onclick = () => handleDelete(btn.getAttribute('data-id'));
-                });
+            allRooms = Array.isArray(data) ? data : []; // Store all rooms
+            
+            if (allRooms.length) {
+                displayRooms(allRooms);
             } else {
                 tbody.innerHTML = '<tr><td colspan="8">No rooms found.</td></tr>';
             }
         } catch {
             tbody.innerHTML = '<tr><td colspan="8">Error loading rooms.</td></tr>';
+            allRooms = [];
         }
     }
 
@@ -344,6 +342,80 @@ document.addEventListener('DOMContentLoaded', function() {
                 deleteModal.style.display = 'none';
                 deleteRoomId = null;
             }
+        });
+    }
+
+    // Search functionality
+    const searchInput = document.getElementById('roomSearch');
+    let allRooms = []; // Store all rooms for filtering
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            filterRooms(searchTerm);
+        });
+    }
+    
+    function filterRooms(searchTerm) {
+        const tbody = document.getElementById('roomsTableBody');
+        if (!tbody) return;
+        
+        if (!searchTerm) {
+            // Show all rooms
+            displayRooms(allRooms);
+            return;
+        }
+        
+        // Filter rooms based on search term
+        const filtered = allRooms.filter(room => {
+            return (
+                (room.roomName || '').toLowerCase().includes(searchTerm) ||
+                (room.building || '').toLowerCase().includes(searchTerm) ||
+                (room.roomType || '').toLowerCase().includes(searchTerm) ||
+                (room.daySection || '').toLowerCase().includes(searchTerm) ||
+                (room.nightSection || '').toLowerCase().includes(searchTerm) ||
+                (room.status || '').toLowerCase().includes(searchTerm) ||
+                (room.capacity || '').toString().includes(searchTerm)
+            );
+        });
+        
+        displayRooms(filtered);
+    }
+    
+    function displayRooms(rooms) {
+        const tbody = document.getElementById('roomsTableBody');
+        if (!tbody) return;
+        
+        if (!rooms || rooms.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8">No rooms found.</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        rooms.forEach(room => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${room.roomName || ''}</td>
+                <td>${room.building || ''}</td>
+                <td>${room.roomType || ''}</td>
+                <td>${room.capacity || 0}</td>
+                <td>${room.daySection || 'None'}</td>
+                <td>${room.nightSection || 'None'}</td>
+                <td><span class="status-badge ${getStatusClass(room.status)}">${room.status || 'Available'}</span></td>
+                <td>
+                    <span class="action-link edit" data-id="${room._id}" title="Edit"><i class="bi bi-pencil"></i></span>
+                    <span class="action-link delete" data-id="${room._id}" title="Delete"><i class="bi bi-trash"></i></span>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        // Re-attach event listeners
+        tbody.querySelectorAll('.edit').forEach(btn => {
+            btn.onclick = () => openEditModal(btn.getAttribute('data-id'));
+        });
+        tbody.querySelectorAll('.delete').forEach(btn => {
+            btn.onclick = () => handleDelete(btn.getAttribute('data-id'));
         });
     }
 

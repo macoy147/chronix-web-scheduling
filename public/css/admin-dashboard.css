@@ -1162,6 +1162,89 @@ body::before {
     }
 }
 
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--ctu-white);
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 8px;
+    margin-right: 12px;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+    color: var(--ctu-soft-gold);
+    transform: scale(1.1);
+}
+
+.mobile-menu-toggle:focus {
+    outline: 2px solid var(--ctu-soft-gold);
+    outline-offset: 2px;
+}
+
+/* Mobile Bottom Navigation */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--ctu-deep-blue);
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 999;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.mobile-bottom-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.mobile-bottom-nav ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 8px 12px;
+    gap: 8px;
+    min-width: min-content;
+}
+
+.mobile-bottom-nav li {
+    flex-shrink: 0;
+}
+
+.mobile-bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--ctu-white);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.75em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    min-width: 70px;
+}
+
+.mobile-bottom-nav a i {
+    font-size: 1.4em;
+    margin-bottom: 4px;
+}
+
+.mobile-bottom-nav li.active a,
+.mobile-bottom-nav a:active {
+    background: var(--ctu-soft-gold);
+    color: var(--ctu-deep-blue);
+}
+
 @media (max-width: 768px) {
     .dashboard-header {
         flex-direction: column;
@@ -1170,6 +1253,18 @@ body::before {
     
     .nav-links {
         display: none;
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+    }
+    
+    .mobile-bottom-nav {
+        display: block;
+    }
+    
+    .nav-left {
+        margin-right: auto;
     }
     
     .chart-container {
