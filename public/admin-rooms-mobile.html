@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONIX - Manage Rooms (Mobile)</title>
+    <meta name="description" content="CTU CHRONIX Room Management - Mobile Version">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/css/admin-rooms.css" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style">
+    
+    <link rel="stylesheet" href="/css/admin-rooms.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#002D62">
+    <link rel="manifest" href="/manifest.json">
+    
+    <style>
+        /* Mobile-specific styles */
+        :root {
+            --mobile-padding: 16px;
+            --mobile-nav-height: 60px;
+            --mobile-bottom-nav-height: 70px;
+        }
+        
+        /* Mobile Navigation */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--ctu-deep-blue);
+            height: var(--mobile-bottom-nav-height);
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            padding: 0 8px;
+        }
+        
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100%;
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px 4px;
+            color: var(--ctu-white);
+            text-decoration: none;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all var(--transition-fast) ease;
+            border-radius: 8px;
+            margin: 0 2px;
+        }
+        
+        .mobile-nav-item.active {
+            background: var(--ctu-soft-gold);
+            color: var(--ctu-deep-blue);
+        }
+        
+        .mobile-nav-item i {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--ctu-deep-blue);
+            height: var(--mobile-nav-height);
+            z-index: 1000;
+            padding: 0 var(--mobile-padding);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mobile-header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+        
+        .mobile-logo-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .mobile-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .mobile-app-title {
+            color: var(--ctu-soft-gold);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            color: var(--ctu-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background var(--transition-fast) ease;
+        }
+        
+        .mobile-menu-btn:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Mobile Side Menu */
+        .mobile-side-menu {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 85%;
+            height: 100%;
+            background: var(--ctu-deep-blue);
+            z-index: 2000;
+            transition: left var(--transition-medium) ease;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+        
+        .mobile-side-menu.open {
+            left: 0;
+        }
+        
+        .mobile-side-menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .mobile-side-menu-close {
+            background: none;
+            border: none;
+            color: var(--ctu-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .mobile-side-menu-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 20px 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-profile-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .mobile-profile-info {
+            flex: 1;
+        }
+        
+        .mobile-profile-name {
+            color: var(--ctu-white);
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .mobile-profile-role {
+            color: var(--ctu-soft-gold);
+            font-size: 0.85rem;
+        }
+        
+        .mobile-side-menu-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mobile-side-menu-links li {
+            margin: 0;
+        }
+        
+        .mobile-side-menu-links a {
+            display: flex;
+            align-items: center;
+            color: var(--ctu-white);
+            text-decoration: none;
+            padding: 16px 20px;
+            transition: all var(--transition-fast) ease;
+            font-weight: 500;
+        }
+        
+        .mobile-side-menu-links a i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .mobile-side-menu-links a.active,
+        .mobile-side-menu-links a:active {
+            background: var(--ctu-soft-gold);
+            color: var(--ctu-deep-blue);
+        }
+        
+        .mobile-side-menu-footer {
+            padding: 20px;
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-logout-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background: none;
+            border: none;
+            color: var(--ctu-white);
+            padding: 12px 0;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .mobile-logout-btn i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+        
+        /* Mobile Main Content */
+        .mobile-main-content {
+            display: none;
+            padding: var(--mobile-padding);
+            padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-padding));
+            min-height: 100vh;
+            background: var(--ctu-lightest-gray);
+        }
+        
+        /* Mobile Rooms Header */
+        .mobile-rooms-header {
+            margin-bottom: 20px;
+        }
+        
+        .mobile-rooms-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 16px;
+        }
+        
+        /* Mobile Search Box */
+        .mobile-search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        
+        .mobile-search-box i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--ctu-text-secondary);
+            font-size: 1.1em;
+            pointer-events: none;
+        }
+        
+        .mobile-search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 45px;
+            border: 2px solid #e5e8eb;
+            border-radius: 10px;
+            font-size: 0.95em;
+            background: #fff;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .mobile-search-box input:focus {
+            outline: none;
+            border-color: var(--ctu-light-blue);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(62, 142, 222, 0.12);
+        }
+        
+        /* Mobile Create Button */
+        .mobile-create-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--ctu-light-blue) 0%, #2E7ECE 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95em;
+            font-weight: 600;
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all .3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(62, 142, 222, 0.3);
+            margin-bottom: 20px;
+        }
+        
+        .mobile-create-btn:active {
+            transform: scale(0.98);
+        }
+        
+        /* Mobile Room Cards */
+        .mobile-rooms-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .mobile-room-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mobile-room-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--ctu-light-blue);
+        }
+        
+        .mobile-room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .mobile-room-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 4px;
+        }
+        
+        .mobile-room-building {
+            font-size: 0.85rem;
+            color: var(--ctu-text-secondary);
+        }
+        
+        .mobile-room-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        
+        .mobile-room-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .mobile-room-detail {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mobile-room-detail-label {
+            font-size: 0.75rem;
+            color: var(--ctu-text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .mobile-room-detail-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--ctu-text-primary);
+        }
+        
+        .mobile-room-actions {
+            display: flex;
+            gap: 8px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f3f6;
+        }
+        
+        .mobile-room-action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .mobile-room-action-btn.edit {
+            background: #f2d28333;
+            color: #c19b26;
+        }
+        
+        .mobile-room-action-btn.delete {
+            background: #ffe2b4;
+            color: #d8000c;
+        }
+        
+        .mobile-room-action-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Mobile Overlay */
+        .mobile-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            display: none;
+        }
+        
+        .mobile-overlay.open {
+            display: block;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .admin-nav, .admin-dashboard-main {
+                display: none;
+            }
+            
+            .mobile-header, .mobile-main-content, .mobile-nav {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <div class="mobile-header-content">
+            <div class="mobile-logo-container">
+                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
+                <span class="mobile-app-title">CHRONIX</span>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Side Menu -->
+    <div class="mobile-side-menu" id="mobileSideMenu">
+        <div class="mobile-side-menu-header">
+            <div class="mobile-logo-container">
+                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
+                <span class="mobile-app-title">CHRONIX</span>
+            </div>
+            <button class="mobile-side-menu-close" id="mobileSideMenuClose" aria-label="Close menu">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        
+        <div class="mobile-side-menu-profile">
+            <img id="mobileProfileAvatar" src="/img/default_admin_avatar.png" alt="Admin Avatar" class="mobile-profile-img">
+            <div class="mobile-profile-info">
+                <div class="mobile-profile-name" id="mobileProfileName">Admin User</div>
+                <div class="mobile-profile-role">Administrator</div>
+            </div>
+        </div>
+        
+        <ul class="mobile-side-menu-links" role="navigation">
+            <li>
+                <a href="admin-dashboard.html">
+                    <i class="bi bi-speedometer2"></i> 
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-subjects.html">
+                    <i class="bi bi-book"></i> 
+                    <span>Subjects</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-sections.html">
+                    <i class="bi bi-layers"></i> 
+                    <span>Sections</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="active" aria-current="page">
+                    <i class="bi bi-door-open"></i> 
+                    <span>Rooms</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-schedules.html">
+                    <i class="bi bi-calendar-event"></i> 
+                    <span>Schedules</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-students.html">
+                    <i class="bi bi-mortarboard"></i> 
+                    <span>Students</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-teachers.html">
+                    <i class="bi bi-person-badge"></i> 
+                    <span>Teachers</span>
+                </a>
+            </li>
+            <li>
+                <a href="admin-profile.html">
+                    <i class="bi bi-person"></i> 
+                    <span>Profile</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="mobile-side-menu-footer">
+            <button class="mobile-logout-btn" id="mobileLogoutBtn">
+                <i class="bi bi-box-arrow-right"></i> 
+                <span>Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- Mobile Main Content -->
+    <main class="mobile-main-content" role="main">
+        <!-- Rooms Header -->
+        <div class="mobile-rooms-header">
+            <h1 class="mobile-rooms-title">Manage Rooms</h1>
+            
+            <!-- Search Box -->
+            <div class="mobile-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="mobileRoomSearch" placeholder="Search rooms..." />
+            </div>
+            
+            <!-- Create Button -->
+            <button class="mobile-create-btn" id="mobileOpenRoomModal">
+                <i class="bi bi-plus-circle"></i> 
+                <span>Create New Room</span>
+            </button>
+        </div>
+
+        <!-- Rooms List -->
+        <div class="mobile-rooms-list" id="mobileRoomsList">
+            <!-- Populated by JavaScript -->
+            <div style="text-align: center; padding: 40px 20px; color: #999;">
+                <i class="bi bi-hourglass-split" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                <span>Loading rooms...</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" role="navigation" aria-label="Mobile navigation">
+        <div class="mobile-nav-items">
+            <a href="admin-dashboard.html" class="mobile-nav-item">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="admin-subjects.html" class="mobile-nav-item">
+                <i class="bi bi-book"></i>
+                <span>Subjects</span>
+            </a>
+            <a href="admin-schedules.html" class="mobile-nav-item">
+                <i class="bi bi-calendar-event"></i>
+                <span>Schedules</span>
+            </a>
+            <a href="#" class="mobile-nav-item active" aria-current="page">
+                <i class="bi bi-door-open"></i>
+                <span>Rooms</span>
+            </a>
+            <a href="admin-teachers.html" class="mobile-nav-item">
+                <i class="bi bi-person-badge"></i>
+                <span>Teachers</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Modal for Creating/Editing Room -->
+    <div id="roomModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content horizontal-modal">
+            <h3>Create New Room</h3>
+            <form id="roomForm">
+                <div class="horizontal-grid">
+                    <div class="form-row">
+                        <input type="text" name="roomName" placeholder="Room Name" required />
+                    </div>
+                    <div class="form-row">
+                        <select name="building" required>
+                            <option value="" disabled selected>Building</option>
+                            <option value="College of Technology(CoTe) Building">College of Technology(CoTe) Building</option>
+                            <option value="College of Education(CoEd) Building">College of Education(CoEd) Building</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <select name="roomType" required>
+                            <option value="" disabled selected>Room Type</option>
+                            <option value="Lecture">Lecture</option>
+                            <option value="Lab">Lab</option>
+                            <option value="Computer Lab">Computer Lab</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="number" name="capacity" min="1" max="200" placeholder="Capacity" required />
+                    </div>
+                    <div class="form-row">
+                        <select name="daySection" id="daySectionSelect">
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <select name="nightSection" id="nightSectionSelect">
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <select name="status" required>
+                            <option value="Available">Available</option>
+                            <option value="Under Maintenance">Under Maintenance</option>
+                            <option value="Occupied">Occupied</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions" style="grid-column: 1 / -1;">
+                    <button type="button" class="modal-cancel" id="closeRoomModal">Cancel</button>
+                    <button type="submit" class="modal-submit">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteRoomModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width:340px;">
+            <h3 style="margin-bottom:16px;">Delete Room</h3>
+            <div id="deleteModalText" style="font-size:1em;margin-bottom:24px;">
+                Are you sure you want to delete this room?
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel" id="cancelDeleteRoomBtn">Cancel</button>
+                <button type="button" class="modal-submit" id="confirmDeleteRoomBtn" style="background:#d8000c;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="roomBubbleMessage" class="room-bubble-message"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="/js/api-config.js"></script>
+    <script type="module" src="/js/error-handler.js"></script>
+    <script type="module" src="/js/auth-guard.js"></script>
+    <script type="module" src="/js/admin-rooms.js"></script>
+    
+    <!-- Mobile-specific JavaScript -->
+    <script type="module">
+    import AuthGuard from '/js/auth-guard.js';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Mobile Admin Rooms loaded');
+        
+        // Check authentication first
+        if (!AuthGuard.checkAuthentication('admin')) {
+            return;
+        }
+
+        // Mobile menu functionality
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileSideMenu = document.getElementById('mobileSideMenu');
+        const mobileSideMenuClose = document.getElementById('mobileSideMenuClose');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        
+        function openMobileMenu() {
+            mobileSideMenu.classList.add('open');
+            mobileOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeMobileMenu() {
+            mobileSideMenu.classList.remove('open');
+            mobileOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        
+        mobileMenuBtn.addEventListener('click', openMobileMenu);
+        mobileSideMenuClose.addEventListener('click', closeMobileMenu);
+        mobileOverlay.addEventListener('click', closeMobileMenu);
+        
+        // Close menu when clicking on links
+        document.querySelectorAll('.mobile-side-menu-links a').forEach(link => {
+            link.addEventListener('click', closeMobileMenu);
+        });
+        
+        // Mobile logout functionality
+        const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+        if (mobileLogoutBtn) {
+            mobileLogoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                if (confirm('Are you sure you want to logout?')) {
+                    AuthGuard.logout();
+                }
+            });
+        }
+        
+        // Update mobile profile info
+        function updateMobileProfileInfo() {
+            const currentUser = AuthGuard.getCurrentUser();
+            if (currentUser) {
+                const mobileProfileName = document.getElementById('mobileProfileName');
+                if (mobileProfileName) {
+                    mobileProfileName.textContent = currentUser.fullname;
+                }
+
+                const mobileProfileAvatar = document.getElementById('mobileProfileAvatar');
+                if (mobileProfileAvatar) {
+                    if (currentUser.profilePicture) {
+                        mobileProfileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                            ? currentUser.profilePicture 
+                            : currentUser.profilePicture;
+                    } else {
+                        mobileProfileAvatar.src = '/img/default_admin_avatar.png';
+                    }
+                }
+            }
+        }
+        
+        updateMobileProfileInfo();
+        
+        // Mobile search functionality
+        const mobileSearchInput = document.getElementById('mobileRoomSearch');
+        if (mobileSearchInput) {
+            mobileSearchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase().trim();
+                filterMobileRooms(searchTerm);
+            });
+        }
+        
+        let allMobileRooms = [];
+        
+        function filterMobileRooms(searchTerm) {
+            if (!searchTerm) {
+                displayMobileRooms(allMobileRooms);
+                return;
+            }
+            
+            const filtered = allMobileRooms.filter(room => {
+                return (
+                    (room.roomName || '').toLowerCase().includes(searchTerm) ||
+                    (room.building || '').toLowerCase().includes(searchTerm) ||
+                    (room.roomType || '').toLowerCase().includes(searchTerm) ||
+                    (room.daySection || '').toLowerCase().includes(searchTerm) ||
+                    (room.nightSection || '').toLowerCase().includes(searchTerm) ||
+                    (room.status || '').toLowerCase().includes(searchTerm) ||
+                    (room.capacity || '').toString().includes(searchTerm)
+                );
+            });
+            
+            displayMobileRooms(filtered);
+        }
+        
+        function displayMobileRooms(rooms) {
+            const mobileRoomsList = document.getElementById('mobileRoomsList');
+            if (!mobileRoomsList) return;
+            
+            if (!rooms || rooms.length === 0) {
+                mobileRoomsList.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #999;">
+                        <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                        <span>No rooms found.</span>
+                    </div>
+                `;
+                return;
+            }
+            
+            mobileRoomsList.innerHTML = '';
+            rooms.forEach(room => {
+                const statusClass = getStatusClass(room.status);
+                const card = document.createElement('div');
+                card.className = 'mobile-room-card';
+                card.innerHTML = `
+                    <div class="mobile-room-header">
+                        <div>
+                            <div class="mobile-room-name">${room.roomName || ''}</div>
+                            <div class="mobile-room-building">${room.building || ''}</div>
+                        </div>
+                        <span class="mobile-room-status ${statusClass}">${room.status || 'Available'}</span>
+                    </div>
+                    <div class="mobile-room-details">
+                        <div class="mobile-room-detail">
+                            <div class="mobile-room-detail-label">Room Type</div>
+                            <div class="mobile-room-detail-value">${room.roomType || '-'}</div>
+                        </div>
+                        <div class="mobile-room-detail">
+                            <div class="mobile-room-detail-label">Capacity</div>
+                            <div class="mobile-room-detail-value">${room.capacity || 0}</div>
+                        </div>
+                        <div class="mobile-room-detail">
+                            <div class="mobile-room-detail-label">Day Section</div>
+                            <div class="mobile-room-detail-value">${room.daySection || 'None'}</div>
+                        </div>
+                        <div class="mobile-room-detail">
+                            <div class="mobile-room-detail-label">Night Section</div>
+                            <div class="mobile-room-detail-value">${room.nightSection || 'None'}</div>
+                        </div>
+                    </div>
+                    <div class="mobile-room-actions">
+                        <button class="mobile-room-action-btn edit" data-id="${room._id}">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="mobile-room-action-btn delete" data-id="${room._id}">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
+                `;
+                mobileRoomsList.appendChild(card);
+            });
+            
+            // Attach event listeners
+            mobileRoomsList.querySelectorAll('.edit').forEach(btn => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-id');
+                    // Trigger the desktop edit function
+                    const editBtn = document.querySelector(`.rooms-table .edit[data-id="${id}"]`);
+                    if (editBtn) editBtn.click();
+                };
+            });
+            
+            mobileRoomsList.querySelectorAll('.delete').forEach(btn => {
+                btn.onclick = () => {
+                    const id = btn.getAttribute('data-id');
+                    // Trigger the desktop delete function
+                    const deleteBtn = document.querySelector(`.rooms-table .delete[data-id="${id}"]`);
+                    if (deleteBtn) deleteBtn.click();
+                };
+            });
+        }
+        
+        function getStatusClass(status) {
+            switch (status) {
+                case 'Available': return 'status-available';
+                case 'Under Maintenance': return 'status-maintenance';
+                case 'Occupied': return 'status-occupied';
+                default: return 'status-available';
+            }
+        }
+        
+        // Load rooms for mobile
+        async function loadMobileRooms() {
+            try {
+                const res = await fetch('/rooms');
+                const data = await res.json();
+                allMobileRooms = Array.isArray(data) ? data : [];
+                displayMobileRooms(allMobileRooms);
+            } catch (error) {
+                console.error('Error loading rooms:', error);
+                const mobileRoomsList = document.getElementById('mobileRoomsList');
+                if (mobileRoomsList) {
+                    mobileRoomsList.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px; color: #d8000c;">
+                            <i class="bi bi-exclamation-triangle" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                            <span>Error loading rooms.</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        loadMobileRooms();
+        
+        // Mobile create button
+        const mobileOpenRoomModal = document.getElementById('mobileOpenRoomModal');
+        const openRoomModal = document.getElementById('openRoomModal');
+        if (mobileOpenRoomModal && openRoomModal) {
+            mobileOpenRoomModal.addEventListener('click', () => {
+                openRoomModal.click();
+            });
+        }
+        
+        // Reload mobile rooms when desktop table is updated
+        const observer = new MutationObserver(() => {
+            loadMobileRooms();
+        });
+        
+        const roomsTableBody = document.getElementById('roomsTableBody');
+        if (roomsTableBody) {
+            observer.observe(roomsTableBody, { childList: true, subtree: true });
+        }
+    });
+    </script>
+    
+    <!-- Mobile detection and redirection -->
+    <script>
+    // Mobile detection and redirection
+    function isMobileDevice() {
+        return window.innerWidth <= 768 || 
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // Prevent redirect loops and multiple rapid redirects
+    let lastRedirectTime = 0;
+    const REDIRECT_COOLDOWN = 1000; // 1 second cooldown
+
+    function shouldRedirectToMobile() {
+        const now = Date.now();
+        if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+            return false; // Too soon since last redirect
+        }
+        
+        return isMobileDevice() && !window.location.pathname.includes('-mobile');
+    }
+
+    function shouldRedirectToDesktop() {
+        const now = Date.now();
+        if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+            return false; // Too soon since last redirect
+        }
+        
+        return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+    }
+
+    // Initial redirect check - redirect to desktop if screen is large
+    if (shouldRedirectToDesktop()) {
+        lastRedirectTime = Date.now();
+        console.log('Redirecting to desktop version...');
+        window.location.href = '/admin-rooms.html';
+    }
+
+    // Handle resize events with debouncing
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            // Redirect to mobile if needed
+            if (shouldRedirectToMobile()) {
+                lastRedirectTime = Date.now();
+                console.log('Screen resized - redirecting to mobile version...');
+                window.location.href = '/admin-rooms-mobile.html';
+            }
+            // Redirect to desktop if needed
+            else if (shouldRedirectToDesktop()) {
+                lastRedirectTime = Date.now();
+                console.log('Screen resized - redirecting to desktop version...');
+                window.location.href = '/admin-rooms.html';
+            }
+        }, 250); // Wait 250ms after resize stops
+    });
+    </script>
+</body>
+</html>

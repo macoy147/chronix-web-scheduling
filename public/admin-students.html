@@ -3,340 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHRONIX - Manage Students</title>
-    <link rel="stylesheet" href="/css/admin-students.css">
+    <title>CHRONIX - Manage Subjects</title>
+    <meta name="description" content="CTU CHRONIX - Manage Subjects - Comprehensive academic management system">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/css/admin-subjects.css" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style">
+    
+    <link rel="stylesheet" href="/css/admin-subjects.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap">
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#002D62">
+    <link rel="manifest" href="/manifest.json">
 </head>
-<body>
+`<body>
     <!-- Navigation Bar -->
-    <nav class="admin-nav">
+    <nav class="admin-nav" role="navigation" aria-label="Main navigation">
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+            <i class="bi bi-list"></i>
+        </button>
+        
         <div class="nav-left">
-            <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
-            <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="admin-logo">
+            <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo" width="36" height="36">
+            <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="admin-logo" width="36" height="36">
             <span class="admin-app-title">CHRONIX</span>
         </div>
         
-        <ul class="nav-links">
-            <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-            <li><a href="admin-subjects.html"><i class="bi bi-book"></i> Subjects</a></li>
-            <li><a href="admin-sections.html"><i class="bi bi-layers"></i> Sections</a></li>
-            <li><a href="admin-rooms.html"><i class="bi bi-door-open"></i> Rooms</a></li>
-            <li><a href="admin-schedules.html"><i class="bi bi-calendar-event"></i> Schedules</a></li>
-            <li class="active"><a href="admin-students.html"><i class="bi bi-mortarboard"></i> Students</a></li>
-            <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i> Teachers</a></li>
+        <ul class="nav-links" role="menubar">
+            <li role="none">
+                <a href="admin-dashboard.html" role="menuitem">
+                    <i class="bi bi-speedometer2" aria-hidden="true"></i> 
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="active" role="none">
+                <a href="admin-subjects.html" role="menuitem" aria-current="page">
+                    <i class="bi bi-book" aria-hidden="true"></i> 
+                    <span>Subjects</span>
+                </a>
+            </li>
+            <li role="none">
+                <a href="admin-sections.html" role="menuitem">
+                    <i class="bi bi-layers" aria-hidden="true"></i> 
+                    <span>Sections</span>
+                </a>
+            </li>
+            <li role="none">
+                <a href="admin-rooms.html" role="menuitem">
+                    <i class="bi bi-door-open" aria-hidden="true"></i> 
+                    <span>Rooms</span>
+                </a>
+            </li>
+            <li role="none">
+                <a href="admin-schedules.html" role="menuitem">
+                    <i class="bi bi-calendar-event" aria-hidden="true"></i> 
+                    <span>Schedules</span>
+                </a>
+            </li>
+            <li role="none">
+                <a href="admin-students.html" role="menuitem">
+                    <i class="bi bi-mortarboard" aria-hidden="true"></i> 
+                    <span>Students</span>
+                </a>
+            </li>
+            <li role="none">
+                <a href="admin-teachers.html" role="menuitem">
+                    <i class="bi bi-person-badge" aria-hidden="true"></i> 
+                    <span>Teachers</span>
+                </a>
+            </li>
         </ul>
+        
         <div class="nav-right">
-            <div class="admin-profile-dropdown">
-                <img id="profileAvatar" src="./img/default_admin_avatar.png" alt="Admin Avatar" class="profile-img">
-                <span class="profile-name" id="profileName">Admin <i class="bi bi-chevron-down"></i></span>
-                <div class="profile-dropdown">
-                    <a href="admin-profile.html"><i class="bi bi-person"></i> Profile</a>
-                    <a href="#" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            <div class="admin-profile-dropdown" role="button" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
+                <img id="profileAvatar" src="/img/default_admin_avatar.png" alt="Admin Avatar" class="profile-img" width="32" height="32">
+                <span class="profile-name" id="profileName">Admin <i class="bi bi-chevron-down" aria-hidden="true"></i></span>
+                <div class="profile-dropdown" role="menu">
+                    <a href="admin-profile.html" role="menuitem">
+                        <i class="bi bi-person" aria-hidden="true"></i> 
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" id="logoutBtn" role="menuitem">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i> 
+                        <span>Logout</span>
+                    </a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="admin-students-main">
-        <div class="admin-center-container">
-            <!-- Header Section -->
-            <div class="students-header">
-                <h1>Student Management</h1>
-                <p>View and manage all students and their class schedules</p>
-            </div>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <ul>
+            <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+            <li class="active"><a href="admin-subjects.html"><i class="bi bi-book"></i><span>Subjects</span></a></li>
+            <li><a href="admin-sections.html"><i class="bi bi-layers"></i><span>Sections</span></a></li>
+            <li><a href="admin-rooms.html"><i class="bi bi-door-open"></i><span>Rooms</span></a></li>
+            <li><a href="admin-schedules.html"><i class="bi bi-calendar-event"></i><span>Schedules</span></a></li>
+            <li><a href="admin-students.html"><i class="bi bi-mortarboard"></i><span>Students</span></a></li>
+            <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i><span>Teachers</span></a></li>
+        </ul>
+    </nav>
 
-            <!-- Search and Filters -->
-            <div class="students-controls">
+    <!-- Page content -->
+    <main class="admin-dashboard-main" role="main">
+        <div class="admin-center-container subjects-container">
+            <h2 class="dashboard-title">Manage Subjects</h2>
+            <div id="subjectBubbleMessage" class="subject-bubble-message"></div>
+            
+            <!-- Search and Filter Bar -->
+            <div class="table-controls">
                 <div class="search-box">
                     <i class="bi bi-search"></i>
-                    <input type="text" id="studentSearch" placeholder="Search students by name, email, or ID...">
+                    <input type="text" id="subjectSearch" placeholder="Search subjects..." />
                 </div>
-                <div class="filter-controls">
-                    <select id="yearLevelFilter">
-                        <option value="">All Year Levels</option>
-                        <option value="1">1st Year</option>
-                        <option value="2">2nd Year</option>
-                        <option value="3">3rd Year</option>
-                        <option value="4">4th Year</option>
-                    </select>
-                    <select id="sectionFilter">
-                        <option value="">All Sections</option>
-                    </select>
-                    <select id="statusFilter">
-                        <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
+                <button class="subject-create-btn" id="openSubjectModal">
+                    <i class="bi bi-plus-circle"></i> 
+                    <span>Create New Subject</span>
+                </button>
             </div>
-
-            <!-- Student Statistics Cards -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="totalStudents">0</span>
-                        <span class="stat-label">Total Students</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon green">
-                        <i class="bi bi-check-circle-fill"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="activeStudents">0</span>
-                        <span class="stat-label">Active Students</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon orange">
-                        <i class="bi bi-calendar-week"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="enrolledSections">0</span>
-                        <span class="stat-label">Enrolled Sections</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Students Table -->
-            <div class="students-table-container">
-                <table class="students-table">
+            
+            <div class="subjects-table-wrapper">
+                <table class="subjects-table">
                     <thead>
                         <tr>
-                            <th>Student Name</th>
-                            <th>Email</th>
-                            <th>CTU ID</th>
-                            <th>Section</th>
-                            <th>Year Level</th>
-                            <th>Gender</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th>COURSE CODE</th>
+                            <th>DESCRIPTIVE TITLE</th>
+                            <th>YEAR LEVEL</th>
+                            <th>CO-PREREQUISITE</th>
+                            <th>UNITS</th>
+                            <th>LEC HOURS</th>
+                            <th>LAB HOURS</th>
+                            <th>TOTAL HOURS</th>
+                            <th>REMARKS</th>
+                            <th>ACTIONS</th>
                         </tr>
                     </thead>
-                    <tbody id="studentsTableBody">
-                        <!-- Students will be populated by JavaScript -->
+                    <tbody id="subjectsTableBody">
+                        <!-- Populated by JS -->
                     </tbody>
                 </table>
-            </div>
-
-            <!-- Loading State -->
-            <div id="loadingState" class="loading-state">
-                <i class="bi bi-arrow-repeat"></i>
-                <span>Loading students...</span>
-            </div>
-
-            <!-- Empty State -->
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <i class="bi bi-person-x"></i>
-                <h3>No Students Found</h3>
-                <p>There are no students in the system yet.</p>
             </div>
         </div>
     </main>
 
-    <!-- Student Schedule Modal -->
-    <div id="studentScheduleModal" class="modal-overlay" style="display:none;">
-        <div class="modal-content student-schedule-modal">
-            <div class="modal-header">
-                <h3 id="studentScheduleTitle">Student Schedule</h3>
-                <button class="modal-close" id="closeStudentScheduleModal">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-            
-            <div class="student-info">
-                <div class="student-avatar">
-                    <img id="modalStudentAvatar" src="./img/default_student_avatar.png" alt="Student Avatar">
-                </div>
-                <div class="student-details">
-                    <h4 id="modalStudentName">Loading...</h4>
-                    <p id="modalStudentEmail">Loading...</p>
-                    <p id="modalStudentId">Loading...</p>
-                    <p id="modalStudentSection">Loading...</p>
-                </div>
-            </div>
-
-            <!-- Schedule Filters -->
-            <div class="schedule-filters">
-                <div class="filter-group">
-                    <label>View:</label>
-                    <select id="scheduleViewSelect">
-                        <option value="weekly">Weekly View</option>
-                        <option value="daily">Daily View</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Shift:</label>
-                    <div class="shift-toggle-small">
-                        <button class="shift-btn-small active" data-shift="all">All</button>
-                        <button class="shift-btn-small" data-shift="day">Day</button>
-                        <button class="shift-btn-small" data-shift="night">Night</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Weekly Schedule View -->
-            <div id="weeklyScheduleView" class="schedule-view">
-                <div class="weekly-calendar">
-                    <div class="calendar-header-small">
-                        <h4>Weekly Class Schedule</h4>
-                    </div>
-                    <div class="weekly-grid" id="weeklyGrid">
-                        <!-- Weekly schedule will be populated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Daily Schedule View -->
-            <div id="dailyScheduleView" class="schedule-view" style="display: none;">
-                <div class="daily-calendar">
-                    <div class="daily-header">
-                        <button class="nav-btn-small" id="prevDayBtn">
-                            <i class="bi bi-chevron-left"></i>
-                        </button>
-                        <h4 id="currentDayDisplay">Monday</h4>
-                        <button class="nav-btn-small" id="nextDayBtn">
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                    </div>
-                    <div class="daily-schedule" id="dailySchedule">
-                        <!-- Daily schedule will be populated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Schedule Statistics -->
-            <div class="schedule-stats">
-                <div class="stat-card">
-                    <div class="stat-icon lecture">
-                        <i class="bi bi-book"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="lectureCount">0</span>
-                        <span class="stat-label">Lecture Hours</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon lab">
-                        <i class="bi bi-laptop"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="labCount">0</span>
-                        <span class="stat-label">Lab Hours</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon total">
-                        <i class="bi bi-clock"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="totalHours">0</span>
-                        <span class="stat-label">Total Hours/Week</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Student Modal -->
-    <div id="editStudentModal" class="modal-overlay" style="display:none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="editStudentModalTitle">Edit Student</h3>
-                <button class="modal-close" id="closeEditStudentModal">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-            
-            <form id="editStudentForm">
-                <div class="form-grid">
+    <!-- Modal for Creating/Editing Subject (horizontal layout) -->
+    <div id="subjectModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content horizontal-modal">
+            <h3 id="subjectModalTitle">Create New Subject</h3>
+            <form id="subjectForm">
+                <div class="horizontal-grid">
                     <div class="form-row">
-                        <label for="editFullName">Full Name *</label>
-                        <input type="text" id="editFullName" name="fullname" required>
+                        <input type="text" name="courseCode" placeholder="Course Code (e.g. OOP121)" required />
                     </div>
-                    
                     <div class="form-row">
-                        <label for="editEmail">Email *</label>
-                        <input type="email" id="editEmail" name="email" required>
+                        <input type="text" name="descriptiveTitle" placeholder="Descriptive Title" required />
                     </div>
-                    
                     <div class="form-row">
-                        <label for="editCtuid">CTU ID *</label>
-                        <input type="text" id="editCtuid" name="ctuid" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <label for="editBirthdate">Birthdate</label>
-                        <input type="date" id="editBirthdate" name="birthdate">
-                    </div>
-                    
-                    <div class="form-row">
-                        <label for="editGender">Gender</label>
-                        <select id="editGender" name="gender">
-                            <option value="">Select Gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
+                        <select name="yearLevel" required>
+                            <option value="" disabled selected>Select Year Level</option>
+                            <option value="1">Year 1</option>
+                            <option value="2">Year 2</option>
+                            <option value="3">Year 3</option>
+                            <option value="4">Year 4</option>
                         </select>
                     </div>
-                    
                     <div class="form-row">
-                        <label for="editSection">Section</label>
-                        <input type="text" id="editSection" name="section" placeholder="e.g., BSIT 3A">
+                        <input type="text" name="coPrerequisite" placeholder="Co/Prerequisite" />
                     </div>
-                    
                     <div class="form-row">
-                        <label for="editRoom">Room</label>
-                        <input type="text" id="editRoom" name="room" placeholder="Optional">
+                        <input type="text" name="units" placeholder="Units" />
+                    </div>
+                    <div class="form-row">
+                        <input type="number" name="lecHours" id="lecHoursInput" min="0" placeholder="Lec Hours" />
+                    </div>
+                    <div class="form-row">
+                        <input type="number" name="labHours" id="labHoursInput" min="0" placeholder="Lab Hours" />
+                    </div>
+                    <div class="form-row">
+                        <input type="number" name="totalHours" id="totalHoursInput" min="0" placeholder="Total Hours" readonly />
+                    </div>
+                    <div class="form-row">
+                        <input type="text" name="remarks" placeholder="Remarks" />
                     </div>
                 </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="modal-cancel" id="cancelEditStudent">Cancel</button>
-                    <button type="submit" class="modal-submit" id="submitEditStudent">Update Student</button>
+                <div class="form-row" style="grid-column: 1 / -1;">
+                    <textarea name="description" placeholder="Description" rows="2"></textarea>
+                </div>
+                <div class="modal-actions" style="grid-column: 1 / -1;">
+                    <button type="button" class="modal-cancel" id="closeSubjectModal">Cancel</button>
+                    <button type="submit" class="modal-submit" id="submitSubjectBtn">Create</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteStudentModal" class="modal-overlay" style="display:none;">
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-header">
-                <h3>Delete Student</h3>
-                <button class="modal-close" id="closeDeleteStudentModal">
-                    <i class="bi bi-x"></i>
-                </button>
+    <div id="deleteSubjectModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width:340px;">
+            <h3 style="margin-bottom:16px;">Delete Subject</h3>
+            <div id="deleteModalText" style="font-size:1em;margin-bottom:24px;">
+                Are you sure you want to delete this subject?
             </div>
-            
-            <div class="delete-confirmation">
-                <div class="warning-icon">
-                    <i class="bi bi-exclamation-triangle"></i>
-                </div>
-                <p id="deleteConfirmationText">Are you sure you want to delete this student? This action cannot be undone.</p>
-                
-                <div class="student-warning-info">
-                    <strong>Note:</strong> All student records and associated data will be permanently removed.
-                </div>
-            </div>
-
             <div class="modal-actions">
-                <button type="button" class="modal-cancel" id="cancelDeleteStudent">Cancel</button>
-                <button type="button" class="modal-delete" id="confirmDeleteStudent">Delete Student</button>
+                <button type="button" class="modal-cancel" id="cancelDeleteSubjectBtn">Cancel</button>
+                <button type="button" class="modal-submit" id="confirmDeleteSubjectBtn" style="background:#d8000c;">Delete</button>
             </div>
         </div>
     </div>
 
-    <!-- Bubble Notification -->
-    <div id="studentBubbleMessage" class="section-bubble-message"></div>
+    <!-- Description Modal -->
+    <div id="descSubjectModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width:380px;">
+            <h3 style="margin-bottom:16px;">Subject Description</h3>
+            <div id="descModalText" style="font-size:1em;white-space:pre-line;margin-bottom:10px;">
+                <!-- Filled by JS -->
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel" id="closeDescSubjectBtn">Close</button>
+            </div>
+        </div>
+    </div>
 
-<script type="module" src="/js/api-config.js"></script>
-<script type="module" src="/js/error-handler.js"></script>
-<script type="module" src="/js/auth-guard.js"></script>
-<script type="module" src="/js/admin-students.js"></script>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" aria-live="polite" aria-label="Loading subjects data">
+        <div class="loading-content">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <p>Loading Subjects Data...</p>
+        </div>
+    </div>
+
+    <!-- Connection Status Indicator -->
+    <div id="connectionStatus" class="connection-status" aria-live="polite"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="/js/api-config.js"></script>
+    <script type="module" src="/js/error-handler.js"></script>
+    <script type="module" src="/js/auth-guard.js"></script>
+    <script type="module" src="/js/admin-subjects.js"></script>
+    
+    <!-- Mobile Menu Toggle and Responsive Script -->
+    <script>
+        // Mobile menu toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const mobileBottomNav = document.getElementById('mobileBottomNav');
+            
+            if (mobileMenuToggle && mobileBottomNav) {
+                mobileMenuToggle.addEventListener('click', function() {
+                    const isVisible = mobileBottomNav.style.display === 'block';
+                    mobileBottomNav.style.display = isVisible ? 'none' : 'block';
+                    
+                    // Change icon
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.className = isVisible ? 'bi bi-list' : 'bi bi-x-lg';
+                    }
+                });
+            }
+            
+            // Profile dropdown functionality
+            const profileDropdown = document.querySelector('.admin-profile-dropdown');
+            if (profileDropdown) {
+                profileDropdown.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isOpen = profileDropdown.classList.toggle('open');
+                    profileDropdown.setAttribute('aria-expanded', isOpen);
+                });
+
+                document.addEventListener('click', function() {
+                    profileDropdown.classList.remove('open');
+                    profileDropdown.setAttribute('aria-expanded', 'false');
+                });
+            }
+        });
+
+        // Mobile detection and redirection
+        function isMobileDevice() {
+            return window.innerWidth <= 768 || 
+                   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Prevent redirect loops and multiple rapid redirects
+        let lastRedirectTime = 0;
+        const REDIRECT_COOLDOWN = 1000; // 1 second cooldown
+
+        function shouldRedirectToMobile() {
+            const now = Date.now();
+            if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+                return false; // Too soon since last redirect
+            }
+            
+            return isMobileDevice() && !window.location.pathname.includes('-mobile');
+        }
+
+        function shouldRedirectToDesktop() {
+            const now = Date.now();
+            if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+                return false; // Too soon since last redirect
+            }
+            
+            return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+        }
+
+        // Initial redirect check
+        if (shouldRedirectToMobile()) {
+            lastRedirectTime = Date.now();
+            console.log('Redirecting to mobile version...');
+            window.location.href = '/admin-subjects-mobile.html';
+        }
+
+        // Handle resize events with debouncing
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                // Redirect to mobile if needed
+                if (shouldRedirectToMobile()) {
+                    lastRedirectTime = Date.now();
+                    console.log('Screen resized - redirecting to mobile version...');
+                    window.location.href = '/admin-subjects-mobile.html';
+                }
+                // Redirect to desktop if needed
+                else if (shouldRedirectToDesktop()) {
+                    lastRedirectTime = Date.now();
+                    console.log('Screen resized - redirecting to desktop version...');
+                    window.location.href = '/admin-subjects.html';
+                }
+            }, 250); // Wait 250ms after resize stops
+        });
+    </script>
 </body>
 </html>
