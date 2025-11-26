@@ -1001,16 +1001,43 @@ a {
         left: 0 !important;
     }
 
+    /* Hide Sign Up by default on mobile */
+    #p2 {
+        display: none;
+    }
+
+    /* Show Sign Up and hide Sign In when targeted */
     #t2:target #p1 {
         display: none;
     }
 
     #t2:target #p2 {
+        display: block;
         transform: translateX(0) !important;
     }
 
     .page-content {
         transform: translate(-50%, -50%) !important;
+    }
+
+    /* Ensure proper z-index and pointer events on mobile */
+    .page#p1 {
+        z-index: 10;
+        pointer-events: auto;
+    }
+
+    .page#p2 {
+        z-index: 5;
+        pointer-events: none;
+    }
+
+    #t2:target .page#p1 {
+        pointer-events: none;
+    }
+
+    #t2:target .page#p2 {
+        pointer-events: auto;
+        z-index: 10;
     }
 }
 

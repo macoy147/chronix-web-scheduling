@@ -168,10 +168,10 @@
                     if (input) {
                         if (input.type === 'password') {
                             input.type = 'text';
-                            this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                            this.innerHTML = '<i class="fas fa-eye"></i>';
                         } else {
                             input.type = 'password';
-                            this.innerHTML = '<i class="fas fa-eye"></i>';
+                            this.innerHTML = '<i class="fas fa-eye-slash"></i>';
                         }
                     }
                 });
@@ -464,9 +464,9 @@
                     form.reset();
                     // Reset password visibility
                     document.getElementById('signupPassword').type = 'password';
-                    document.querySelector('[data-target="signupPassword"]').innerHTML = '<i class="fas fa-eye"></i>';
+                    document.querySelector('[data-target="signupPassword"]').innerHTML = '<i class="fas fa-eye-slash"></i>';
                     document.getElementById('signupConfirmPassword').type = 'password';
-                    document.querySelector('[data-target="signupConfirmPassword"]').innerHTML = '<i class="fas fa-eye"></i>';
+                    document.querySelector('[data-target="signupConfirmPassword"]').innerHTML = '<i class="fas fa-eye-slash"></i>';
                     
                     // Switch to login form after successful registration
                     setTimeout(() => {
@@ -541,7 +541,7 @@
                         
                         form.reset();
                         document.getElementById('loginPassword').type = 'password';
-                        document.querySelector('[data-target="loginPassword"]').innerHTML = '<i class="fas fa-eye"></i>';
+                        document.querySelector('[data-target="loginPassword"]').innerHTML = '<i class="fas fa-eye-slash"></i>';
                         
                         // Redirect based on role with a small delay to ensure session is stored
                         setTimeout(() => {
