@@ -172,9 +172,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const data = await res.json();
             console.log('Subjects data received:', data);
+            allSubjects = Array.isArray(data) ? data : []; // Store all subjects
             
-            if (Array.isArray(data) && data.length > 0) {
-                renderSubjectsTable(data);
+            if (allSubjects.length > 0) {
+                renderSubjectsTable(allSubjects);
             } else {
                 tbody.innerHTML = `
                     <tr>
@@ -196,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>
             `;
             showBubbleMessage('Failed to load subjects', 'error');
+            allSubjects = [];
         }
     }
 
@@ -489,6 +491,40 @@ document.addEventListener('DOMContentLoaded', function() {
             editMode = false;
             editingId = null;
         });
+    }
+
+    // Search functionality
+    const searchInput = document.getElementById('subjectSearch');
+    let allSubjects = []; // Store all subjects for filtering
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            filterSubjects(searchTerm);
+        });
+    }
+    
+    function filterSubjects(searchTerm) {
+        if (!searchTerm) {
+            // Show all subjects
+            renderSubjectsTable(allSubjects);
+            return;
+        }
+        
+        // Filter subjects based on search term
+        const filtered = allSubjects.filter(subj => {
+            return (
+                (subj.courseCode || '').toLowerCase().includes(searchTerm) ||
+                (subj.descriptiveTitle || '').toLowerCase().includes(searchTerm) ||
+                (subj.yearLevel || '').toString().includes(searchTerm) ||
+                (subj.coPrerequisite || '').toLowerCase().includes(searchTerm) ||
+                (subj.units || '').toString().includes(searchTerm) ||
+                (subj.remarks || '').toLowerCase().includes(searchTerm) ||
+                (subj.description || '').toLowerCase().includes(searchTerm)
+            );
+        });
+        
+        renderSubjectsTable(filtered);
     }
 
     // Initial load

@@ -12,6 +12,10 @@
 <body>
     <!-- Navigation Bar -->
     <nav class="admin-nav">
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+            <i class="bi bi-list"></i>
+        </button>
+        
         <div class="nav-left">
             <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
             <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="admin-logo">
@@ -27,6 +31,7 @@
             <li><a href="admin-students.html"><i class="bi bi-mortarboard"></i> Students</a></li>
             <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i> Teachers</a></li>
         </ul>
+        
         <div class="nav-right">
             <div class="admin-profile-dropdown">
                 <img id="profileAvatar" src="/img/default_admin_avatar.png" alt="Admin Avatar" class="profile-img">
@@ -39,14 +44,38 @@
         </div>
     </nav>
 
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <ul>
+            <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+            <li class="active"><a href="admin-subjects.html"><i class="bi bi-book"></i><span>Subjects</span></a></li>
+            <li><a href="admin-sections.html"><i class="bi bi-layers"></i><span>Sections</span></a></li>
+            <li><a href="admin-rooms.html"><i class="bi bi-door-open"></i><span>Rooms</span></a></li>
+            <li><a href="admin-schedules.html"><i class="bi bi-calendar-event"></i><span>Schedules</span></a></li>
+            <li><a href="admin-students.html"><i class="bi bi-mortarboard"></i><span>Students</span></a></li>
+            <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i><span>Teachers</span></a></li>
+        </ul>
+    </nav>
+
     <!-- Page content -->
     <main class="admin-dashboard-main">
         <div class="admin-center-container subjects-container">
             <h2 class="dashboard-title">Manage Subjects</h2>
-            
             <div id="subjectBubbleMessage" class="subject-bubble-message"></div>
+            
+            <!-- Search and Filter Bar -->
+            <div class="table-controls">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="subjectSearch" placeholder="Search subjects..." />
+                </div>
+                <button class="subject-create-btn" id="openSubjectModal">
+                    <i class="bi bi-plus-circle"></i> 
+                    <span>Create New Subject</span>
+                </button>
+            </div>
+            
             <div class="subjects-table-wrapper">
-                <button class="subject-create-btn" id="openSubjectModal"><i class="bi bi-plus"></i> Create New Subject</button>
                 <table class="subjects-table">
                     <thead>
                         <tr>
@@ -152,5 +181,71 @@
 <script type="module" src="/js/error-handler.js"></script>
 <script type="module" src="/js/auth-guard.js"></script>
 <script type="module" src="/js/admin-subjects.js"></script>
+
+<script>
+// Mobile menu toggle and drag functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileBottomNav = document.getElementById('mobileBottomNav');
+    
+    if (mobileMenuToggle && mobileBottomNav) {
+        mobileMenuToggle.addEventListener('click', function() {
+            mobileBottomNav.classList.toggle('nav-visible');
+            
+            // Change icon
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.className = mobileBottomNav.classList.contains('nav-visible') ? 'bi bi-x-lg' : 'bi bi-list';
+            }
+        });
+    }
+    
+    // Draggable navigation for mobile
+    if (mobileBottomNav) {
+        const navList = mobileBottomNav.querySelector('ul');
+        let isDragging = false;
+        let startX = 0;
+        let scrollLeft = 0;
+        
+        // Mouse events
+        navList.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            navList.style.cursor = 'grabbing';
+            startX = e.pageX - navList.offsetLeft;
+            scrollLeft = navList.scrollLeft;
+        });
+        
+        navList.addEventListener('mouseleave', () => {
+            isDragging = false;
+            navList.style.cursor = 'grab';
+        });
+        
+        navList.addEventListener('mouseup', () => {
+            isDragging = false;
+            navList.style.cursor = 'grab';
+        });
+        
+        navList.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX - navList.offsetLeft;
+            const walk = (x - startX) * 2;
+            navList.scrollLeft = scrollLeft - walk;
+        });
+        
+        // Touch events
+        navList.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].pageX - navList.offsetLeft;
+            scrollLeft = navList.scrollLeft;
+        }, { passive: true });
+        
+        navList.addEventListener('touchmove', (e) => {
+            const x = e.touches[0].pageX - navList.offsetLeft;
+            const walk = (x - startX) * 2;
+            navList.scrollLeft = scrollLeft - walk;
+        }, { passive: true });
+    }
+});
+</script>
 </body>
 </html>

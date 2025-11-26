@@ -26,17 +26,19 @@ body {
     overflow-x: hidden;
 }
 
-/* Navigation Bar */
+/* Enhanced Navigation Bar */
 .admin-nav {
     display: flex;
     align-items: center;
     background: var(--nav-bg);
-    height: 56px;
-    padding: 0 18px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    height: 60px;
+    padding: 0 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 100;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
 }
 
 .nav-left {
@@ -47,26 +49,32 @@ body {
 }
 
 .admin-logo {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     object-fit: contain;
-    margin-right: 10px;
+    margin-right: 12px;
     border-radius: 50%;
     background: #fff;
     border: 2px solid var(--ctu-soft-gold);
-    box-shadow: 0 2px 8px #f2d28344;
+    box-shadow: 0 4px 12px rgba(242, 210, 131, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.admin-logo:hover {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .admin-app-title {
     color: var(--ctu-soft-gold);
     font-weight: 800;
-    font-size: 1.08em;
+    font-size: 1.2em;
     letter-spacing: 0.5px;
     margin: 0 18px 0 0;
     padding: 0;
     display: flex;
     align-items: center;
     height: 100%;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .nav-links {
@@ -78,7 +86,8 @@ body {
 }
 
 .nav-links li {
-    margin: 0 2px;
+    margin: 0 4px;
+    position: relative;
 }
 
 .nav-links a {
@@ -86,24 +95,46 @@ body {
     align-items: center;
     color: var(--ctu-white);
     font-weight: 600;
-    font-size: 0.99em;
+    font-size: 0.95em;
     text-decoration: none;
-    padding: 7px 10px;
-    border-radius: 6px;
-    transition: background .18s, color .18s, box-shadow .18s;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
     position: relative;
+    overflow: hidden;
+}
+
+.nav-links a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: left 0.3s ease;
+}
+
+.nav-links a:hover::before {
+    left: 0;
 }
 
 .nav-links li.active a,
 .nav-links a:hover {
     background: var(--ctu-soft-gold);
     color: var(--ctu-deep-blue);
-    box-shadow: 0 2px 8px var(--ctu-soft-gold);
+    box-shadow: 0 4px 12px rgba(242, 210, 131, 0.4);
+    transform: translateY(-2px);
+}
+
+.nav-links a:focus {
+    outline: 2px solid var(--ctu-soft-gold);
+    outline-offset: 2px;
 }
 
 .nav-links a i {
-    margin-right: 6px;
-    font-size: 1.07em;
+    margin-right: 8px;
+    font-size: 1.1em;
 }
 
 .nav-right {
@@ -119,7 +150,7 @@ body {
     user-select: none;
     padding: 6px 12px;
     border-radius: 30px;
-    transition: background 0.3s ease;
+    transition: background 0.2s ease;
 }
 
 .admin-profile-dropdown:hover {
@@ -140,23 +171,20 @@ body {
     border: 2px solid var(--ctu-soft-gold);
     background: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    display: block;
-    transition: opacity 0.3s ease;
 }
 
 .profile-name {
     color: var(--ctu-white);
     font-weight: 600;
-    font-size: 0.97em;
+    font-size: 0.95em;
     display: flex;
     align-items: center;
-    transition: opacity 0.3s ease;
 }
 
 .profile-name i {
     margin-left: 5px;
-    font-size: 0.78em;
-    transition: transform 0.3s ease;
+    font-size: 0.8em;
+    transition: transform 0.2s ease;
 }
 
 .admin-profile-dropdown.open .profile-name i {
@@ -171,7 +199,7 @@ body {
     background: var(--profile-dropdown-bg);
     min-width: 140px;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
     z-index: 200;
     flex-direction: column;
     overflow: hidden;
@@ -951,22 +979,29 @@ body {
     transform: scale(1.1);
 }
 
+.mobile-menu-toggle:focus {
+    outline: 2px solid var(--ctu-soft-gold);
+    outline-offset: 2px;
+}
+
 /* Mobile Bottom Navigation */
 .mobile-bottom-nav {
     display: none;
     position: fixed;
-    bottom: -100%;
+    bottom: 0;
     left: 0;
     right: 0;
     background: var(--ctu-deep-blue);
     box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2);
     z-index: 999;
-    overflow: hidden;
-    transition: bottom 0.3s ease;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
 
-.mobile-bottom-nav.nav-visible {
-    bottom: 0;
+.mobile-bottom-nav::-webkit-scrollbar {
+    display: none;
 }
 
 .mobile-bottom-nav ul {
@@ -976,20 +1011,6 @@ body {
     padding: 8px 12px;
     gap: 8px;
     min-width: min-content;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    cursor: grab;
-    user-select: none;
-}
-
-.mobile-bottom-nav ul::-webkit-scrollbar {
-    display: none;
-}
-
-.mobile-bottom-nav ul:active {
-    cursor: grabbing;
 }
 
 .mobile-bottom-nav li {
@@ -1010,7 +1031,6 @@ body {
     transition: all 0.3s ease;
     white-space: nowrap;
     min-width: 70px;
-    pointer-events: auto;
 }
 
 .mobile-bottom-nav a i {
@@ -1035,11 +1055,6 @@ body {
     
     .mobile-bottom-nav {
         display: block;
-        bottom: -100%;
-    }
-    
-    .mobile-bottom-nav.nav-visible {
-        bottom: 0;
     }
     
     .admin-nav {
@@ -1224,6 +1239,21 @@ body {
     }
 }
 
+/* Touch-friendly interactions for non-hover devices */
+@media (hover: none) {
+    .rooms-table tbody tr:hover {
+        transform: none;
+    }
+    
+    .room-create-btn:hover {
+        transform: none;
+    }
+    
+    .nav-links a:hover {
+        background: transparent;
+    }
+}
+
 /* Landscape mode for mobile */
 @media (max-width: 900px) and (orientation: landscape) {
     .admin-nav {
@@ -1246,6 +1276,22 @@ body {
     }
 }
 
+/* High contrast support */
+@media (prefers-contrast: high) {
+    .rooms-table-wrapper {
+        border: 2px solid var(--ctu-deep-blue);
+    }
+    
+    .nav-links a {
+        border: 1px solid transparent;
+    }
+    
+    .nav-links a:hover,
+    .nav-links li.active a {
+        border-color: var(--ctu-soft-gold);
+    }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
     * {
@@ -1261,6 +1307,11 @@ body {
     .room-create-btn:hover,
     .modal-submit:hover,
     .modal-cancel:hover {
+        transform: none;
+    }
+    
+    .nav-links a:hover,
+    .nav-links li.active a {
         transform: none;
     }
 }
