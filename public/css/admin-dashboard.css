@@ -7,7 +7,7 @@
     --ctu-lightest-gray: #F4F7F9;
     --ctu-text-primary: #333333;
     --ctu-text-secondary: #555555;
-    --tint-blue-bg: #EAF3FF;
+    --tint-blue-bg: #EAF3FF;    
     --tint-gold-bg: #FFFBF0;
     --tint-red-bg: #FFF0F0;
     --nav-bg: var(--ctu-deep-blue);
@@ -94,19 +94,17 @@ body::before {
     transform: translateY(0);
 }
 
-/* Enhanced Navigation Bar */
+/* Navigation Bar */
 .admin-nav {
     display: flex;
     align-items: center;
     background: var(--nav-bg);
-    height: 60px;
-    padding: 0 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    height: 56px;
+    padding: 0 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
     position: sticky;
     top: 0;
     z-index: 100;
-    backdrop-filter: blur(10px);
-    transition: all var(--transition-medium) ease;
 }
 
 .nav-left {
@@ -117,32 +115,26 @@ body::before {
 }
 
 .admin-logo {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     object-fit: contain;
-    margin-right: 12px;
+    margin-right: 10px;
     border-radius: 50%;
     background: #fff;
     border: 2px solid var(--ctu-soft-gold);
-    box-shadow: 0 4px 12px rgba(242, 210, 131, 0.3);
-    transition: transform var(--transition-fast) ease;
-}
-
-.admin-logo:hover {
-    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 2px 8px #f2d28344;
 }
 
 .admin-app-title {
     color: var(--ctu-soft-gold);
     font-weight: 800;
-    font-size: 1.2em;
+    font-size: 1.08em;
     letter-spacing: 0.5px;
     margin: 0 18px 0 0;
     padding: 0;
     display: flex;
     align-items: center;
     height: 100%;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .nav-links {
@@ -154,8 +146,7 @@ body::before {
 }
 
 .nav-links li {
-    margin: 0 4px;
-    position: relative;
+    margin: 0 2px;
 }
 
 .nav-links a {
@@ -163,36 +154,19 @@ body::before {
     align-items: center;
     color: var(--ctu-white);
     font-weight: 600;
-    font-size: 0.95em;
+    font-size: 0.99em;
     text-decoration: none;
-    padding: 8px 14px;
-    border-radius: 8px;
-    transition: all var(--transition-fast) ease;
+    padding: 7px 10px;
+    border-radius: 6px;
+    transition: background .18s, color .18s, box-shadow .18s;
     position: relative;
-    overflow: hidden;
-}
-
-.nav-links a::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    transition: left var(--transition-medium) ease;
-}
-
-.nav-links a:hover::before {
-    left: 0;
 }
 
 .nav-links li.active a,
 .nav-links a:hover {
     background: var(--ctu-soft-gold);
     color: var(--ctu-deep-blue);
-    box-shadow: 0 4px 12px rgba(242, 210, 131, 0.4);
-    transform: translateY(-2px);
+    box-shadow: 0 2px 8px var(--ctu-soft-gold);
 }
 
 .nav-links a:focus {
@@ -201,8 +175,8 @@ body::before {
 }
 
 .nav-links a i {
-    margin-right: 8px;
-    font-size: 1.1em;
+    margin-right: 6px;
+    font-size: 1.07em;
 }
 
 .nav-right {
@@ -218,7 +192,7 @@ body::before {
     user-select: none;
     padding: 6px 12px;
     border-radius: 30px;
-    transition: background var(--transition-fast) ease;
+    transition: background 0.3s ease;
 }
 
 .admin-profile-dropdown:hover {
@@ -239,19 +213,23 @@ body::before {
     border: 2px solid var(--ctu-soft-gold);
     background: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: block;
+    transition: opacity 0.3s ease;
 }
 
 .profile-name {
     color: var(--ctu-white);
     font-weight: 600;
-    font-size: 0.95em;
+    font-size: 0.97em;
     display: flex;
     align-items: center;
+    transition: opacity 0.3s ease;
 }
+
 .profile-name i {
     margin-left: 5px;
-    font-size: 0.8em;
-    transition: transform var(--transition-fast) ease;
+    font-size: 0.78em;
+    transition: transform 0.3s ease;
 }
 
 .admin-profile-dropdown.open .profile-name i {
@@ -266,11 +244,11 @@ body::before {
     background: var(--profile-dropdown-bg);
     min-width: 140px;
     border-radius: 12px;
-    box-shadow: var(--shadow-large);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     z-index: 200;
     flex-direction: column;
     overflow: hidden;
-    animation: slideDown var(--transition-medium) ease;
+    animation: slideDown 0.3s ease;
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -294,12 +272,13 @@ body::before {
     padding: 12px 16px;
     text-decoration: none;
     font-weight: 500;
-    transition: all var(--transition-fast) ease;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 0.95em;
 }
+
 .profile-dropdown a:hover,
 .profile-dropdown a:focus {
     background: var(--profile-dropdown-hover);
@@ -316,7 +295,7 @@ body::before {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    transform: scale(0.95);
+    transform: scale(0.90);
     transform-origin: top center;
     padding-bottom: 50px;
     position: relative;
