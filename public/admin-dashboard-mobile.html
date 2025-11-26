@@ -307,13 +307,14 @@
         /* Mobile Main Content */
         .mobile-main-content {
             display: none;
-            padding: var(--mobile-padding);
-            padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-padding));
+            padding: 12px;
+            padding-bottom: calc(var(--mobile-bottom-nav-height) + 12px);
             min-height: 100vh;
             background: var(--ctu-lightest-gray);
             width: 100%;
             max-width: 100vw;
             overflow-x: hidden;
+            box-sizing: border-box;
         }
         
         /* Mobile Dashboard Header */
@@ -976,6 +977,14 @@
             <a href="admin-subjects.html" class="mobile-nav-item">
                 <i class="bi bi-book"></i>
                 <span>Subjects</span>
+            </a>
+            <a href="admin-sections.html" class="mobile-nav-item">
+                <i class="bi bi-layers"></i>
+                <span>Sections</span>
+            </a>
+            <a href="admin-rooms.html" class="mobile-nav-item">
+                <i class="bi bi-door-open"></i>
+                <span>Rooms</span>
             </a>
             <a href="admin-schedules.html" class="mobile-nav-item">
                 <i class="bi bi-calendar-event"></i>

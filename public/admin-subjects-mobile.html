@@ -278,13 +278,14 @@
         /* Mobile Main Content */
         .mobile-main-content {
             display: none;
-            padding: var(--mobile-padding);
-            padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-padding));
+            padding: 12px;
+            padding-bottom: calc(var(--mobile-bottom-nav-height) + 12px);
             min-height: 100vh;
             background: var(--ctu-lightest-gray);
             width: 100%;
             max-width: 100vw;
             overflow-x: hidden;
+            box-sizing: border-box;
         }
         
         /* Mobile Subjects Header */
@@ -646,13 +647,21 @@
                 <i class="bi bi-book"></i>
                 <span>Subjects</span>
             </a>
-            <a href="admin-schedules.html" class="mobile-nav-item">
-                <i class="bi bi-calendar-event"></i>
-                <span>Schedules</span>
+            <a href="admin-sections.html" class="mobile-nav-item">
+                <i class="bi bi-layers"></i>
+                <span>Sections</span>
             </a>
             <a href="admin-rooms.html" class="mobile-nav-item">
                 <i class="bi bi-door-open"></i>
                 <span>Rooms</span>
+            </a>
+            <a href="admin-schedules.html" class="mobile-nav-item">
+                <i class="bi bi-calendar-event"></i>
+                <span>Schedules</span>
+            </a>
+            <a href="admin-students.html" class="mobile-nav-item">
+                <i class="bi bi-mortarboard"></i>
+                <span>Students</span>
             </a>
             <a href="admin-teachers.html" class="mobile-nav-item">
                 <i class="bi bi-person-badge"></i>
@@ -660,6 +669,13 @@
             </a>
         </div>
     </nav>
+
+    <!-- Hidden desktop table for JavaScript compatibility -->
+    <div style="display: none;">
+        <table class="subjects-table">
+            <tbody id="subjectsTableBody"></tbody>
+        </table>
+    </div>
 
     <!-- Modal for Creating/Editing Subject -->
     <div id="subjectModal" class="modal-overlay" style="display:none;">
@@ -921,28 +937,102 @@
                 mobileSubjectsList.appendChild(card);
             });
             
-            // Attach event listeners
+            // Attach event listeners - directly handle actions
             mobileSubjectsList.querySelectorAll('.desc').forEach(btn => {
-                btn.onclick = () => {
+                btn.onclick = async () => {
                     const id = btn.getAttribute('data-id');
-                    const descBtn = document.querySelector(`.subjects-table .desc[data-id="${id}"]`);
-                    if (descBtn) descBtn.click();
+                    const descModal = document.getElementById('descSubjectModal');
+                    const descModalText = document.getElementById('descModalText');
+                    
+                    try {
+                        const res = await fetch('/subjects');
+                        if (res.ok) {
+                            const data = await res.json();
+                            const subject = data.find(s => s._id === id);
+                            
+                            if (descModalText) {
+                                descModalText.textContent = subject && subject.description 
+                                    ? subject.description 
+                                    : "No description provided for this subject.";
+                            }
+                            if (descModal) descModal.style.display = 'flex';
+                        }
+                    } catch (error) {
+                        console.error('Error loading description:', error);
+                    }
                 };
             });
             
             mobileSubjectsList.querySelectorAll('.edit').forEach(btn => {
-                btn.onclick = () => {
+                btn.onclick = async () => {
                     const id = btn.getAttribute('data-id');
-                    const editBtn = document.querySelector(`.subjects-table .edit[data-id="${id}"]`);
-                    if (editBtn) editBtn.click();
+                    
+                    try {
+                        const res = await fetch('/subjects');
+                        if (!res.ok) throw new Error('Failed to fetch subjects');
+                        
+                        const data = await res.json();
+                        const subject = data.find(s => s._id === id);
+                        
+                        if (!subject) return;
+                        
+                        // Populate form
+                        if (subjectForm) {
+                            subjectForm.courseCode.value = subject.courseCode || '';
+                            subjectForm.descriptiveTitle.value = subject.descriptiveTitle || '';
+                            subjectForm.yearLevel.value = subject.yearLevel || '';
+                            subjectForm.coPrerequisite.value = subject.coPrerequisite || '';
+                            subjectForm.units.value = subject.units || '';
+                            subjectForm.lecHours.value = subject.lecHours || '';
+                            subjectForm.labHours.value = subject.labHours || '';
+                            subjectForm.totalHours.value = subject.totalHours || '';
+                            subjectForm.remarks.value = subject.remarks || '';
+                            subjectForm.description.value = subject.description || '';
+                            
+                            // Set edit mode
+                            subjectForm.dataset.editMode = 'true';
+                            subjectForm.dataset.editingId = id;
+                        }
+                        
+                        if (subjectModalTitle) subjectModalTitle.textContent = 'Edit Subject';
+                        if (submitSubjectBtn) submitSubjectBtn.textContent = 'Save Changes';
+                        if (subjectModal) subjectModal.style.display = 'flex';
+                        
+                    } catch (error) {
+                        console.error('Error opening edit modal:', error);
+                    }
                 };
             });
             
             mobileSubjectsList.querySelectorAll('.delete').forEach(btn => {
-                btn.onclick = () => {
+                btn.onclick = async () => {
                     const id = btn.getAttribute('data-id');
-                    const deleteBtn = document.querySelector(`.subjects-table .delete[data-id="${id}"]`);
-                    if (deleteBtn) deleteBtn.click();
+                    const deleteModal = document.getElementById('deleteSubjectModal');
+                    const deleteModalText = document.getElementById('deleteModalText');
+                    const confirmDeleteBtn = document.getElementById('confirmDeleteSubjectBtn');
+                    
+                    try {
+                        const res = await fetch('/subjects');
+                        if (res.ok) {
+                            const data = await res.json();
+                            const subject = data.find(s => s._id === id);
+                            
+                            if (deleteModalText) {
+                                deleteModalText.textContent = subject
+                                    ? `Are you sure you want to delete "${subject.descriptiveTitle}" (${subject.courseCode})? This action cannot be undone.`
+                                    : 'Are you sure you want to delete this subject? This action cannot be undone.';
+                            }
+                            
+                            // Store the ID for deletion
+                            if (confirmDeleteBtn) {
+                                confirmDeleteBtn.dataset.deleteId = id;
+                            }
+                            
+                            if (deleteModal) deleteModal.style.display = 'flex';
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
                 };
             });
         }
@@ -970,12 +1060,203 @@
         
         loadMobileSubjects();
         
-        // Mobile create button
+        // Mobile create button - directly open modal
         const mobileOpenSubjectModal = document.getElementById('mobileOpenSubjectModal');
-        const openSubjectModal = document.getElementById('openSubjectModal');
-        if (mobileOpenSubjectModal && openSubjectModal) {
+        const subjectModal = document.getElementById('subjectModal');
+        const subjectForm = document.getElementById('subjectForm');
+        const subjectModalTitle = document.getElementById('subjectModalTitle');
+        const submitSubjectBtn = document.getElementById('submitSubjectBtn');
+        const closeSubjectModal = document.getElementById('closeSubjectModal');
+        
+        // Auto-calculate total hours
+        const lecInput = document.getElementById('lecHoursInput');
+        const labInput = document.getElementById('labHoursInput');
+        const totalInput = document.getElementById('totalHoursInput');
+
+        function updateTotal() {
+            if (lecInput && labInput && totalInput) {
+                const lec = parseFloat(lecInput.value) || 0;
+                const lab = parseFloat(labInput.value) || 0;
+                totalInput.value = lec + lab;
+            }
+        }
+
+        if (lecInput && labInput && totalInput) {
+            lecInput.addEventListener('input', updateTotal);
+            labInput.addEventListener('input', updateTotal);
+        }
+        
+        // Notification system
+        function showBubbleMessage(msg, type = "success") {
+            const bubble = document.getElementById('subjectBubbleMessage');
+            if (!bubble) return;
+            
+            bubble.textContent = msg;
+            bubble.classList.remove("show", "success", "error");
+            bubble.classList.add(type);
+            void bubble.offsetWidth;
+            bubble.classList.add("show");
+            
+            setTimeout(() => {
+                bubble.classList.remove("show");
+            }, 3000);
+        }
+        
+        if (mobileOpenSubjectModal) {
             mobileOpenSubjectModal.addEventListener('click', () => {
-                openSubjectModal.click();
+                if (subjectForm) {
+                    subjectForm.reset();
+                    delete subjectForm.dataset.editMode;
+                    delete subjectForm.dataset.editingId;
+                }
+                if (subjectModalTitle) subjectModalTitle.textContent = 'Create New Subject';
+                if (submitSubjectBtn) submitSubjectBtn.textContent = 'Create';
+                if (subjectModal) subjectModal.style.display = 'flex';
+            });
+        }
+        
+        // Close modal handlers
+        if (closeSubjectModal) {
+            closeSubjectModal.addEventListener('click', () => {
+                if (subjectModal) subjectModal.style.display = 'none';
+            });
+        }
+        
+        if (subjectModal) {
+            subjectModal.addEventListener('click', (e) => {
+                if (e.target === subjectModal) {
+                    subjectModal.style.display = 'none';
+                }
+            });
+        }
+        
+        // Form submission handler
+        if (subjectForm) {
+            subjectForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(subjectForm);
+                const data = {
+                    courseCode: formData.get('courseCode')?.trim() || '',
+                    descriptiveTitle: formData.get('descriptiveTitle')?.trim() || '',
+                    yearLevel: parseInt(formData.get('yearLevel') || '0'),
+                    coPrerequisite: formData.get('coPrerequisite')?.trim() || '',
+                    units: formData.get('units')?.trim() || '',
+                    lecHours: formData.get('lecHours') || '',
+                    labHours: formData.get('labHours') || '',
+                    totalHours: formData.get('totalHours') || '',
+                    remarks: formData.get('remarks')?.trim() || '',
+                    description: formData.get('description')?.trim() || ''
+                };
+                
+                // Validation
+                if (!data.courseCode || !data.descriptiveTitle || !data.yearLevel) {
+                    showBubbleMessage("Course Code, Descriptive Title, and Year Level are required.", "error");
+                    return;
+                }
+                
+                try {
+                    let url = '/subjects';
+                    let method = 'POST';
+                    
+                    const editMode = subjectForm.dataset.editMode === 'true';
+                    const editingId = subjectForm.dataset.editingId;
+                    
+                    if (editMode && editingId) {
+                        url += `/${editingId}`;
+                        method = 'PUT';
+                    }
+                    
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    const result = await res.json();
+                    
+                    if (res.ok) {
+                        showBubbleMessage(
+                            editMode ? "Subject updated successfully!" : "Subject created successfully!", 
+                            "success"
+                        );
+                        if (subjectModal) subjectModal.style.display = 'none';
+                        if (subjectForm) subjectForm.reset();
+                        loadMobileSubjects();
+                    } else {
+                        showBubbleMessage(result.error || "Failed to save subject.", "error");
+                    }
+                } catch (error) {
+                    console.error('Error saving subject:', error);
+                    showBubbleMessage("Network error. Please check your connection.", "error");
+                }
+            });
+        }
+        
+        // Delete confirmation modal handlers
+        const deleteSubjectModal = document.getElementById('deleteSubjectModal');
+        const cancelDeleteSubjectBtn = document.getElementById('cancelDeleteSubjectBtn');
+        const confirmDeleteSubjectBtn = document.getElementById('confirmDeleteSubjectBtn');
+        
+        if (cancelDeleteSubjectBtn) {
+            cancelDeleteSubjectBtn.addEventListener('click', () => {
+                if (deleteSubjectModal) deleteSubjectModal.style.display = 'none';
+            });
+        }
+        
+        if (confirmDeleteSubjectBtn) {
+            confirmDeleteSubjectBtn.addEventListener('click', async () => {
+                const deleteId = confirmDeleteSubjectBtn.dataset.deleteId;
+                if (!deleteId) return;
+                
+                try {
+                    const res = await fetch(`/subjects/${deleteId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await res.json();
+                    
+                    if (res.ok) {
+                        showBubbleMessage("Subject deleted successfully!", "success");
+                        loadMobileSubjects();
+                    } else {
+                        showBubbleMessage(result.error || "Failed to delete subject.", "error");
+                    }
+                } catch (error) {
+                    console.error('Error deleting subject:', error);
+                    showBubbleMessage("Network error. Please try again.", "error");
+                }
+                
+                if (deleteSubjectModal) deleteSubjectModal.style.display = 'none';
+                delete confirmDeleteSubjectBtn.dataset.deleteId;
+            });
+        }
+        
+        if (deleteSubjectModal) {
+            deleteSubjectModal.addEventListener('click', (e) => {
+                if (e.target === deleteSubjectModal) {
+                    deleteSubjectModal.style.display = 'none';
+                }
+            });
+        }
+        
+        // Description modal handlers
+        const descSubjectModal = document.getElementById('descSubjectModal');
+        const closeDescSubjectBtn = document.getElementById('closeDescSubjectBtn');
+        
+        if (closeDescSubjectBtn) {
+            closeDescSubjectBtn.addEventListener('click', () => {
+                if (descSubjectModal) descSubjectModal.style.display = 'none';
+            });
+        }
+        
+        if (descSubjectModal) {
+            descSubjectModal.addEventListener('click', (e) => {
+                if (e.target === descSubjectModal) {
+                    descSubjectModal.style.display = 'none';
+                }
             });
         }
         
