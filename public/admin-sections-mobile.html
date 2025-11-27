@@ -300,6 +300,44 @@
             margin-bottom: 16px;
         }
         
+        /* Mobile Search Bar */
+        .mobile-search-bar {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        
+        .mobile-search-bar i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--ctu-text-secondary);
+            font-size: 1rem;
+            pointer-events: none;
+        }
+        
+        .mobile-search-bar input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 2px solid #e5e8eb;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: #fff;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .mobile-search-bar input:focus {
+            outline: none;
+            border-color: var(--ctu-light-blue);
+            box-shadow: 0 0 0 4px rgba(62, 142, 222, 0.12);
+        }
+        
+        .mobile-search-bar input::placeholder {
+            color: #999;
+        }
+        
         /* Mobile Create Button */
         .mobile-create-btn {
             width: 100%;
@@ -580,6 +618,12 @@
         <!-- Sections Header -->
         <div class="mobile-sections-header">
             <h1 class="mobile-sections-title">Manage Sections</h1>
+            
+            <!-- Search Bar -->
+            <div class="mobile-search-bar">
+                <i class="bi bi-search"></i>
+                <input type="text" id="mobileSectionSearch" placeholder="Search sections...">
+            </div>
             
             <!-- Create Button -->
             <button class="mobile-create-btn" id="mobileOpenSectionModal">
@@ -959,6 +1003,7 @@
                 displayMobileSections(allMobileSections);
                 populateAdviserDropdown();
                 populateAcademicYearDropdown();
+                setupMobileSearch();
             } catch (error) {
                 console.error('Error loading sections:', error);
                 const mobileSectionsList = document.getElementById('mobileSectionsList');
@@ -1010,6 +1055,51 @@
                 option.textContent = year;
                 select.appendChild(option);
             });
+        }
+        
+        // Setup mobile search functionality
+        function setupMobileSearch() {
+            const searchInput = document.getElementById('mobileSectionSearch');
+            if (!searchInput) return;
+            
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase().trim();
+                filterMobileSections(searchTerm);
+            });
+        }
+        
+        // Filter mobile sections based on search term
+        function filterMobileSections(searchTerm) {
+            if (searchTerm === '') {
+                displayMobileSections(allMobileSections);
+                return;
+            }
+            
+            const filtered = allMobileSections.filter(section => {
+                const sectionName = section.sectionName?.toLowerCase() || '';
+                const program = section.programID?.toLowerCase() || '';
+                const yearLevel = section.yearLevel?.toString() || '';
+                const shift = section.shift?.toLowerCase() || '';
+                const academicYear = section.academicYear?.toLowerCase() || '';
+                const semester = section.semester?.toLowerCase() || '';
+                
+                // Find adviser name
+                let adviserName = '';
+                if (section.adviserTeacher) {
+                    const adviser = allTeachers.find(teacher => teacher._id === section.adviserTeacher);
+                    adviserName = adviser ? adviser.fullname.toLowerCase() : '';
+                }
+                
+                return sectionName.includes(searchTerm) ||
+                       program.includes(searchTerm) ||
+                       yearLevel.includes(searchTerm) ||
+                       shift.includes(searchTerm) ||
+                       adviserName.includes(searchTerm) ||
+                       academicYear.includes(searchTerm) ||
+                       semester.includes(searchTerm);
+            });
+            
+            displayMobileSections(filtered);
         }
         
         loadMobileSections();

@@ -49,6 +49,7 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'public')));
 }
 
+
 // Connect to MongoDB with updated options
 mongoose.connect(MONGODB_URI, {
     // Remove deprecated options

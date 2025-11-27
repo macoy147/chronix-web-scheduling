@@ -703,7 +703,13 @@
 
             function updateStats() {
                 document.getElementById('totalTeachers').textContent = allTeachers.length;
-                document.getElementById('activeTeachers').textContent = allTeachers.length;
+                // Count active teachers (those with schedules)
+                const activeCount = allTeachers.filter(teacher => {
+                    return allSchedules.some(schedule => 
+                        (schedule.teacher._id || schedule.teacher) === teacher._id
+                    );
+                }).length;
+                document.getElementById('activeTeachers').textContent = activeCount;
             }
 
             function displayTeachers(teachers) {

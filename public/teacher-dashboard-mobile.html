@@ -84,6 +84,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        
+        .mobile-top-bar .menu-icon:active {
+            background: rgba(242, 210, 131, 0.2);
+            transform: scale(0.95);
         }
         
         .mobile-top-bar .profile-section {
@@ -106,14 +115,16 @@
         .mobile-side-menu {
             position: fixed;
             top: 0;
-            left: -280px;
+            left: -100%;
             width: 280px;
+            max-width: 85vw;
             height: 100vh;
             background: white;
             z-index: 1001;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            transition: left 0.3s ease;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         .mobile-side-menu.show {
@@ -121,31 +132,58 @@
         }
         
         .mobile-menu-header {
-            background: var(--ctu-deep-blue);
+            background: linear-gradient(135deg, var(--ctu-deep-blue) 0%, #003d7a 100%);
             padding: 20px;
             display: flex;
             align-items: center;
             gap: 12px;
+            position: relative;
+        }
+        
+        .mobile-menu-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            font-size: 1.3em;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-close:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95);
         }
         
         .mobile-menu-header .profile-img {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             object-fit: cover;
             border-radius: 50%;
             border: 3px solid var(--ctu-soft-gold);
             background: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
         
         .mobile-menu-header .user-info {
             flex: 1;
             color: white;
+            padding-right: 40px;
         }
         
         .mobile-menu-header .user-info h3 {
             margin: 0;
-            font-size: 1.1em;
+            font-size: 1.15em;
             font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         
         .mobile-menu-header .user-info p {
@@ -165,26 +203,60 @@
             padding: 16px 20px;
             color: var(--ctu-text-primary);
             text-decoration: none;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             border-left: 4px solid transparent;
+            position: relative;
+            overflow: hidden;
         }
         
-        .mobile-menu-item:hover,
+        .mobile-menu-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            background: var(--tint-blue-bg);
+            transition: width 0.3s ease;
+            z-index: -1;
+        }
+        
+        .mobile-menu-item:active::before {
+            width: 100%;
+        }
+        
         .mobile-menu-item.active {
             background: var(--tint-blue-bg);
             border-left-color: var(--ctu-light-blue);
             color: var(--ctu-deep-blue);
         }
         
+        .mobile-menu-item.active::before {
+            width: 100%;
+        }
+        
         .mobile-menu-item i {
             font-size: 1.3em;
-            width: 24px;
+            width: 28px;
             text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-menu-item:active i {
+            transform: scale(1.1);
         }
         
         .mobile-menu-item span {
             font-weight: 600;
             font-size: 0.95em;
+        }
+        
+        .mobile-menu-item.logout {
+            color: var(--ctu-red-accent);
+        }
+        
+        .mobile-menu-item.logout:active {
+            background: var(--tint-red-bg);
         }
         
         .mobile-menu-divider {
@@ -201,11 +273,15 @@
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
-            display: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            backdrop-filter: blur(2px);
         }
         
         .mobile-menu-overlay.show {
-            display: block;
+            opacity: 1;
+            visibility: visible;
         }
         
         /* Mobile Bottom Navigation */
@@ -236,20 +312,49 @@
             transition: all 0.3s ease;
             border-radius: 8px;
             gap: 4px;
+            min-height: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mobile-nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: var(--ctu-soft-gold);
+            transition: width 0.3s ease;
+        }
+        
+        .mobile-nav-item.active::before {
+            width: 60%;
         }
         
         .mobile-nav-item i {
             font-size: 1.5em;
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-nav-item:active i {
+            transform: scale(1.2);
         }
         
         .mobile-nav-item span {
             font-size: 0.7em;
             font-weight: 600;
+            transition: opacity 0.3s ease;
         }
         
         .mobile-nav-item.active {
             color: var(--ctu-soft-gold);
             background: rgba(242, 210, 131, 0.1);
+        }
+        
+        .mobile-nav-item:active {
+            background: rgba(242, 210, 131, 0.15);
         }
         
         /* Main Content Adjustments */
@@ -522,6 +627,109 @@
         .logout-dialog-btn.confirm:hover {
             background: #8a0009;
         }
+        
+        /* Additional Responsive Improvements */
+        @media (max-width: 380px) {
+            .mobile-top-bar .teacher-app-title {
+                font-size: 1em;
+            }
+            
+            .mobile-side-menu {
+                width: 260px;
+            }
+            
+            .mobile-menu-header .profile-img {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .mobile-menu-header .user-info h3 {
+                font-size: 1em;
+            }
+            
+            .mobile-nav-item span {
+                font-size: 0.65em;
+            }
+            
+            .mobile-nav-item i {
+                font-size: 1.3em;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .mobile-menu-header {
+                padding: 15px;
+            }
+            
+            .mobile-menu-header .profile-img {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .mobile-menu-item {
+                padding: 12px 20px;
+            }
+        }
+        
+        /* Landscape mode optimizations */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .mobile-top-bar {
+                height: 50px;
+            }
+            
+            .mobile-nav {
+                height: 60px;
+            }
+            
+            .teacher-main {
+                padding-top: 50px;
+                padding-bottom: 60px;
+            }
+            
+            .mobile-menu-header {
+                padding: 12px 15px;
+            }
+            
+            .mobile-menu-header .profile-img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .mobile-menu-item {
+                padding: 10px 20px;
+            }
+        }
+        
+        /* Safe area insets for notched devices */
+        @supports (padding: max(0px)) {
+            .mobile-top-bar {
+                padding-left: max(var(--mobile-padding), env(safe-area-inset-left));
+                padding-right: max(var(--mobile-padding), env(safe-area-inset-right));
+                padding-top: env(safe-area-inset-top);
+            }
+            
+            .mobile-nav {
+                padding-left: max(8px, env(safe-area-inset-left));
+                padding-right: max(8px, env(safe-area-inset-right));
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Prevent text selection on interactive elements */
+        .mobile-menu-item,
+        .mobile-nav-item,
+        .mobile-top-bar .menu-icon,
+        .mobile-menu-close {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -545,6 +753,9 @@
     <!-- Mobile Side Menu -->
     <div class="mobile-side-menu" id="mobileSideMenu">
         <div class="mobile-menu-header">
+            <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">
+                <i class="bi bi-x-lg"></i>
+            </button>
             <img id="menuProfileAvatar" src="./img/default_teacher_avatar.png" alt="Teacher Avatar" class="profile-img">
             <div class="user-info">
                 <h3 id="menuUserName">Teacher</h3>
@@ -565,7 +776,7 @@
                 <span>Profile</span>
             </a>
             <div class="mobile-menu-divider"></div>
-            <a href="#" class="mobile-menu-item" id="menuLogoutLink">
+            <a href="#" class="mobile-menu-item logout" id="menuLogoutLink">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Logout</span>
             </a>
@@ -909,6 +1120,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Mobile side menu toggle
             const menuToggle = document.getElementById('mobileMenuToggle');
+            const menuClose = document.getElementById('mobileMenuClose');
             const sideMenu = document.getElementById('mobileSideMenu');
             const menuOverlay = document.getElementById('mobileMenuOverlay');
             
@@ -931,8 +1143,36 @@
                 });
             }
             
+            if (menuClose) {
+                menuClose.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeSideMenu();
+                });
+            }
+            
             if (menuOverlay) {
                 menuOverlay.addEventListener('click', closeSideMenu);
+            }
+            
+            // Swipe to close menu
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            if (sideMenu) {
+                sideMenu.addEventListener('touchstart', function(e) {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, { passive: true });
+                
+                sideMenu.addEventListener('touchend', function(e) {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipe();
+                }, { passive: true });
+            }
+            
+            function handleSwipe() {
+                if (touchStartX - touchEndX > 50) {
+                    closeSideMenu();
+                }
             }
             
             // Update menu profile info
