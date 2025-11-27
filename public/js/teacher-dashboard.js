@@ -813,6 +813,68 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Setup shift toggle buttons
+    function setupShiftToggle() {
+        const shiftButtons = document.querySelectorAll('.shift-btn-small');
+        shiftButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                shiftButtons.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                // Update current shift
+                currentShift = this.getAttribute('data-shift');
+                console.log('Shift changed to:', currentShift);
+                // Re-render schedule
+                renderScheduleViews();
+            });
+        });
+    }
+
+    // Setup schedule view selector
+    function setupScheduleViewSelector() {
+        const scheduleViewSelect = document.getElementById('scheduleViewSelect');
+        if (scheduleViewSelect) {
+            scheduleViewSelect.addEventListener('change', function() {
+                currentView = this.value;
+                console.log('View changed to:', currentView);
+                
+                const weeklyView = document.getElementById('weeklyScheduleView');
+                const dailyView = document.getElementById('dailyScheduleView');
+                
+                if (currentView === 'weekly') {
+                    weeklyView.style.display = 'block';
+                    dailyView.style.display = 'none';
+                    renderWeeklySchedule();
+                } else {
+                    weeklyView.style.display = 'none';
+                    dailyView.style.display = 'block';
+                    renderDailySchedule();
+                }
+            });
+        }
+    }
+
+    // Setup daily navigation
+    function setupDailyNavigation() {
+        const prevDayBtn = document.getElementById('prevDayBtn');
+        const nextDayBtn = document.getElementById('nextDayBtn');
+        
+        if (prevDayBtn) {
+            prevDayBtn.addEventListener('click', function() {
+                currentDayIndex = (currentDayIndex - 1 + 6) % 6;
+                renderDailySchedule();
+            });
+        }
+        
+        if (nextDayBtn) {
+            nextDayBtn.addEventListener('click', function() {
+                currentDayIndex = (currentDayIndex + 1) % 6;
+                renderDailySchedule();
+            });
+        }
+    }
+
     function renderWeeklySchedule() {
         // Your existing weekly schedule rendering code
         const weeklyGrid = document.getElementById('weeklyGrid');
@@ -864,13 +926,72 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Add your other schedule functions (renderDailySchedule, etc.) here
+    function renderDailySchedule() {
+        const dailySchedule = document.getElementById('dailySchedule');
+        const currentDayDisplay = document.getElementById('currentDayDisplay');
+        
+        if (!dailySchedule || !currentDayDisplay) return;
+
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const currentDay = days[currentDayIndex];
+        
+        currentDayDisplay.textContent = currentDay;
+
+        const daySchedules = teacherSchedules.filter(schedule => {
+            const matchesDay = schedule.day === currentDay;
+            const matchesShift = currentShift === 'all' || 
+                (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
+            return matchesDay && matchesShift;
+        }).sort((a, b) => {
+            const getTimeValue = (schedule) => {
+                let timeValue = parseInt(schedule.startTime.replace(':', ''));
+                if (schedule.startPeriod === 'PM' && timeValue < 1200) timeValue += 1200;
+                if (schedule.startPeriod === 'AM' && timeValue === 1200) timeValue = 0;
+                return timeValue;
+            };
+            return getTimeValue(a) - getTimeValue(b);
+        });
+
+        if (daySchedules.length === 0) {
+            dailySchedule.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-calendar-x"></i>
+                    <p>No classes scheduled for ${currentDay}</p>
+                </div>
+            `;
+            return;
+        }
+
+        dailySchedule.innerHTML = daySchedules.map(schedule => {
+            const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+            const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
+            const roomName = schedule.room?.roomName || schedule.room || 'No room';
+            const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
+            
+            return `
+                <div class="daily-schedule-item ${schedule.scheduleType}">
+                    <div class="schedule-time">${timeDisplay}</div>
+                    <div class="schedule-details">
+                        <div class="schedule-subject">${subjectCode}</div>
+                        <div class="schedule-meta">${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
+                    </div>
+                    <div class="schedule-section">${sectionName}</div>
+                </div>
+            `;
+        }).join('');
+    }
 
     // Initialize the application
     async function initializeApp() {
         try {
             updateProfileInfo();
             await loadUserProfile();
+            
+            // Setup schedule controls
+            setupShiftToggle();
+            setupScheduleViewSelector();
+            setupDailyNavigation();
+            
             NotificationHelper.showNotification('Dashboard loaded successfully!', 'success');
         } catch (error) {
             console.error('Error initializing app:', error);

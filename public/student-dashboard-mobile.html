@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONIX - Student Dashboard</title>
+    <meta name="description" content="CTU CHRONIX Student Dashboard - Mobile Version">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/css/student-dashboard.css" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style">
+    
+    <link rel="stylesheet" href="/css/student-dashboard.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#002D62">
+    <link rel="manifest" href="/manifest.json">
+    
+    <style>
+        /* Mobile-specific styles */
+        :root {
+            --mobile-padding: 16px;
+            --mobile-nav-height: 60px;
+            --mobile-bottom-nav-height: 70px;
+        }
+        
+        /* Prevent horizontal scrolling */
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+        
+        /* Hide desktop navigation */
+        .student-nav {
+            display: none;
+        }
+        
+        /* Mobile Top Bar */
+        .mobile-top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--mobile-nav-height);
+            background: var(--ctu-deep-blue);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--mobile-padding);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mobile-top-bar .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .mobile-top-bar .student-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .mobile-top-bar .student-app-title {
+            color: var(--ctu-soft-gold);
+            font-weight: 800;
+            font-size: 1.2em;
+            letter-spacing: 0.5px;
+        }
+        
+        .mobile-top-bar .menu-icon {
+            font-size: 1.5em;
+            color: var(--ctu-soft-gold);
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .mobile-top-bar .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .mobile-top-bar .profile-img {
+            width: 36px;
+            height: 36px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--ctu-soft-gold);
+            background: #fff;
+        }
+        
+        /* Mobile Side Menu */
+        .mobile-side-menu {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100vh;
+            background: white;
+            z-index: 1001;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: left 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .mobile-side-menu.show {
+            left: 0;
+        }
+        
+        .mobile-menu-header {
+            background: var(--ctu-deep-blue);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .mobile-menu-header .profile-img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid var(--ctu-soft-gold);
+            background: #fff;
+        }
+        
+        .mobile-menu-header .user-info {
+            flex: 1;
+            color: white;
+        }
+        
+        .mobile-menu-header .user-info h3 {
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+        
+        .mobile-menu-header .user-info p {
+            margin: 4px 0 0 0;
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+        
+        .mobile-menu-items {
+            padding: 8px 0;
+        }
+        
+        .mobile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            color: var(--ctu-text-primary);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+        
+        .mobile-menu-item:hover,
+        .mobile-menu-item.active {
+            background: var(--tint-blue-bg);
+            border-left-color: var(--ctu-light-blue);
+            color: var(--ctu-deep-blue);
+        }
+        
+        .mobile-menu-item i {
+            font-size: 1.3em;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .mobile-menu-item span {
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+        
+        .mobile-menu-divider {
+            height: 1px;
+            background: #e5e8eb;
+            margin: 8px 0;
+        }
+        
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .mobile-menu-overlay.show {
+            display: block;
+        }
+        
+        /* Mobile Bottom Navigation */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--ctu-deep-blue);
+            height: var(--mobile-bottom-nav-height);
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 8px;
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            gap: 4px;
+        }
+        
+        .mobile-nav-item i {
+            font-size: 1.5em;
+        }
+        
+        .mobile-nav-item span {
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        
+        .mobile-nav-item.active {
+            color: var(--ctu-soft-gold);
+            background: rgba(242, 210, 131, 0.1);
+        }
+        
+        /* Main Content Adjustments */
+        .student-main {
+            padding-top: var(--mobile-nav-height);
+            padding-bottom: var(--mobile-bottom-nav-height);
+            min-height: 100vh;
+        }
+        
+        .student-center-container {
+            width: 100%;
+            padding: var(--mobile-padding);
+        }
+        
+        /* Mobile-optimized cards */
+        .welcome-header,
+        .schedule-header,
+        .profile-header {
+            padding: 16px;
+        }
+        
+        .welcome-header h1,
+        .schedule-header h1,
+        .profile-header h1 {
+            font-size: 1.5em;
+        }
+        
+        /* Stats Grid Mobile */
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        .stat-card {
+            padding: 16px;
+        }
+        
+        /* Schedule Filters Mobile */
+        .schedule-filters {
+            flex-direction: column;
+            gap: 12px;
+            padding: 12px;
+        }
+        
+        .filter-group {
+            width: 100%;
+        }
+        
+        .filter-group select {
+            width: 100%;
+        }
+        
+        .shift-toggle-small {
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .shift-btn-small {
+            flex: 1;
+        }
+        
+        /* Weekly Grid Mobile */
+        .weekly-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        .weekly-day {
+            padding: 12px;
+            min-height: auto;
+        }
+        
+        /* Schedule Stats Mobile */
+        .schedule-stats {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        /* Profile Mobile */
+        .profile-avatar-section {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .avatar-container {
+            width: 120px;
+            height: 120px;
+        }
+        
+        .profile-card {
+            padding: 16px;
+        }
+        
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .profile-actions {
+            flex-direction: column;
+        }
+        
+        .btn-primary,
+        .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        /* Daily Schedule Mobile */
+        .daily-schedule-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .schedule-time {
+            min-width: auto;
+        }
+        
+        /* Weekly Preview Mobile */
+        .weekly-grid-preview {
+            grid-template-columns: 1fr;
+        }
+        
+        /* Today's Schedule Mobile */
+        .schedule-item-today {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        /* Mobile Profile Dropdown */
+        .mobile-profile-menu {
+            display: none;
+            position: fixed;
+            top: var(--mobile-nav-height);
+            right: 0;
+            background: white;
+            min-width: 200px;
+            border-radius: 0 0 0 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            z-index: 999;
+            overflow: hidden;
+        }
+        
+        .mobile-profile-menu.show {
+            display: block;
+        }
+        
+        .mobile-profile-menu a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            color: var(--ctu-deep-blue);
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .mobile-profile-menu a:hover {
+            background: var(--tint-blue-bg);
+        }
+        
+        .mobile-profile-menu a i {
+            font-size: 1.1em;
+        }
+        
+        /* Notification Mobile */
+        .notification {
+            top: calc(var(--mobile-nav-height) + 10px);
+            right: 10px;
+            left: 10px;
+            max-width: none;
+        }
+        
+        /* Logout Confirmation Dialog */
+        .logout-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logout-dialog-overlay.show {
+            display: flex;
+        }
+        
+        .logout-dialog {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .logout-dialog-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .logout-dialog-header i {
+            font-size: 2em;
+            color: var(--ctu-red-accent);
+        }
+        
+        .logout-dialog-header h3 {
+            margin: 0;
+            color: var(--ctu-deep-blue);
+            font-size: 1.3em;
+        }
+        
+        .logout-dialog-body {
+            margin-bottom: 24px;
+            color: var(--ctu-text-secondary);
+            font-size: 1em;
+            line-height: 1.5;
+        }
+        
+        .logout-dialog-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .logout-dialog-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-dialog-btn.cancel {
+            background: #e5e8eb;
+            color: var(--ctu-text-primary);
+        }
+        
+        .logout-dialog-btn.cancel:hover {
+            background: #d5d8db;
+        }
+        
+        .logout-dialog-btn.confirm {
+            background: var(--ctu-red-accent);
+            color: white;
+        }
+        
+        .logout-dialog-btn.confirm:hover {
+            background: #8a0009;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Top Bar -->
+    <div class="mobile-top-bar">
+        <div class="menu-icon" id="mobileMenuToggle">
+            <i class="bi bi-list"></i>
+        </div>
+        <div class="logo-section">
+            <img src="img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="student-logo">
+            <span class="student-app-title">CHRONIX</span>
+        </div>
+        <div class="profile-section" id="mobileProfileToggle">
+            <img id="mobileProfileAvatar" src="./img/default_student_avatar.png" alt="student Avatar" class="profile-img">
+        </div>
+    </div>
+
+    <!-- Mobile Side Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <!-- Mobile Side Menu -->
+    <div class="mobile-side-menu" id="mobileSideMenu">
+        <div class="mobile-menu-header">
+            <img id="menuProfileAvatar" src="./img/default_student_avatar.png" alt="student Avatar" class="profile-img">
+            <div class="user-info">
+                <h3 id="menuUserName">student</h3>
+                <p id="menuUserEmail">student@example.com</p>
+            </div>
+        </div>
+        <div class="mobile-menu-items">
+            <a href="#" class="mobile-menu-item active" id="menuDashboardLink">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="mobile-menu-item" id="menuScheduleLink">
+                <i class="bi bi-calendar-event"></i>
+                <span>My Schedule</span>
+            </a>
+            <a href="#" class="mobile-menu-item" id="menuProfileLink">
+                <i class="bi bi-person"></i>
+                <span>Profile</span>
+            </a>
+            <div class="mobile-menu-divider"></div>
+            <a href="#" class="mobile-menu-item" id="menuLogoutLink">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Mobile Profile Menu -->
+    <div class="mobile-profile-menu" id="mobileProfileMenu">
+        <a href="#" id="mobileProfileBtn">
+            <i class="bi bi-person"></i>
+            <span>My Profile</span>
+        </a>
+        <a href="#" id="mobileLogoutBtn">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+
+    <main class="student-main">
+        <!-- Dashboard View -->
+        <div id="dashboardView" class="view-section active">
+            <div class="student-center-container">
+                <!-- Welcome Header -->
+                <div class="welcome-header">
+                    <h1>Welcome back, <span id="studentGreetingName">Student</span>!</h1>
+                    <p>Here's your class schedule and upcoming activities</p>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon total-classes">
+                            <i class="bi bi-book"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="totalSubjects">0</span>
+                            <span class="stat-label">Total Subjects</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon lecture-hours">
+                            <i class="bi bi-mortarboard"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="lectureHours">0</span>
+                            <span class="stat-label">Lecture Hours</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon lab-hours">
+                            <i class="bi bi-laptop"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="labHours">0</span>
+                            <span class="stat-label">Lab Hours</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon class-section">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="studentSection">-</span>
+                            <span class="stat-label">Class Section</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Schedule -->
+                <div class="today-schedule">
+                    <div class="section-header">
+                        <h2>Today's Schedule</h2>
+                        <span id="currentDateDisplay"></span>
+                    </div>
+                    <div class="schedule-list" id="todayScheduleList">
+                        <!-- Today's classes will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Weekly Schedule Preview -->
+                <div class="weekly-preview">
+                    <div class="section-header">
+                        <h2>Weekly Schedule</h2>
+                        <button class="view-all-btn" id="viewFullScheduleBtn">View Full Schedule</button>
+                    </div>
+                    <div class="weekly-grid-preview" id="weeklyPreview">
+                        <!-- Weekly preview will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule View -->
+        <div id="scheduleView" class="view-section">
+            <div class="student-center-container">
+                <div class="schedule-header">
+                    <h1>My Class Schedule</h1>
+                    <p>View your complete weekly class schedule</p>
+                </div>
+
+                <!-- Schedule Filters -->
+                <div class="schedule-filters">
+                    <div class="filter-group">
+                        <label>View:</label>
+                        <select id="scheduleViewSelect">
+                            <option value="weekly">Weekly View</option>
+                            <option value="daily">Daily View</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Shift:</label>
+                        <div class="shift-toggle-small">
+                            <button class="shift-btn-small active" data-shift="all">All</button>
+                            <button class="shift-btn-small" data-shift="day">Day</button>
+                            <button class="shift-btn-small" data-shift="night">Night</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly Schedule View -->
+                <div id="weeklyScheduleView" class="schedule-view">
+                    <div class="weekly-calendar">
+                        <div class="calendar-header-small">
+                            <h4>Weekly Class Schedule</h4>
+                        </div>
+                        <div class="weekly-grid" id="weeklyGrid">
+                            <!-- Weekly schedule will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Schedule View -->
+                <div id="dailyScheduleView" class="schedule-view" style="display: none;">
+                    <div class="daily-calendar">
+                        <div class="daily-header">
+                            <button class="nav-btn-small" id="prevDayBtn">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <h4 id="currentDayDisplay">Monday</h4>
+                            <button class="nav-btn-small" id="nextDayBtn">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="daily-schedule" id="dailySchedule">
+                            <!-- Daily schedule will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Statistics -->
+                <div class="schedule-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon lecture">
+                            <i class="bi bi-book"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="scheduleLectureCount">0</span>
+                            <span class="stat-label">Lecture Hours/Week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon lab">
+                            <i class="bi bi-laptop"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="scheduleLabCount">0</span>
+                            <span class="stat-label">Lab Hours/Week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon total">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="scheduleTotalHours">0</span>
+                            <span class="stat-label">Total Hours/Week</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile View -->
+        <div id="profileView" class="view-section">
+            <div class="student-center-container">
+                <div class="profile-header">
+                    <h1>My Profile</h1>
+                    <p>Manage your personal information and account settings</p>
+                </div>
+
+                <div class="profile-content">
+                    <!-- Profile Card -->
+                    <div class="profile-card">
+                        <div class="profile-avatar-section">
+                            <div class="avatar-container">
+                                <img id="profileViewAvatar" src="./img/default_student_avatar.png" alt="Profile Avatar" class="profile-picture">
+                                <div class="avatar-overlay">
+                                    <label for="profilePictureInput" class="avatar-upload-btn">
+                                        <i class="bi bi-camera"></i>
+                                        Change Photo
+                                    </label>
+                                    <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
+                                </div>
+                            </div>
+                            <div class="avatar-info">
+                                <h3 id="profileViewName">Loading...</h3>
+                                <p id="profileViewRole">student</p>
+                                <p id="profileViewEmail">Loading...</p>
+                            </div>
+                        </div>
+
+                        <div class="profile-actions">
+                            <button class="btn-primary" id="saveProfileBtn">
+                                <i class="bi bi-check-lg"></i> Save Changes
+                            </button>
+                            <button class="btn-secondary" id="cancelBtn">
+                                <i class="bi bi-x-lg"></i> Cancel
+                            </button>
+                        </div>
+
+                        <div class="profile-details">
+                            <div class="detail-section">
+                                <h4>Personal Information</h4>
+                                <div class="detail-grid">
+                                    <div class="info-item">
+                                        <label>Full Name</label>
+                                        <input type="text" id="profileFullName" class="editable-field" placeholder="Enter your full name">
+                                    </div>
+                                    <div class="info-item">
+                                        <label>CTU ID</label>
+                                        <input type="text" id="profileCtuid" class="editable-field" placeholder="CTU ID" readonly>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Email</label>
+                                        <input type="email" id="profileEmail" class="editable-field" placeholder="Enter your email">
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Birthdate</label>
+                                        <input type="date" id="profileBirthdate" class="editable-field">
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Gender</label>
+                                        <select id="profileGender" class="editable-field">
+                                            <option value="">Select Gender</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-section">
+                                <h4>Academic Information</h4>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Class Section</span>
+                                        <span class="detail-value" id="profileClassSection">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Assigned Room</span>
+                                        <span class="detail-value" id="profileAssignedRoom">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Total Subjects</span>
+                                        <span class="detail-value" id="profileTotalSubjects">0</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Weekly Hours</span>
+                                        <span class="detail-value" id="profileWeeklyHours">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-section">
+                                <h4>Account Information</h4>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">User Role</span>
+                                        <span class="detail-value" id="profileUserRole">student</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Last Login</span>
+                                        <span class="detail-value" id="profileLastLogin">-</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Account Created</span>
+                                        <span class="detail-value" id="profileAccountCreated">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav">
+        <a href="#" class="mobile-nav-item active" id="mobileDashboardLink">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="#" class="mobile-nav-item" id="mobileScheduleLink">
+            <i class="bi bi-calendar-event"></i>
+            <span>Schedule</span>
+        </a>
+        <a href="#" class="mobile-nav-item" id="mobileProfileLink">
+            <i class="bi bi-person"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- Notification -->
+    <div id="studentNotification" class="notification"></div>
+
+    <!-- Logout Confirmation Dialog -->
+    <div class="logout-dialog-overlay" id="logoutDialogOverlay">
+        <div class="logout-dialog">
+            <div class="logout-dialog-header">
+                <i class="bi bi-exclamation-triangle"></i>
+                <h3>Confirm Logout</h3>
+            </div>
+            <div class="logout-dialog-body">
+                Are you sure you want to log out? You will need to sign in again to access your dashboard.
+            </div>
+            <div class="logout-dialog-actions">
+                <button class="logout-dialog-btn cancel" id="cancelLogoutBtn">Cancel</button>
+                <button class="logout-dialog-btn confirm" id="confirmLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/js/api-config.js"></script>
+    <script type="module" src="/js/error-handler.js"></script>
+    <script type="module" src="/js/auth-guard.js"></script>
+    <script type="module" src="/js/student-dashboard.js"></script>
+    <script>
+        // Mobile-specific navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile side menu toggle
+            const menuToggle = document.getElementById('mobileMenuToggle');
+            const sideMenu = document.getElementById('mobileSideMenu');
+            const menuOverlay = document.getElementById('mobileMenuOverlay');
+            
+            function openSideMenu() {
+                sideMenu.classList.add('show');
+                menuOverlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+            
+            function closeSideMenu() {
+                sideMenu.classList.remove('show');
+                menuOverlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+            
+            if (menuToggle) {
+                menuToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openSideMenu();
+                });
+            }
+            
+            if (menuOverlay) {
+                menuOverlay.addEventListener('click', closeSideMenu);
+            }
+            
+            // Update menu profile info
+            function updateMenuProfile() {
+                const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+                if (currentUser) {
+                    const menuUserName = document.getElementById('menuUserName');
+                    const menuUserEmail = document.getElementById('menuUserEmail');
+                    const menuProfileAvatar = document.getElementById('menuProfileAvatar');
+                    
+                    if (menuUserName) {
+                        menuUserName.textContent = currentUser.fullname || 'student';
+                    }
+                    if (menuUserEmail) {
+                        menuUserEmail.textContent = currentUser.email || 'student@example.com';
+                    }
+                    if (menuProfileAvatar && currentUser.profilePicture) {
+                        menuProfileAvatar.src = currentUser.profilePicture.startsWith('data:image/') 
+                            ? currentUser.profilePicture 
+                            : './img/default_student_avatar.png';
+                    }
+                }
+            }
+            
+            // Call on load
+            setTimeout(updateMenuProfile, 500);
+            
+            // Mobile profile toggle
+            const profileToggle = document.getElementById('mobileProfileToggle');
+            const profileMenu = document.getElementById('mobileProfileMenu');
+            
+            if (profileToggle && profileMenu) {
+                profileToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    profileMenu.classList.toggle('show');
+                });
+                
+                document.addEventListener('click', function() {
+                    profileMenu.classList.remove('show');
+                });
+            }
+            
+            // Mobile navigation
+            const mobileDashboardLink = document.getElementById('mobileDashboardLink');
+            const mobileScheduleLink = document.getElementById('mobileScheduleLink');
+            const mobileProfileLink = document.getElementById('mobileProfileLink');
+            const mobileProfileBtn = document.getElementById('mobileProfileBtn');
+            const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+            
+            // Menu navigation
+            const menuDashboardLink = document.getElementById('menuDashboardLink');
+            const menuScheduleLink = document.getElementById('menuScheduleLink');
+            const menuProfileLink = document.getElementById('menuProfileLink');
+            const menuLogoutLink = document.getElementById('menuLogoutLink');
+            
+            function updateMobileNavActive(clickedElement) {
+                document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                if (clickedElement) {
+                    clickedElement.classList.add('active');
+                }
+            }
+            
+            function updateMenuActive(section) {
+                document.querySelectorAll('.mobile-menu-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                const menuItem = document.getElementById(`menu${section}Link`);
+                if (menuItem) {
+                    menuItem.classList.add('active');
+                }
+            }
+            
+            // Bottom nav handlers
+            if (mobileDashboardLink) {
+                mobileDashboardLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('dashboardLink')?.click();
+                    updateMobileNavActive(this);
+                    updateMenuActive('Dashboard');
+                });
+            }
+            
+            if (mobileScheduleLink) {
+                mobileScheduleLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('scheduleLink')?.click();
+                    updateMobileNavActive(this);
+                    updateMenuActive('Schedule');
+                });
+            }
+            
+            if (mobileProfileLink) {
+                mobileProfileLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('profileLink')?.click();
+                    updateMobileNavActive(this);
+                    updateMenuActive('Profile');
+                });
+            }
+            
+            // Side menu handlers
+            if (menuDashboardLink) {
+                menuDashboardLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('dashboardLink')?.click();
+                    updateMobileNavActive(mobileDashboardLink);
+                    updateMenuActive('Dashboard');
+                    closeSideMenu();
+                });
+            }
+            
+            if (menuScheduleLink) {
+                menuScheduleLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('scheduleLink')?.click();
+                    updateMobileNavActive(mobileScheduleLink);
+                    updateMenuActive('Schedule');
+                    closeSideMenu();
+                });
+            }
+            
+            if (menuProfileLink) {
+                menuProfileLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('profileLink')?.click();
+                    updateMobileNavActive(mobileProfileLink);
+                    updateMenuActive('Profile');
+                    closeSideMenu();
+                });
+            }
+            
+            if (menuLogoutLink) {
+                menuLogoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showLogoutDialog();
+                    closeSideMenu();
+                });
+            }
+            
+            if (mobileProfileBtn) {
+                mobileProfileBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('studentProfileBtn')?.click();
+                    profileMenu.classList.remove('show');
+                    updateMobileNavActive(mobileProfileLink);
+                    updateMenuActive('Profile');
+                });
+            }
+            
+            if (mobileLogoutBtn) {
+                mobileLogoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showLogoutDialog();
+                });
+            }
+            
+            // Logout confirmation dialog
+            function showLogoutDialog() {
+                const dialogOverlay = document.getElementById('logoutDialogOverlay');
+                if (dialogOverlay) {
+                    dialogOverlay.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+            
+            function hideLogoutDialog() {
+                const dialogOverlay = document.getElementById('logoutDialogOverlay');
+                if (dialogOverlay) {
+                    dialogOverlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                }
+            }
+            
+            const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+            const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+            const logoutDialogOverlay = document.getElementById('logoutDialogOverlay');
+            
+            if (cancelLogoutBtn) {
+                cancelLogoutBtn.addEventListener('click', hideLogoutDialog);
+            }
+            
+            if (confirmLogoutBtn) {
+                confirmLogoutBtn.addEventListener('click', function() {
+                    hideLogoutDialog();
+                    document.getElementById('studentLogoutBtn')?.click();
+                });
+            }
+            
+            if (logoutDialogOverlay) {
+                logoutDialogOverlay.addEventListener('click', function(e) {
+                    if (e.target === logoutDialogOverlay) {
+                        hideLogoutDialog();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
