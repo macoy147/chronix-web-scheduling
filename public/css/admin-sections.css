@@ -189,8 +189,8 @@ body {
 }
 
 .admin-center-container {
-    max-width: 1200px;
-    width: 95%;
+    max-width: 1350px;
+    width: 99vw;
     margin: 0 auto;
     background: transparent;
     padding: 18px 0 0 0;
