@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONIX - Profile (Mobile)</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        :root {
+            --ctu-soft-gold: #F2D283;
+            --ctu-light-blue: #3E8EDE;
+            --ctu-deep-blue: #002D62;
+            --ctu-red-accent: #A3000C;
+            --ctu-white: #FFFFFF;
+            --ctu-lightest-gray: #F4F7F9;
+            --ctu-text-primary: #333333;
+            --ctu-text-secondary: #555555;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--ctu-lightest-gray);
+            color: var(--ctu-text-primary);
+            overflow-x: hidden;
+        }
+        
+        /* Mobile Header */
+        .mobile-header {
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--ctu-deep-blue);
+            height: 60px;
+            z-index: 1000;
+            padding: 0 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .mobile-logo-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .mobile-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .mobile-app-title {
+            color: var(--ctu-soft-gold);
+            font-weight: 700;
+            font-size: 1rem;
+            margin-left: 4px;
+        }
+        
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            color: var(--ctu-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        /* Mobile Side Menu - Same as other pages */
+        .mobile-side-menu {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 85%;
+            max-width: 320px;
+            height: 100%;
+            background: var(--ctu-deep-blue);
+            z-index: 2000;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 0;
+        }
+        
+        .mobile-side-menu.open {
+            left: 0;
+        }
+        
+        .mobile-side-menu-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .mobile-side-menu-close {
+            background: none;
+            border: none;
+            color: var(--ctu-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .mobile-side-menu-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 20px 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-profile-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .mobile-profile-info {
+            flex: 1;
+        }
+        
+        .mobile-profile-name {
+            color: var(--ctu-white);
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .mobile-profile-role {
+            color: var(--ctu-soft-gold);
+            font-size: 0.85rem;
+        }
+        
+        .mobile-side-menu-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mobile-side-menu-links li {
+            margin: 0;
+        }
+        
+        .mobile-side-menu-links a {
+            display: flex;
+            align-items: center;
+            color: var(--ctu-white);
+            text-decoration: none;
+            padding: 16px 20px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .mobile-side-menu-links a i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .mobile-side-menu-links a.active,
+        .mobile-side-menu-links a:active {
+            background: var(--ctu-soft-gold);
+            color: var(--ctu-deep-blue);
+        }
+        
+        .mobile-side-menu-footer {
+            padding: 20px;
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-logout-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background: none;
+            border: none;
+            color: var(--ctu-white);
+            padding: 12px 0;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .mobile-logout-btn i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+        
+        /* Mobile Overlay */
+        .mobile-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            display: none;
+        }
+        
+        .mobile-overlay.open {
+            display: block;
+        }
+        
+        /* Mobile Main Content */
+        .mobile-main-content {
+            padding: 16px;
+            padding-bottom: 90px;
+            min-height: 100vh;
+        }
+        
+        .mobile-page-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 20px;
+        }
+        
+        /* Profile Avatar Section */
+        .mobile-avatar-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .mobile-avatar-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 16px;
+        }
+        
+        .mobile-profile-picture {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--ctu-soft-gold);
+        }
+        
+        .mobile-avatar-upload {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--ctu-light-blue);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .mobile-avatar-upload i {
+            font-size: 1.2rem;
+        }
+        
+        .mobile-user-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 4px;
+        }
+        
+        .mobile-user-role {
+            display: inline-block;
+            background: var(--ctu-soft-gold);
+            color: var(--ctu-deep-blue);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        /* Profile Form */
+        .mobile-profile-form {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .mobile-form-section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .mobile-form-group {
+            margin-bottom: 16px;
+        }
+        
+        .mobile-form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--ctu-text-secondary);
+            margin-bottom: 6px;
+        }
+        
+        .mobile-form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e8eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: white;
+        }
+        
+        .mobile-form-input:focus {
+            outline: none;
+            border-color: var(--ctu-light-blue);
+        }
+        
+        .mobile-form-input:disabled {
+            background: #f5f5f5;
+            color: #999;
+        }
+        
+        .mobile-info-value {
+            padding: 12px;
+            background: #f8f9fb;
+            border-radius: 8px;
+            color: var(--ctu-text-primary);
+        }
+        
+        /* Action Buttons */
+        .mobile-action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .mobile-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .mobile-btn-primary {
+            background: var(--ctu-light-blue);
+            color: white;
+        }
+        
+        .mobile-btn-secondary {
+            background: #e5e8eb;
+            color: var(--ctu-text-primary);
+        }
+        
+        /* Mobile Bottom Nav */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--ctu-deep-blue);
+            height: 70px;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .mobile-nav-items {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 0 12px;
+            gap: 8px;
+        }
+        
+        .mobile-nav-items::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            min-width: 70px;
+            padding: 8px 12px;
+            color: var(--ctu-white);
+            text-decoration: none;
+            font-size: 0.7rem;
+            font-weight: 500;
+            border-radius: 8px;
+        }
+        
+        .mobile-nav-item.active {
+            background: var(--ctu-soft-gold);
+            color: var(--ctu-deep-blue);
+        }
+        
+        .mobile-nav-item i {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        /* Loading State */
+        .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <div class="mobile-logo-container">
+            <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
+            <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
+            <span class="mobile-app-title">CHRONIX</span>
+        </div>
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="bi bi-list"></i>
+        </button>
+    </header>
+
+    <!-- Mobile Side Menu -->
+    <div class="mobile-side-menu" id="mobileSideMenu">
+        <div class="mobile-side-menu-header">
+            <div class="mobile-logo-container">
+                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
+                <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
+                <span class="mobile-app-title">CHRONIX</span>
+            </div>
+            <button class="mobile-side-menu-close" id="mobileSideMenuClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        
+        <div class="mobile-side-menu-profile">
+            <img id="menuProfileAvatar" src="/img/default_admin_avatar.png" alt="Admin Avatar" class="mobile-profile-img">
+            <div class="mobile-profile-info">
+                <div class="mobile-profile-name" id="menuProfileName">Admin User</div>
+                <div class="mobile-profile-role">Administrator</div>
+            </div>
+        </div>
+        
+        <ul class="mobile-side-menu-links">
+            <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a></li>
+            <li><a href="admin-subjects.html"><i class="bi bi-book"></i> <span>Subjects</span></a></li>
+            <li><a href="admin-sections.html"><i class="bi bi-layers"></i> <span>Sections</span></a></li>
+            <li><a href="admin-rooms.html"><i class="bi bi-door-open"></i> <span>Rooms</span></a></li>
+            <li><a href="admin-schedules.html"><i class="bi bi-calendar-event"></i> <span>Schedules</span></a></li>
+            <li><a href="admin-students.html"><i class="bi bi-mortarboard"></i> <span>Students</span></a></li>
+            <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i> <span>Teachers</span></a></li>
+            <li><a href="admin-profile.html" class="active"><i class="bi bi-person"></i> <span>Profile</span></a></li>
+        </ul>
+        
+        <div class="mobile-side-menu-footer">
+            <button class="mobile-logout-btn" id="mobileLogoutBtn">
+                <i class="bi bi-box-arrow-right"></i> 
+                <span>Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- Mobile Main Content -->
+    <main class="mobile-main-content">
+        <h1 class="mobile-page-title">My Profile</h1>
+        
+        <!-- Avatar Section -->
+        <div class="mobile-avatar-section">
+            <div class="mobile-avatar-container">
+                <img id="profilePicture" src="/img/default_admin_avatar.png" alt="Profile Picture" class="mobile-profile-picture">
+                <label for="profilePictureInput" class="mobile-avatar-upload">
+                    <i class="bi bi-camera"></i>
+                </label>
+                <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
+            </div>
+            <div class="mobile-user-name" id="userName">Loading...</div>
+            <div class="mobile-user-role" id="userRole">Administrator</div>
+        </div>
+
+        <!-- Personal Information -->
+        <div class="mobile-profile-form">
+            <h3 class="mobile-form-section-title">Personal Information</h3>
+            
+            <div class="mobile-form-group">
+                <label class="mobile-form-label">Full Name</label>
+                <input type="text" id="fullName" class="mobile-form-input" placeholder="Enter your full name">
+            </div>
+            
+            <div class="mobile-form-group">
+                <label class="mobile-form-label">Email Address</label>
+                <input type="email" id="email" class="mobile-form-input" placeholder="Enter your email">
+            </div>
+            
+            <div class="mobile-form-group">
+                <label class="mobile-form-label">CTU ID</label>
+                <input type="text" id="ctuid" class="mobile-form-input" placeholder="Enter your CTU ID">
+            </div>
+            
+            <div class="mobile-form-group">
+                <label class="mobile-form-label">Gender</label>
+                <select id="gender" class="mobile-form-input">
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="mobile-form-group">
+                <label class="mobile-form-label">Birthdate</label>
+                <input type="date" id="birthdate" class="mobile-form-input">
+            </div>
+        </div>
+
+        <!-- Account Information -->
+        <div class="mobile-profile-form">
+            <h3 class="mobile-form-section-title">Account Information</h3>
+            
+            <div class="mobile-form-group">
+                <label class="mobile-form-label">User ID</label>
+                <div class="mobile-info-value" id="userId">-</div>
+            </div>
+            
+            <div class="mobile-form-group">
+                <label class="mobile-form-label">Last Login</label>
+                <div class="mobile-info-value" id="lastLogin">-</div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mobile-action-buttons">
+            <button class="mobile-btn mobile-btn-secondary" id="cancelBtn">
+                <i class="bi bi-x-lg"></i> Cancel
+            </button>
+            <button class="mobile-btn mobile-btn-primary" id="saveProfileBtn">
+                <i class="bi bi-check-lg"></i> Save
+            </button>
+        </div>
+    </main>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav">
+        <div class="mobile-nav-items">
+            <a href="admin-dashboard-mobile.html" class="mobile-nav-item">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="admin-subjects-mobile.html" class="mobile-nav-item">
+                <i class="bi bi-book"></i>
+                <span>Subjects</span>
+            </a>
+            <a href="admin-sections-mobile.html" class="mobile-nav-item">
+                <i class="bi bi-layers"></i>
+                <span>Sections</span>
+            </a>
+            <a href="admin-rooms-mobile.html" class="mobile-nav-item">
+                <i class="bi bi-door-open"></i>
+                <span>Rooms</span>
+            </a>
+            <a href="admin-schedules-mobile.html" class="mobile-nav-item">
+                <i class="bi bi-calendar-event"></i>
+                <span>Schedules</span>
+            </a>
+            <a href="admin-students-mobile.html" class="mobile-nav-item">
+                <i class="bi bi-mortarboard"></i>
+                <span>Students</span>
+            </a>
+            <a href="admin-teachers-mobile.html" class="mobile-nav-item">
+                <i class="bi bi-person-badge"></i>
+                <span>Teachers</span>
+            </a>
+        </div>
+    </nav>
+
+    <script type="module" src="/js/auth-guard.js"></script>
+    <script type="module">
+        import AuthGuard from '/js/auth-guard.js';
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check authentication
+            if (!AuthGuard.checkAuthentication('admin')) {
+                return;
+            }
+
+            // Mobile menu functionality
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileSideMenu = document.getElementById('mobileSideMenu');
+            const mobileSideMenuClose = document.getElementById('mobileSideMenuClose');
+            const mobileOverlay = document.getElementById('mobileOverlay');
+            
+            function openMobileMenu() {
+                mobileSideMenu.classList.add('open');
+                mobileOverlay.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+            
+            function closeMobileMenu() {
+                mobileSideMenu.classList.remove('open');
+                mobileOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+            
+            mobileMenuBtn.addEventListener('click', openMobileMenu);
+            mobileSideMenuClose.addEventListener('click', closeMobileMenu);
+            mobileOverlay.addEventListener('click', closeMobileMenu);
+            
+            // Close menu when clicking on links
+            document.querySelectorAll('.mobile-side-menu-links a').forEach(link => {
+                link.addEventListener('click', closeMobileMenu);
+            });
+            
+            // Mobile logout functionality
+            const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+            if (mobileLogoutBtn) {
+                mobileLogoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        AuthGuard.logout();
+                    }
+                });
+            }
+
+            // Load user profile
+            const currentUser = AuthGuard.getCurrentUser();
+            const userId = AuthGuard.getUserId();
+            
+            if (currentUser && userId) {
+                // Populate form fields
+                document.getElementById('userName').textContent = currentUser.fullname || 'Admin User';
+                document.getElementById('fullName').value = currentUser.fullname || '';
+                document.getElementById('email').value = currentUser.email || '';
+                document.getElementById('ctuid').value = currentUser.ctuid || '';
+                document.getElementById('gender').value = currentUser.gender || '';
+                document.getElementById('birthdate').value = currentUser.birthdate || '';
+                document.getElementById('userId').textContent = userId;
+                document.getElementById('userRole').textContent = currentUser.userrole || 'Administrator';
+                
+                // Format last login
+                if (currentUser.lastLogin) {
+                    const lastLogin = new Date(currentUser.lastLogin);
+                    document.getElementById('lastLogin').textContent = lastLogin.toLocaleString();
+                }
+                
+                // Set profile pictures
+                if (currentUser.profilePicture) {
+                    document.getElementById('profilePicture').src = currentUser.profilePicture;
+                    document.getElementById('menuProfileAvatar').src = currentUser.profilePicture;
+                }
+                
+                // Set menu profile name
+                document.getElementById('menuProfileName').textContent = currentUser.fullname || 'Admin User';
+            }
+
+            // Profile picture upload
+            const profilePictureInput = document.getElementById('profilePictureInput');
+            const profilePicture = document.getElementById('profilePicture');
+            
+            profilePictureInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        profilePicture.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Save profile
+            const saveProfileBtn = document.getElementById('saveProfileBtn');
+            saveProfileBtn.addEventListener('click', async function() {
+                const formData = new FormData();
+                formData.append('fullname', document.getElementById('fullName').value);
+                formData.append('email', document.getElementById('email').value);
+                formData.append('ctuid', document.getElementById('ctuid').value);
+                formData.append('gender', document.getElementById('gender').value);
+                formData.append('birthdate', document.getElementById('birthdate').value);
+                
+                // Add profile picture if changed
+                if (profilePictureInput.files[0]) {
+                    formData.append('profilePicture', profilePictureInput.files[0]);
+                }
+                
+                try {
+                    const res = await fetch(`/user/${userId}`, {
+                        method: 'PUT',
+                        body: formData
+                    });
+                    
+                    if (res.ok) {
+                        const result = await res.json();
+                        AuthGuard.storeUserSession(result.user);
+                        alert('Profile updated successfully!');
+                        window.location.reload();
+                    } else {
+                        const error = await res.json();
+                        alert('Error: ' + (error.error || 'Failed to update profile'));
+                    }
+                } catch (error) {
+                    console.error('Error updating profile:', error);
+                    alert('Network error. Please try again.');
+                }
+            });
+
+            // Cancel button
+            const cancelBtn = document.getElementById('cancelBtn');
+            cancelBtn.addEventListener('click', function() {
+                window.location.reload();
+            });
+        });
+    </script>
+
+    <!-- Mobile detection and redirection -->
+    <script>
+        function isMobileDevice() {
+            return window.innerWidth <= 768 || 
+                   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        let lastRedirectTime = 0;
+        const REDIRECT_COOLDOWN = 1000;
+
+        function shouldRedirectToDesktop() {
+            const now = Date.now();
+            if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+                return false;
+            }
+            return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+        }
+
+        if (shouldRedirectToDesktop()) {
+            lastRedirectTime = Date.now();
+            window.location.href = '/admin-profile.html';
+        }
+
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                if (shouldRedirectToDesktop()) {
+                    lastRedirectTime = Date.now();
+                    window.location.href = '/admin-profile.html';
+                }
+            }, 250);
+        });
+    </script>
+</body>
+</html>

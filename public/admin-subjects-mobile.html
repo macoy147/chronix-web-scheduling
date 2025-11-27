@@ -335,6 +335,33 @@
             box-shadow: 0 0 0 4px rgba(163, 0, 12, 0.12);
         }
         
+        /* Mobile Filter Controls */
+        .mobile-filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        
+        .mobile-filter-dropdown {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e5e8eb;
+            border-radius: 8px;
+            font-size: 0.9em;
+            background: #fff;
+            color: var(--ctu-text-primary);
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-filter-dropdown:focus {
+            outline: none;
+            border-color: var(--ctu-red-accent);
+            box-shadow: 0 0 0 3px rgba(163, 0, 12, 0.12);
+        }
+        
         /* Mobile Create Button */
         .mobile-create-btn {
             width: 100%;
@@ -619,6 +646,22 @@
                 <input type="text" id="mobileSubjectSearch" placeholder="Search subjects..." />
             </div>
             
+            <!-- Filter Dropdowns -->
+            <div class="mobile-filter-controls">
+                <select id="mobileYearLevelFilter" class="mobile-filter-dropdown">
+                    <option value="">All Year Levels</option>
+                    <option value="1">Year 1</option>
+                    <option value="2">Year 2</option>
+                    <option value="3">Year 3</option>
+                    <option value="4">Year 4</option>
+                </select>
+                <select id="mobileSemesterFilter" class="mobile-filter-dropdown">
+                    <option value="">All Semesters</option>
+                    <option value="1st Semester">1st Semester</option>
+                    <option value="2nd Semester">2nd Semester</option>
+                </select>
+            </div>
+            
             <!-- Create Button -->
             <button class="mobile-create-btn" id="mobileOpenSubjectModal">
                 <i class="bi bi-plus-circle"></i> 
@@ -696,6 +739,13 @@
                             <option value="2">Year 2</option>
                             <option value="3">Year 3</option>
                             <option value="4">Year 4</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <select name="semester" required>
+                            <option value="" disabled selected>Select Semester</option>
+                            <option value="1st Semester">1st Semester</option>
+                            <option value="2nd Semester">2nd Semester</option>
                         </select>
                     </div>
                     <div class="form-row">
@@ -838,34 +888,63 @@
         
         updateMobileProfileInfo();
         
-        // Mobile search functionality
+        // Mobile search and filter functionality
         const mobileSearchInput = document.getElementById('mobileSubjectSearch');
+        const mobileYearLevelFilter = document.getElementById('mobileYearLevelFilter');
+        const mobileSemesterFilter = document.getElementById('mobileSemesterFilter');
+        
         if (mobileSearchInput) {
             mobileSearchInput.addEventListener('input', function(e) {
-                const searchTerm = e.target.value.toLowerCase().trim();
-                filterMobileSubjects(searchTerm);
+                applyMobileFilters();
+            });
+        }
+        
+        if (mobileYearLevelFilter) {
+            mobileYearLevelFilter.addEventListener('change', function() {
+                applyMobileFilters();
+            });
+        }
+        
+        if (mobileSemesterFilter) {
+            mobileSemesterFilter.addEventListener('change', function() {
+                applyMobileFilters();
             });
         }
         
         let allMobileSubjects = [];
         
-        function filterMobileSubjects(searchTerm) {
-            if (!searchTerm) {
-                displayMobileSubjects(allMobileSubjects);
-                return;
+        function applyMobileFilters() {
+            const searchTerm = mobileSearchInput ? mobileSearchInput.value.toLowerCase().trim() : '';
+            const selectedYear = mobileYearLevelFilter ? mobileYearLevelFilter.value : '';
+            const selectedSemester = mobileSemesterFilter ? mobileSemesterFilter.value : '';
+            
+            let filtered = allMobileSubjects;
+            
+            // Filter by year level
+            if (selectedYear) {
+                filtered = filtered.filter(subj => subj.yearLevel === parseInt(selectedYear));
             }
             
-            const filtered = allMobileSubjects.filter(subj => {
-                return (
-                    (subj.courseCode || '').toLowerCase().includes(searchTerm) ||
-                    (subj.descriptiveTitle || '').toLowerCase().includes(searchTerm) ||
-                    (subj.yearLevel || '').toString().includes(searchTerm) ||
-                    (subj.coPrerequisite || '').toLowerCase().includes(searchTerm) ||
-                    (subj.units || '').toString().includes(searchTerm) ||
-                    (subj.remarks || '').toLowerCase().includes(searchTerm) ||
-                    (subj.description || '').toLowerCase().includes(searchTerm)
-                );
-            });
+            // Filter by semester
+            if (selectedSemester) {
+                filtered = filtered.filter(subj => subj.semester === selectedSemester);
+            }
+            
+            // Filter by search term
+            if (searchTerm) {
+                filtered = filtered.filter(subj => {
+                    return (
+                        (subj.courseCode || '').toLowerCase().includes(searchTerm) ||
+                        (subj.descriptiveTitle || '').toLowerCase().includes(searchTerm) ||
+                        (subj.yearLevel || '').toString().includes(searchTerm) ||
+                        (subj.semester || '').toLowerCase().includes(searchTerm) ||
+                        (subj.coPrerequisite || '').toLowerCase().includes(searchTerm) ||
+                        (subj.units || '').toString().includes(searchTerm) ||
+                        (subj.remarks || '').toLowerCase().includes(searchTerm) ||
+                        (subj.description || '').toLowerCase().includes(searchTerm)
+                    );
+                });
+            }
             
             displayMobileSubjects(filtered);
         }
@@ -894,7 +973,10 @@
                             <div class="mobile-subject-code">${subj.courseCode || ''}</div>
                             <div class="mobile-subject-title">${subj.descriptiveTitle || ''}</div>
                         </div>
-                        <span class="mobile-subject-year">Year ${subj.yearLevel || ''}</span>
+                        <div style="text-align: right;">
+                            <span class="mobile-subject-year">Year ${subj.yearLevel || ''}</span>
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 2px;">${subj.semester || '-'}</div>
+                        </div>
                     </div>
                     <div class="mobile-subject-details">
                         <div class="mobile-subject-detail">
@@ -981,6 +1063,7 @@
                             subjectForm.courseCode.value = subject.courseCode || '';
                             subjectForm.descriptiveTitle.value = subject.descriptiveTitle || '';
                             subjectForm.yearLevel.value = subject.yearLevel || '';
+                            subjectForm.semester.value = subject.semester || '';
                             subjectForm.coPrerequisite.value = subject.coPrerequisite || '';
                             subjectForm.units.value = subject.units || '';
                             subjectForm.lecHours.value = subject.lecHours || '';
@@ -1140,6 +1223,7 @@
                     courseCode: formData.get('courseCode')?.trim() || '',
                     descriptiveTitle: formData.get('descriptiveTitle')?.trim() || '',
                     yearLevel: parseInt(formData.get('yearLevel') || '0'),
+                    semester: formData.get('semester') || '',
                     coPrerequisite: formData.get('coPrerequisite')?.trim() || '',
                     units: formData.get('units')?.trim() || '',
                     lecHours: formData.get('lecHours') || '',

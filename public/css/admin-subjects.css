@@ -319,6 +319,38 @@ body {
     color: #999;
 }
 
+/* Filter Controls */
+.filter-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.filter-dropdown {
+    padding: 10px 14px;
+    border: 2px solid #e5e8eb;
+    border-radius: 8px;
+    font-size: 0.9em;
+    background: #fff;
+    color: var(--ctu-text-primary);
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 150px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filter-dropdown:hover {
+    border-color: var(--ctu-light-blue);
+}
+
+.filter-dropdown:focus {
+    outline: none;
+    border-color: var(--ctu-red-accent);
+    box-shadow: 0 0 0 3px rgba(163, 0, 12, 0.12);
+}
+
 /* Table and Table Controls */
 .subjects-table-wrapper {
     background: #fff;
@@ -1109,6 +1141,16 @@ body {
     .search-box {
         max-width: 100%;
         width: 100%;
+    }
+    
+    .filter-controls {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .filter-dropdown {
+        width: 100%;
+        min-width: auto;
     }
     
     .subject-create-btn {

@@ -52,10 +52,12 @@ if (process.env.NODE_ENV === 'production') {
 // Connect to MongoDB with updated options
 mongoose.connect(MONGODB_URI, {
     // Remove deprecated options
-}).then(() => {
+}).then(async () => {
     logger.info("✅ Connected to MongoDB!");
     // Check if admin user exists, if not create one
-    ensureAdminUser();
+    await ensureAdminUser();
+    // Run migration to add semester field to existing subjects
+    await migrateSubjectsSemester();
 }).catch(err => {
     logger.error('MongoDB connection error:', err);
 });
@@ -105,6 +107,40 @@ async function ensureAdminUser() {
     }
 }
 
+// Function to migrate subjects and add semester field
+async function migrateSubjectsSemester() {
+    try {
+        // Find all subjects without semester field
+        const subjectsWithoutSemester = await Subject.find({ 
+            $or: [
+                { semester: { $exists: false } },
+                { semester: null },
+                { semester: '' }
+            ]
+        });
+        
+        if (subjectsWithoutSemester.length === 0) {
+            logger.info('✅ All subjects have semester field');
+            return;
+        }
+        
+        logger.info(`🔄 Migrating ${subjectsWithoutSemester.length} subjects to add semester field...`);
+        
+        // Update each subject with default semester
+        let updated = 0;
+        for (const subject of subjectsWithoutSemester) {
+            subject.semester = '1st Semester'; // Default to 1st Semester
+            await subject.save();
+            updated++;
+            logger.info(`  ✓ Updated: ${subject.courseCode} - ${subject.descriptiveTitle}`);
+        }
+        
+        logger.info(`✅ Migration complete: Updated ${updated} subjects with semester field`);
+    } catch (error) {
+        logger.error('❌ Error during semester migration:', error);
+    }
+}
+
 // ✅ UPDATED: Process profile picture to base64
 async function processProfilePicture(file, userId) {
     if (!file) return null;
@@ -147,6 +183,7 @@ const SubjectSchema = new mongoose.Schema({
     courseCode: { type: String, required: true, unique: true },
     descriptiveTitle: { type: String, required: true },
     yearLevel: { type: Number, required: true, min: 1, max: 12 },
+    semester: { type: String, required: true, enum: ['1st Semester', '2nd Semester'], default: '1st Semester' },
     coPrerequisite: String,
     units: String,
     lecHours: String,
@@ -775,7 +812,7 @@ app.post('/subjects', async (req, res) => {
     try {
         logger.info('Received request to create subject:', req.body);
         const {
-            courseCode, descriptiveTitle, yearLevel, coPrerequisite, units,
+            courseCode, descriptiveTitle, yearLevel, semester, coPrerequisite, units,
             lecHours, labHours, totalHours, remarks, description
         } = req.body;
         if (!courseCode || !descriptiveTitle || !yearLevel) {
@@ -799,6 +836,7 @@ app.post('/subjects', async (req, res) => {
             courseCode: courseCode.trim(),
             descriptiveTitle: descriptiveTitle.trim(),
             yearLevel: yearLevel,
+            semester: semester,
             coPrerequisite: coPrerequisite?.trim() || '',
             units: units?.trim() || '',
             lecHours: lecHours || '',
@@ -819,7 +857,7 @@ app.post('/subjects', async (req, res) => {
 app.put('/subjects/:id', async (req, res) => {
     try {
         const {
-            courseCode, descriptiveTitle, yearLevel, coPrerequisite, units,
+            courseCode, descriptiveTitle, yearLevel, semester, coPrerequisite, units,
             lecHours, labHours, totalHours, remarks, description
         } = req.body;
         if (!courseCode || !descriptiveTitle || !yearLevel) {
@@ -846,6 +884,7 @@ app.put('/subjects/:id', async (req, res) => {
                 courseCode: courseCode.trim(),
                 descriptiveTitle: descriptiveTitle.trim(),
                 yearLevel: yearLevel,
+                semester: semester,
                 coPrerequisite: coPrerequisite?.trim() || '',
                 units: units?.trim() || '',
                 lecHours: lecHours || '',
@@ -872,6 +911,52 @@ app.delete('/subjects/:id', async (req, res) => {
     } catch (error) {
         logger.error('Error deleting subject:', error);
         res.status(500).json({ error: `Error deleting subject: ${error.message}` });
+    }
+});
+
+// Migration endpoint to add semester field to existing subjects
+app.post('/subjects/migrate/add-semester', async (req, res) => {
+    try {
+        // Find all subjects without semester field
+        const subjectsWithoutSemester = await Subject.find({ 
+            $or: [
+                { semester: { $exists: false } },
+                { semester: null },
+                { semester: '' }
+            ]
+        });
+        
+        logger.info(`Found ${subjectsWithoutSemester.length} subjects without semester field`);
+        
+        if (subjectsWithoutSemester.length === 0) {
+            return res.json({ 
+                message: 'All subjects already have semester field',
+                updated: 0
+            });
+        }
+        
+        // Update each subject with default semester
+        let updated = 0;
+        for (const subject of subjectsWithoutSemester) {
+            subject.semester = '1st Semester'; // Default to 1st Semester
+            await subject.save();
+            updated++;
+        }
+        
+        logger.info(`✅ Migration complete: Updated ${updated} subjects with semester field`);
+        
+        res.json({ 
+            message: `Successfully added semester field to ${updated} subjects`,
+            updated: updated,
+            subjects: subjectsWithoutSemester.map(s => ({
+                courseCode: s.courseCode,
+                descriptiveTitle: s.descriptiveTitle,
+                semester: s.semester
+            }))
+        });
+    } catch (error) {
+        logger.error('Error during migration:', error);
+        res.status(500).json({ error: `Migration failed: ${error.message}` });
     }
 });
 

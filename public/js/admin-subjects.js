@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tbody.innerHTML = `
             <tr>
-                <td colspan="10" class="loading-state">
+                <td colspan="11" class="loading-state">
                     <div class="loading-spinner"></div>
                     <span>Loading subjects...</span>
                 </td>
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="no-data">
+                        <td colspan="11" class="no-data">
                             <i class="bi bi-inbox"></i>
                             <span>No subjects found. Create your first subject!</span>
                         </td>
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error loading subjects:', error);
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" class="error-state">
+                    <td colspan="11" class="error-state">
                         <i class="bi bi-exclamation-triangle"></i>
                         <span>Error loading subjects. Please try again.</span>
                     </td>
@@ -211,10 +211,12 @@ document.addEventListener('DOMContentLoaded', function() {
         subjects.forEach(subj => {
             const tr = document.createElement('tr');
             const descriptiveTitle = subj.descriptiveTitle || '';
+            const semester = subj.semester || '-';
             tr.innerHTML = `
                 <td>${subj.courseCode || ''}</td>
                 <td title="${descriptiveTitle}">${descriptiveTitle}</td>
                 <td>Year ${subj.yearLevel || ''}</td>
+                <td>${semester}</td>
                 <td>${subj.coPrerequisite || '-'}</td>
                 <td>${subj.units || '-'}</td>
                 <td>${subj.lecHours || '0'}</td>
@@ -271,6 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 courseCode: formData.get('courseCode')?.trim() || '',
                 descriptiveTitle: formData.get('descriptiveTitle')?.trim() || '',
                 yearLevel: parseInt(formData.get('yearLevel') || '0'),
+                semester: formData.get('semester') || '',
                 coPrerequisite: formData.get('coPrerequisite')?.trim() || '',
                 units: formData.get('units')?.trim() || '',
                 lecHours: formData.get('lecHours') || '',
@@ -283,8 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Submitting subject data:', data);
             
             // Validation
-            if (!data.courseCode || !data.descriptiveTitle || !data.yearLevel) {
-                showBubbleMessage("Course Code, Descriptive Title, and Year Level are required.", "error");
+            if (!data.courseCode || !data.descriptiveTitle || !data.yearLevel || !data.semester) {
+                showBubbleMessage("Course Code, Descriptive Title, Year Level, and Semester are required.", "error");
                 return;
             }
             
@@ -347,6 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.courseCode.value = subject.courseCode || '';
                 form.descriptiveTitle.value = subject.descriptiveTitle || '';
                 form.yearLevel.value = subject.yearLevel || '';
+                form.semester.value = subject.semester || '';
                 form.coPrerequisite.value = subject.coPrerequisite || '';
                 form.units.value = subject.units || '';
                 form.lecHours.value = subject.lecHours || '';
@@ -493,36 +497,62 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Search functionality
+    // Search and filter functionality
     const searchInput = document.getElementById('subjectSearch');
+    const yearLevelFilter = document.getElementById('yearLevelFilter');
+    const semesterFilter = document.getElementById('semesterFilter');
     let allSubjects = []; // Store all subjects for filtering
     
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase().trim();
-            filterSubjects(searchTerm);
+            applyFilters();
         });
     }
     
-    function filterSubjects(searchTerm) {
-        if (!searchTerm) {
-            // Show all subjects
-            renderSubjectsTable(allSubjects);
-            return;
+    if (yearLevelFilter) {
+        yearLevelFilter.addEventListener('change', function() {
+            applyFilters();
+        });
+    }
+    
+    if (semesterFilter) {
+        semesterFilter.addEventListener('change', function() {
+            applyFilters();
+        });
+    }
+    
+    function applyFilters() {
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const selectedYear = yearLevelFilter ? yearLevelFilter.value : '';
+        const selectedSemester = semesterFilter ? semesterFilter.value : '';
+        
+        let filtered = allSubjects;
+        
+        // Filter by year level
+        if (selectedYear) {
+            filtered = filtered.filter(subj => subj.yearLevel === parseInt(selectedYear));
         }
         
-        // Filter subjects based on search term
-        const filtered = allSubjects.filter(subj => {
-            return (
-                (subj.courseCode || '').toLowerCase().includes(searchTerm) ||
-                (subj.descriptiveTitle || '').toLowerCase().includes(searchTerm) ||
-                (subj.yearLevel || '').toString().includes(searchTerm) ||
-                (subj.coPrerequisite || '').toLowerCase().includes(searchTerm) ||
-                (subj.units || '').toString().includes(searchTerm) ||
-                (subj.remarks || '').toLowerCase().includes(searchTerm) ||
-                (subj.description || '').toLowerCase().includes(searchTerm)
-            );
-        });
+        // Filter by semester
+        if (selectedSemester) {
+            filtered = filtered.filter(subj => subj.semester === selectedSemester);
+        }
+        
+        // Filter by search term
+        if (searchTerm) {
+            filtered = filtered.filter(subj => {
+                return (
+                    (subj.courseCode || '').toLowerCase().includes(searchTerm) ||
+                    (subj.descriptiveTitle || '').toLowerCase().includes(searchTerm) ||
+                    (subj.yearLevel || '').toString().includes(searchTerm) ||
+                    (subj.semester || '').toLowerCase().includes(searchTerm) ||
+                    (subj.coPrerequisite || '').toLowerCase().includes(searchTerm) ||
+                    (subj.units || '').toString().includes(searchTerm) ||
+                    (subj.remarks || '').toLowerCase().includes(searchTerm) ||
+                    (subj.description || '').toLowerCase().includes(searchTerm)
+                );
+            });
+        }
         
         renderSubjectsTable(filtered);
     }
