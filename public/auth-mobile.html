@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#002D62">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>CHRONIX - Sign In</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --ctu-soft-gold: #F2D283;       
+            --ctu-light-blue: #3E8EDE;     
+            --ctu-deep-blue: #002D62;      
+            --ctu-white: #FFFFFF;
+            --ctu-lightest-gray: #F4F7F9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-image: url('/img/img/educ_animated1.png');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 45, 98, 0.9) 0%, rgba(62, 142, 222, 0.85) 100%);
+            z-index: 0;
+        }
+
+        /* Home Button */
+        .home-button {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            padding: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: var(--ctu-white);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .home-button:active {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(0.95);
+        }
+
+        /* Mobile Container */
+        .mobile-container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            background: rgba(0, 45, 98, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 16px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tab-button i {
+            font-size: 20px;
+        }
+
+        .tab-button.active {
+            color: var(--ctu-soft-gold);
+            background: rgba(242, 210, 131, 0.1);
+        }
+
+        /* Auth Content */
+        .auth-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding-top: 40px;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 30px 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .auth-card.active {
+            display: block;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Logos */
+        .auth-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .auth-logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--ctu-white);
+            border: 3px solid var(--ctu-soft-gold);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Typography */
+        .auth-title {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--ctu-white);
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-subtitle {
+            font-size: 14px;
+            margin-bottom: 25px;
+            font-weight: 500;
+            color: var(--ctu-white);
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        /* Form */
+        .auth-form {
+            width: 100%;
+        }
+
+        .form-scroll {
+            max-height: 50vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 5px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(242, 210, 131, 0.5) transparent;
+        }
+
+        .form-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .form-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .form-scroll::-webkit-scrollbar-thumb {
+            background: rgba(242, 210, 131, 0.5);
+            border-radius: 10px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--ctu-soft-gold);
+            font-size: 14px;
+            z-index: 1;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 14px 14px 14px 43px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            color: var(--ctu-white);
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--ctu-soft-gold);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(242, 210, 131, 0.3);
+        }
+
+        .input-group select {
+            appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23F2D283' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            padding-right: 40px;
+        }
+
+        .input-group select option {
+            background: var(--ctu-deep-blue);
+            color: var(--ctu-white);
+        }
+
+        /* Password Toggle */
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 45px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--ctu-soft-gold);
+            font-size: 14px;
+            z-index: 2;
+            padding: 10px;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Two Fields Row */
+        .row-two-fields {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .row-two-fields .input-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        /* Forgot Link */
+        .forgot-link {
+            display: block;
+            text-align: right;
+            color: var(--ctu-soft-gold);
+            font-size: 13px;
+            margin: -4px 0 16px 0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .forgot-link:active {
+            opacity: 0.7;
+        }
+
+        /* Auth Button */
+        .auth-button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(135deg, var(--ctu-soft-gold) 0%, #C19B26 100%);
+            color: var(--ctu-deep-blue);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 25px rgba(193, 155, 38, 0.4);
+            margin-top: 10px;
+            min-height: 52px;
+        }
+
+        .auth-button:active {
+            transform: scale(0.98);
+        }
+
+        .auth-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Switch Text */
+        .switch-text {
+            margin-top: 16px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+        }
+
+        .switch-link {
+            color: var(--ctu-soft-gold);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* Notification */
+        .mobile-notification {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-150px);
+            max-width: 90%;
+            padding: 16px 20px;
+            border-radius: 12px;
+            color: white;
+            z-index: 10000;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .mobile-notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .mobile-notification.success {
+            background: linear-gradient(135deg, #00C851, #007E33);
+        }
+
+        .mobile-notification.error {
+            background: linear-gradient(135deg, #FF4444, #CC0000);
+        }
+
+        .notif-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 380px) {
+            .auth-card {
+                padding: 25px 20px;
+            }
+
+            .auth-title {
+                font-size: 24px;
+            }
+
+            .row-two-fields {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .row-two-fields .input-group {
+                margin-bottom: 16px;
+            }
+        }
+
+        /* Landscape mode */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .mobile-container {
+                padding-top: 10px;
+            }
+
+            .auth-content {
+                padding-top: 20px;
+            }
+
+            .auth-card {
+                padding: 20px;
+            }
+
+            .auth-title {
+                font-size: 22px;
+                margin-bottom: 6px;
+            }
+
+            .auth-subtitle {
+                font-size: 12px;
+                margin-bottom: 15px;
+            }
+
+            .input-group {
+                margin-bottom: 12px;
+            }
+
+            .form-scroll {
+                max-height: 35vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Home Button -->
+    <a href="index.html" class="home-button">
+        <i class="fas fa-home"></i>
+    </a>
+
+    <!-- Mobile Container -->
+    <div class="mobile-container">
+        <div class="auth-content">
+            <!-- Sign In Card -->
+            <div class="auth-card active" id="signinCard">
+                <div class="auth-logos">
+                    <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="auth-logo">
+                    <img src="/img/img/CHRONIX_LOGO.png" alt="Chronix Logo" class="auth-logo">
+                </div>
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Sign in to access your schedule</p>
+                
+                <form id="loginForm" class="auth-form">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" placeholder="Email Address" required />
+                    </div>
+                    
+                    <div class="input-group password-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="password" placeholder="Password" id="loginPassword" required />
+                        <span class="toggle-password" data-target="loginPassword">
+                            <i class="fas fa-eye-slash"></i>
+                        </span>
+                    </div>
+                    
+                    <a href="#" class="forgot-link">Forgot your password?</a>
+                    
+                    <button type="submit" class="auth-button">
+                        <span>Sign In</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    
+                    <p class="switch-text">
+                        Don't have an account? <a href="#" class="switch-link" id="showSignup">Sign Up</a>
+                    </p>
+                </form>
+            </div>
+
+            <!-- Sign Up Card -->
+            <div class="auth-card" id="signupCard">
+                <div class="auth-logos">
+                    <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="auth-logo">
+                    <img src="/img/img/CHRONIX_LOGO.png" alt="Chronix Logo" class="auth-logo">
+                </div>
+                <h1 class="auth-title">Create Account</h1>
+                <p class="auth-subtitle">Join CHRONIX scheduling system</p>
+                
+                <form id="registerForm" class="auth-form">
+                    <div class="form-scroll">
+                        <div class="input-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" name="fullname" placeholder="Full Name" required />
+                        </div>
+                        
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" name="email" placeholder="Email Address" required />
+                        </div>
+                        
+                        <div class="row-two-fields">
+                            <div class="input-group">
+                                <i class="fas fa-venus-mars"></i>
+                                <select name="gender" required>
+                                    <option value="" disabled selected>Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <i class="fas fa-calendar"></i>
+                                <input type="date" name="birthdate" required />
+                            </div>
+                        </div>
+                        
+                        <div class="row-two-fields">
+                            <div class="input-group">
+                                <i class="fas fa-user-tag"></i>
+                                <select name="userrole" id="userRoleSelect" required>
+                                    <option value="" disabled selected>User Role</option>
+                                    <option value="student">Student</option>
+                                    <option value="teacher">Teacher</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <i class="fas fa-door-open"></i>
+                                <select name="room" id="roomSelect">
+                                    <option value="" selected>Select Room</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row-two-fields">
+                            <div class="input-group">
+                                <i class="fas fa-id-card"></i>
+                                <input type="text" name="ctuid" placeholder="Student/Faculty ID" required />
+                            </div>
+                            
+                            <div class="input-group">
+                                <i class="fas fa-users"></i>
+                                <select name="section" id="sectionSelect">
+                                    <option value="" selected>Select Section</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group password-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" name="password" placeholder="Password" id="signupPassword" required />
+                            <span class="toggle-password" data-target="signupPassword">
+                                <i class="fas fa-eye-slash"></i>
+                            </span>
+                        </div>
+                        
+                        <div class="input-group password-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" name="confirmpassword" placeholder="Confirm Password" id="signupConfirmPassword" required />
+                            <span class="toggle-password" data-target="signupConfirmPassword">
+                                <i class="fas fa-eye-slash"></i>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="auth-button">
+                        <span>Create Account</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    
+                    <p class="switch-text">
+                        Already have an account? <a href="#" class="switch-link" id="showSignin">Sign In</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-button active" id="signinTab">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Sign In</span>
+        </button>
+        <button class="tab-button" id="signupTab">
+            <i class="fas fa-user-plus"></i>
+            <span>Sign Up</span>
+        </button>
+    </div>
+
+    <!-- Notification -->
+    <div class="mobile-notification" id="mobileNotification">
+        <div class="notif-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        <div class="notif-content">
+            <div class="notif-message"></div>
+        </div>
+    </div>
+
+    <script type="module" src="/js/api-config.js"></script>
+    <script type="module" src="/js/auth.js"></script>
+    
+    <script>
+        // Tab switching functionality
+        const signinTab = document.getElementById('signinTab');
+        const signupTab = document.getElementById('signupTab');
+        const signinCard = document.getElementById('signinCard');
+        const signupCard = document.getElementById('signupCard');
+        const showSignup = document.getElementById('showSignup');
+        const showSignin = document.getElementById('showSignin');
+
+        function switchToSignin() {
+            signinTab.classList.add('active');
+            signupTab.classList.remove('active');
+            signinCard.classList.add('active');
+            signupCard.classList.remove('active');
+        }
+
+        function switchToSignup() {
+            signupTab.classList.add('active');
+            signinTab.classList.remove('active');
+            signupCard.classList.add('active');
+            signinCard.classList.remove('active');
+        }
+
+        signinTab.addEventListener('click', switchToSignin);
+        signupTab.addEventListener('click', switchToSignup);
+        showSignup.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchToSignup();
+        });
+        showSignin.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchToSignin();
+        });
+
+        // Password toggle functionality
+        document.querySelectorAll('.toggle-password').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
