@@ -1117,6 +1117,87 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
+    // Export schedule functionality
+    async function setupExportButton() {
+        const exportBtn = document.getElementById('exportScheduleBtn');
+        if (!exportBtn) return;
+
+        exportBtn.addEventListener('click', async function() {
+            try {
+                if (!schedules || schedules.length === 0) {
+                    showBubbleMessage('No schedules to export', 'error');
+                    return;
+                }
+
+                // Filter schedules based on current selection
+                let schedulesToExport = schedules;
+                let exportDescription = 'All Schedules';
+                let filename = 'all_schedules';
+
+                // If year level and section are selected, filter schedules
+                if (currentYearLevel !== '' && currentSection !== '') {
+                    schedulesToExport = schedules.filter(s => 
+                        (s.section._id || s.section) === currentSection
+                    );
+
+                    // Get section details for better naming
+                    const selectedSection = sections.find(s => s._id === currentSection);
+                    if (selectedSection) {
+                        exportDescription = `${selectedSection.sectionName} (${selectedSection.shift})`;
+                        filename = `schedule_${selectedSection.sectionName.replace(/\s+/g, '_')}_${selectedSection.shift}`;
+                    }
+                } else if (currentYearLevel !== '') {
+                    // If only year level is selected, filter by year level
+                    schedulesToExport = schedules.filter(s => {
+                        const section = sections.find(sec => (sec._id === s.section._id || sec._id === s.section));
+                        return section && section.yearLevel === parseInt(currentYearLevel);
+                    });
+                    exportDescription = `Year ${currentYearLevel} Schedules`;
+                    filename = `schedules_year_${currentYearLevel}`;
+                }
+
+                if (schedulesToExport.length === 0) {
+                    showBubbleMessage('No schedules to export with current filter', 'error');
+                    return;
+                }
+
+                // Import the export module
+                const { default: scheduleExporter } = await import('./schedule-export.js');
+
+                // Prepare user info
+                const currentUser = AuthGuard.getCurrentUser();
+                const userInfo = {
+                    name: currentUser?.fullname || 'Administrator',
+                    role: 'Administrator',
+                    section: exportDescription,
+                    ctuid: currentUser?.ctuid || 'N/A',
+                    profilePicture: currentUser?.profilePicture || null
+                };
+
+                // Show export dialog
+                const result = await scheduleExporter.showExportDialog(
+                    schedulesToExport,
+                    userInfo,
+                    filename
+                );
+
+                if (result) {
+                    showBubbleMessage(
+                        `${exportDescription} exported successfully as ${result.toUpperCase()}! (${schedulesToExport.length} schedule${schedulesToExport.length !== 1 ? 's' : ''})`,
+                        'success'
+                    );
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                showBubbleMessage(
+                    'Failed to export schedules: ' + error.message,
+                    'error'
+                );
+            }
+        });
+    }
+
     // Initial load
     loadAllData();
+    setupExportButton();
 });

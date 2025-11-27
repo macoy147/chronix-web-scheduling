@@ -434,6 +434,11 @@ body {
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 .schedule-header h1 {
@@ -446,6 +451,37 @@ body {
     margin: 0;
     color: var(--ctu-text-secondary);
     font-size: 1em;
+}
+
+.export-schedule-btn {
+    background: linear-gradient(135deg, #3E8EDE 0%, #2E7ECE 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(62, 142, 222, 0.3);
+    white-space: nowrap;
+}
+
+.export-schedule-btn:hover {
+    background: linear-gradient(135deg, #002D62 0%, #001D42 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(62, 142, 222, 0.4);
+}
+
+.export-schedule-btn:active {
+    transform: translateY(0);
+}
+
+.export-schedule-btn i {
+    font-size: 1.1em;
 }
 
 /* Schedule Filters */

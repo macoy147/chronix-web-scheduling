@@ -956,6 +956,73 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
     }
 
+    // Export schedule functionality
+    async function setupExportButton() {
+        const exportBtn = document.getElementById('exportScheduleBtn');
+        if (!exportBtn) return;
+
+        exportBtn.addEventListener('click', async function() {
+            try {
+                if (!studentSchedules || studentSchedules.length === 0) {
+                    NotificationHelper.showNotification('No schedules to export', 'error');
+                    return;
+                }
+
+                // Filter schedules based on current shift selection
+                let schedulesToExport = studentSchedules;
+                let shiftDescription = '';
+                
+                if (currentShift !== 'all') {
+                    schedulesToExport = studentSchedules.filter(schedule => 
+                        schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift
+                    );
+                    shiftDescription = ` (${currentShift.charAt(0).toUpperCase() + currentShift.slice(1)} Shift)`;
+                }
+
+                if (schedulesToExport.length === 0) {
+                    NotificationHelper.showNotification('No schedules to export with current filter', 'error');
+                    return;
+                }
+
+                // Import the export module
+                const { default: scheduleExporter } = await import('./schedule-export.js');
+
+                // Prepare user info
+                const userInfo = {
+                    name: currentStudent?.fullname || 'Student',
+                    role: 'Student',
+                    section: (currentStudent?.section || 'N/A') + shiftDescription,
+                    ctuid: currentStudent?.ctuid || 'N/A',
+                    profilePicture: currentStudent?.profilePicture || null
+                };
+
+                // Generate filename
+                const shiftSuffix = currentShift !== 'all' ? `_${currentShift}` : '';
+                const filename = `student_schedule_${currentStudent?.ctuid || 'export'}${shiftSuffix}`;
+
+                // Show export dialog
+                const result = await scheduleExporter.showExportDialog(
+                    schedulesToExport,
+                    userInfo,
+                    filename
+                );
+
+                if (result) {
+                    NotificationHelper.showNotification(
+                        `Schedule exported successfully as ${result.toUpperCase()}! (${schedulesToExport.length} class${schedulesToExport.length !== 1 ? 'es' : ''})`,
+                        'success'
+                    );
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                NotificationHelper.showNotification(
+                    'Failed to export schedule: ' + error.message,
+                    'error'
+                );
+            }
+        });
+    }
+
     // Initialize the application
     async function initializeApp() {
         try {
@@ -966,6 +1033,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setupShiftToggle();
             setupScheduleViewSelector();
             setupDailyNavigation();
+            setupExportButton();
             
             NotificationHelper.showNotification('Dashboard loaded successfully!', 'success');
         } catch (error) {

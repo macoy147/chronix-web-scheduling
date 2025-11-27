@@ -45,7 +45,7 @@
             <div class="view-toggle-container">
                 <!-- Year and Section Selector -->
                 <div class="section-selector">
-                    <label for="sectionFilterSelect">Year and Section: </label>
+                    <label for="sectionFilterSelect">Year and Section: *</label>
                     <select id="sectionFilterSelect" class="section-filter-dropdown">
                         <option value="">Select Year and Section</option>
                         <!-- Populated by JS with all sections -->
@@ -57,6 +57,9 @@
             <div class="create-schedule-container">
                 <button class="schedule-create-btn" id="openScheduleModal">
                     <i class="bi bi-plus-circle"></i> Create New Schedule
+                </button>
+                <button class="export-schedule-btn" id="exportScheduleBtn">
+                    <i class="bi bi-download"></i> Export Schedules
                 </button>
             </div>
 
