@@ -782,6 +782,69 @@ document.addEventListener('DOMContentLoaded', function() {
             renderDailySchedule();
         }
     }
+    
+    // Setup shift toggle buttons
+    function setupShiftToggle() {
+        const shiftButtons = document.querySelectorAll('.shift-btn-small');
+        shiftButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                shiftButtons.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                // Update current shift
+                currentShift = this.getAttribute('data-shift');
+                console.log('Shift changed to:', currentShift);
+                // Re-render schedule
+                renderScheduleViews();
+            });
+        });
+    }
+    
+    // Setup schedule view selector
+    function setupScheduleViewSelector() {
+        const scheduleViewSelect = document.getElementById('scheduleViewSelect');
+        if (scheduleViewSelect) {
+            scheduleViewSelect.addEventListener('change', function() {
+                currentView = this.value;
+                console.log('View changed to:', currentView);
+                
+                // Toggle visibility of views
+                const weeklyView = document.getElementById('weeklyScheduleView');
+                const dailyView = document.getElementById('dailyScheduleView');
+                
+                if (currentView === 'weekly') {
+                    if (weeklyView) weeklyView.style.display = 'block';
+                    if (dailyView) dailyView.style.display = 'none';
+                    renderWeeklySchedule();
+                } else {
+                    if (weeklyView) weeklyView.style.display = 'none';
+                    if (dailyView) dailyView.style.display = 'block';
+                    renderDailySchedule();
+                }
+            });
+        }
+    }
+    
+    // Setup daily navigation buttons
+    function setupDailyNavigation() {
+        const prevDayBtn = document.getElementById('prevDayBtn');
+        const nextDayBtn = document.getElementById('nextDayBtn');
+        
+        if (prevDayBtn) {
+            prevDayBtn.addEventListener('click', function() {
+                currentDayIndex = (currentDayIndex - 1 + 6) % 6; // 6 days (Mon-Sat)
+                renderDailySchedule();
+            });
+        }
+        
+        if (nextDayBtn) {
+            nextDayBtn.addEventListener('click', function() {
+                currentDayIndex = (currentDayIndex + 1) % 6; // 6 days (Mon-Sat)
+                renderDailySchedule();
+            });
+        }
+    }
 
     function renderWeeklySchedule() {
         const weeklyGrid = document.getElementById('weeklyGrid');
@@ -832,14 +895,78 @@ document.addEventListener('DOMContentLoaded', function() {
             weeklyGrid.appendChild(dayDiv);
         });
     }
-
-    // Add your other schedule functions (renderDailySchedule, etc.) here
+    
+    function renderDailySchedule() {
+        const dailySchedule = document.getElementById('dailySchedule');
+        const currentDayDisplay = document.getElementById('currentDayDisplay');
+        
+        if (!dailySchedule) return;
+        
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const currentDay = days[currentDayIndex];
+        
+        if (currentDayDisplay) {
+            currentDayDisplay.textContent = currentDay;
+        }
+        
+        const daySchedules = studentSchedules.filter(schedule => {
+            const matchesDay = schedule.day === currentDay;
+            const matchesShift = currentShift === 'all' || 
+                (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
+            return matchesDay && matchesShift;
+        }).sort((a, b) => {
+            const getTimeValue = (schedule) => {
+                let timeValue = parseInt(schedule.startTime.replace(':', ''));
+                if (schedule.startPeriod === 'PM' && timeValue < 1200) timeValue += 1200;
+                if (schedule.startPeriod === 'AM' && timeValue === 1200) timeValue = 0;
+                return timeValue;
+            };
+            return getTimeValue(a) - getTimeValue(b);
+        });
+        
+        if (daySchedules.length === 0) {
+            dailySchedule.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-calendar-x"></i>
+                    <p>No classes scheduled for ${currentDay}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        dailySchedule.innerHTML = daySchedules.map(schedule => {
+            const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+            const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
+            const roomName = schedule.room?.roomName || schedule.room || 'No room';
+            const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
+            
+            return `
+                <div class="schedule-item-daily ${schedule.scheduleType}">
+                    <div class="schedule-time-daily">${timeDisplay}</div>
+                    <div class="schedule-details-daily">
+                        <div class="schedule-subject-daily">${subjectCode}</div>
+                        <div class="schedule-meta-daily">
+                            <span><i class="bi bi-person"></i> ${teacherName}</span>
+                            <span><i class="bi bi-door-open"></i> ${roomName}</span>
+                            <span><i class="bi bi-tag"></i> ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 
     // Initialize the application
     async function initializeApp() {
         try {
             updateProfileInfo();
             await loadUserProfile();
+            
+            // Setup schedule controls
+            setupShiftToggle();
+            setupScheduleViewSelector();
+            setupDailyNavigation();
+            
             NotificationHelper.showNotification('Dashboard loaded successfully!', 'success');
         } catch (error) {
             console.error('Error initializing app:', error);

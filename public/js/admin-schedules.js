@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // State management
     let currentYearLevel = '';
-    let currentShift = 'day'; // 'day' or 'night'
+    let currentSection = ''; // Selected section ID
     let currentDate = new Date();
     let schedules = [];
     let subjects = [];
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (yearLevelSelect) {
         yearLevelSelect.addEventListener('change', function() {
             currentYearLevel = this.value;
-            if (currentYearLevel) {
+            if (currentSection && currentYearLevel) {
                 renderSubjectAssignments();
                 renderCalendar();
             } else {
@@ -99,36 +99,75 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Shift Toggle
-    const dayShiftBtn = document.getElementById('dayShiftBtn');
-    if (dayShiftBtn) {
-        dayShiftBtn.addEventListener('click', function() {
-            currentShift = 'day';
-            updateShiftToggle();
-            renderCalendar();
-            renderSubjectAssignments();
+    // Section Filter Selector
+    const sectionFilterSelect = document.getElementById('sectionFilterSelect');
+    if (sectionFilterSelect) {
+        sectionFilterSelect.addEventListener('change', function() {
+            currentSection = this.value;
+            
+            // Auto-set year level based on selected section
+            if (currentSection) {
+                const selectedSection = sections.find(s => s._id === currentSection);
+                if (selectedSection) {
+                    currentYearLevel = selectedSection.yearLevel.toString();
+                    if (yearLevelSelect) {
+                        yearLevelSelect.value = currentYearLevel;
+                    }
+                }
+            }
+            
+            if (currentSection && currentYearLevel) {
+                renderSubjectAssignments();
+                renderCalendar();
+            } else {
+                clearSubjectAssignments();
+                renderCalendar(); // Clear calendar
+            }
         });
     }
 
-    const nightShiftBtn = document.getElementById('nightShiftBtn');
-    if (nightShiftBtn) {
-        nightShiftBtn.addEventListener('click', function() {
-            currentShift = 'night';
-            updateShiftToggle();
-            renderCalendar();
-            renderSubjectAssignments();
-        });
-    }
-
-    function updateShiftToggle() {
-        document.querySelectorAll('.shift-btn').forEach(btn => btn.classList.remove('active'));
-        const activeBtn = document.getElementById(currentShift + 'ShiftBtn');
-        if (activeBtn) activeBtn.classList.add('active');
+    // Populate section filter dropdown with ALL sections grouped by year
+    function populateSectionFilter() {
+        const select = document.getElementById('sectionFilterSelect');
+        if (!select) return;
         
-        const calendarContainer = document.querySelector('.calendar-container');
-        if (calendarContainer) {
-            calendarContainer.className = `calendar-container ${currentShift}-shift`;
-        }
+        select.innerHTML = '<option value="">Select Year and Section</option>';
+        
+        // Group sections by year level
+        const sectionsByYear = {};
+        sections.forEach(section => {
+            const year = section.yearLevel;
+            if (!sectionsByYear[year]) {
+                sectionsByYear[year] = [];
+            }
+            sectionsByYear[year].push(section);
+        });
+        
+        // Sort years
+        const years = Object.keys(sectionsByYear).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        // Create optgroups for each year
+        years.forEach(year => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = `━━━ Year ${year} ━━━`;
+            
+            // Sort sections within year by shift, then name
+            const yearSections = sectionsByYear[year].sort((a, b) => {
+                if (a.shift !== b.shift) {
+                    return a.shift.localeCompare(b.shift);
+                }
+                return a.sectionName.localeCompare(b.sectionName);
+            });
+            
+            yearSections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section._id;
+                option.textContent = `${section.sectionName} (${section.shift})`;
+                optgroup.appendChild(option);
+            });
+            
+            select.appendChild(optgroup);
+        });
     }
 
     // Calendar Navigation
@@ -158,14 +197,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadSections(),
                 loadRooms()
             ]);
+            
+            // Populate section filter after sections are loaded
+            populateSectionFilter();
+            
             renderCalendar();
-            // Initialize with empty subject assignments if no year level selected
-            if (currentYearLevel) {
+            // Initialize with empty subject assignments if no year level or section selected
+            if (currentYearLevel && currentSection) {
                 renderSubjectAssignments();
             } else {
                 clearSubjectAssignments();
             }
-            updateShiftToggle();
         } catch (error) {
             console.error('Error loading data:', error);
             showBubbleMessage('Error loading schedule data', 'error');
@@ -356,12 +398,21 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        if (!currentSection) {
+            container.innerHTML = '<div class="no-selection">Select a section to see subject progress.</div>';
+            return;
+        }
+
         const filteredSubjects = subjects.filter(s => s.yearLevel === parseInt(currentYearLevel));
-        const filteredSections = sections.filter(s => s.yearLevel === parseInt(currentYearLevel))
-            .sort((a, b) => a.shift.localeCompare(b.shift));
+        const selectedSection = sections.find(s => s._id === currentSection);
 
         if (filteredSubjects.length === 0) {
             container.innerHTML = '<div class="no-selection">No subjects for this year level.</div>';
+            return;
+        }
+
+        if (!selectedSection) {
+            container.innerHTML = '<div class="no-selection">Section not found.</div>';
             return;
         }
 
@@ -369,11 +420,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const card = document.createElement('div');
             card.className = 'subject-assignment-card';
 
-            const progressHtml = filteredSections.map(section => {
-                const allocated = calculateAllocatedHours(subject._id, section._id);
-                const total = parseFloat(subject.totalHours) || 0;
-                return `${section.sectionName} - ${section.shift} ${allocated}/${total} hours`;
-            }).join(' | ');
+            const allocated = calculateAllocatedHours(subject._id, currentSection);
+            const total = parseFloat(subject.totalHours) || 0;
+            const progressHtml = `${selectedSection.sectionName} - ${selectedSection.shift}: ${allocated}/${total} hours`;
 
             card.innerHTML = `
                 <h3>${subject.courseCode} - ${subject.descriptiveTitle}</h3>
@@ -388,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (container) container.innerHTML = '';
     }
 
-    // Render calendar with filters for year level and shift
+    // Render calendar with filters for year level and section
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
         if (!grid) return;
@@ -407,27 +456,37 @@ document.addEventListener('DOMContentLoaded', function() {
             dayDiv.className = 'calendar-day';
             dayDiv.innerHTML = `<h4>${day}</h4>`;
 
-            if (currentYearLevel !== '') {
+            if (currentYearLevel !== '' && currentSection !== '') {
                 const daySchedules = schedules.filter(s => 
                     s.day === day &&
-                    s.section.yearLevel === parseInt(currentYearLevel) &&
-                    s.section.shift.toLowerCase() === currentShift
+                    (s.section._id || s.section) === currentSection
                 );
 
-                // Sort schedules by start time (basic sort assuming 24h format)
+                // Sort schedules by start time
                 daySchedules.sort((a, b) => {
                     let aStart = parseInt(a.startTime.replace(':', ''));
-                    if (a.startPeriod === 'PM') aStart += 1200;
+                    if (a.startPeriod === 'PM' && !a.startTime.startsWith('12')) aStart += 1200;
                     let bStart = parseInt(b.startTime.replace(':', ''));
-                    if (b.startPeriod === 'PM') bStart += 1200;
+                    if (b.startPeriod === 'PM' && !b.startTime.startsWith('12')) bStart += 1200;
                     return aStart - bStart;
                 });
 
                 daySchedules.forEach(schedule => {
                     const item = document.createElement('div');
                     item.className = `schedule-item ${schedule.scheduleType}`;
-                    const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
-                    item.textContent = `${timeDisplay}: ${schedule.subject.courseCode} (${schedule.teacher.fullname})`;
+                    
+                    // Ensure time is displayed in 12-hour format with AM/PM
+                    const startTime = schedule.startTime || '00:00';
+                    const endTime = schedule.endTime || '00:00';
+                    const startPeriod = schedule.startPeriod || 'AM';
+                    const endPeriod = schedule.endPeriod || 'PM';
+                    
+                    const timeDisplay = `${startTime} ${startPeriod} - ${endTime} ${endPeriod}`;
+                    const subjectCode = schedule.subject.courseCode || 'N/A';
+                    const teacherName = schedule.teacher.fullname || 'No Teacher';
+                    const roomName = schedule.room.roomName || 'No Room';
+                    
+                    item.textContent = `${timeDisplay}: ${subjectCode} (${teacherName}) - ${roomName}`;
                     item.onclick = () => showScheduleDetails(schedule);
                     dayDiv.appendChild(item);
                 });
@@ -471,16 +530,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (closeBtn) {
         closeBtn.onclick = () => {
+            // Reset form
+            if (form) form.reset();
+            // Hide conflict alert
+            hideConflictAlert();
+            // Hide hours info
+            if (subjectHoursInfo) subjectHoursInfo.style.display = 'none';
+            // Close modal
             if (scheduleModal) scheduleModal.style.display = 'none';
             document.body.style.overflow = 'auto';
+            // Reset edit mode
+            editMode = false;
+            editingScheduleId = null;
         };
     }
 
     if (scheduleModal) {
         scheduleModal.addEventListener('click', function(e) {
             if (e.target === scheduleModal) {
+                // Reset form
+                if (form) form.reset();
+                // Hide conflict alert
+                hideConflictAlert();
+                // Hide hours info
+                if (subjectHoursInfo) subjectHoursInfo.style.display = 'none';
+                // Close modal
                 scheduleModal.style.display = 'none';
                 document.body.style.overflow = 'auto';
+                // Reset edit mode
+                editMode = false;
+                editingScheduleId = null;
             }
         });
     }
@@ -490,7 +569,36 @@ document.addEventListener('DOMContentLoaded', function() {
         subjectSelect.addEventListener('change', updateHoursInfo);
     }
     if (sectionSelect) {
-        sectionSelect.addEventListener('change', updateHoursInfo);
+        sectionSelect.addEventListener('change', () => {
+            updateHoursInfo();
+            autoSelectRoomForSection();
+        });
+    }
+    
+    // Auto-select room based on section
+    function autoSelectRoomForSection() {
+        const sectionId = sectionSelect?.value;
+        const roomSelect = document.getElementById('roomSelect');
+        
+        if (!sectionId || !roomSelect) return;
+        
+        const section = sections.find(s => s._id === sectionId);
+        if (!section) return;
+        
+        // Find room assigned to this section based on shift
+        const assignedRoom = rooms.find(room => {
+            if (section.shift.toLowerCase() === 'day') {
+                return room.daySection === section.sectionName;
+            } else if (section.shift.toLowerCase() === 'night') {
+                return room.nightSection === section.sectionName;
+            }
+            return false;
+        });
+        
+        if (assignedRoom) {
+            roomSelect.value = assignedRoom._id;
+            console.log(`Auto-selected room: ${assignedRoom.roomName} for section: ${section.sectionName}`);
+        }
     }
 
     function updateHoursInfo() {
@@ -527,26 +635,273 @@ document.addEventListener('DOMContentLoaded', function() {
         subjectHoursInfo.style.display = 'block';
     }
 
+    // Convert time to minutes for comparison
+    function timeToMinutes(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    }
+    
+    // Convert minutes back to time string
+    function minutesToTime(minutes) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    }
+    
+    // Convert schedule time to 24-hour format for comparison
+    function scheduleTimeTo24Hour(schedule) {
+        let [hours, minutes] = schedule.startTime.split(':').map(Number);
+        if (schedule.startPeriod === 'PM' && hours !== 12) hours += 12;
+        if (schedule.startPeriod === 'AM' && hours === 12) hours = 0;
+        const startTime24 = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        
+        [hours, minutes] = schedule.endTime.split(':').map(Number);
+        if (schedule.endPeriod === 'PM' && hours !== 12) hours += 12;
+        if (schedule.endPeriod === 'AM' && hours === 12) hours = 0;
+        const endTime24 = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        
+        return { startTime24, endTime24 };
+    }
+    
+    // Check for schedule conflicts
+    function checkScheduleConflicts(formData) {
+        const conflicts = [];
+        const startMinutes = timeToMinutes(formData.startTime);
+        const endMinutes = timeToMinutes(formData.endTime);
+        
+        // Filter schedules for the same day, excluding current schedule if editing
+        const daySchedules = schedules.filter(s => 
+            s.day === formData.day && 
+            (!editMode || s._id !== editingScheduleId)
+        );
+        
+        daySchedules.forEach(schedule => {
+            // Convert existing schedule to 24-hour format for comparison
+            const { startTime24, endTime24 } = scheduleTimeTo24Hour(schedule);
+            const schedStartMinutes = timeToMinutes(startTime24);
+            const schedEndMinutes = timeToMinutes(endTime24);
+            
+            // Check for time overlap
+            const hasTimeOverlap = (startMinutes < schedEndMinutes && endMinutes > schedStartMinutes);
+            
+            if (hasTimeOverlap) {
+                // Check teacher conflict
+                if ((schedule.teacher._id || schedule.teacher) === formData.teacher) {
+                    conflicts.push({
+                        type: 'teacher',
+                        schedule: schedule,
+                        message: `Teacher ${schedule.teacher.fullname} is already teaching ${schedule.subject.courseCode} at this time`
+                    });
+                }
+                
+                // Check room conflict
+                if ((schedule.room._id || schedule.room) === formData.room) {
+                    conflicts.push({
+                        type: 'room',
+                        schedule: schedule,
+                        message: `${schedule.room.roomName} is already occupied by ${schedule.subject.courseCode} at this time`
+                    });
+                }
+                
+                // Check section conflict
+                if ((schedule.section._id || schedule.section) === formData.section) {
+                    conflicts.push({
+                        type: 'section',
+                        schedule: schedule,
+                        message: `Section ${schedule.section.sectionName} already has ${schedule.subject.courseCode} scheduled at this time`
+                    });
+                }
+            }
+        });
+        
+        return conflicts;
+    }
+    
+    // Suggest alternative time slots
+    function suggestAlternativeTimeSlots(formData, conflicts) {
+        const startMinutes = timeToMinutes(formData.startTime);
+        const endMinutes = timeToMinutes(formData.endTime);
+        const duration = endMinutes - startMinutes;
+        
+        // Get all schedules for the same day
+        const daySchedules = schedules.filter(s => 
+            s.day === formData.day &&
+            (!editMode || s._id !== editingScheduleId)
+        );
+        
+        // Create a list of busy time slots (convert to 24-hour format)
+        const busySlots = daySchedules.map(s => {
+            const { startTime24, endTime24 } = scheduleTimeTo24Hour(s);
+            return {
+                start: timeToMinutes(startTime24),
+                end: timeToMinutes(endTime24),
+                teacher: s.teacher._id || s.teacher,
+                room: s.room._id || s.room,
+                section: s.section._id || s.section
+            };
+        });
+        
+        // Define working hours (7 AM to 9 PM)
+        const workStart = 7 * 60; // 7:00 AM
+        const workEnd = 21 * 60;  // 9:00 PM
+        
+        const suggestions = [];
+        
+        // Try slots near the requested time (within 2 hours before and after)
+        const searchStart = Math.max(workStart, startMinutes - 120);
+        const searchEnd = Math.min(workEnd - duration, startMinutes + 120);
+        
+        for (let testStart = searchStart; testStart <= searchEnd; testStart += 30) {
+            const testEnd = testStart + duration;
+            
+            // Check if this slot conflicts with any existing schedule
+            let hasConflict = false;
+            
+            for (const busy of busySlots) {
+                const hasTimeOverlap = (testStart < busy.end && testEnd > busy.start);
+                
+                if (hasTimeOverlap) {
+                    // Check if it conflicts with our teacher, room, or section
+                    if (busy.teacher === formData.teacher || 
+                        busy.room === formData.room || 
+                        busy.section === formData.section) {
+                        hasConflict = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!hasConflict) {
+                suggestions.push({
+                    startTime: minutesToTime(testStart),
+                    endTime: minutesToTime(testEnd),
+                    distance: Math.abs(testStart - startMinutes) // Distance from original time
+                });
+                
+                // Limit to 3 suggestions
+                if (suggestions.length >= 3) break;
+            }
+        }
+        
+        // Sort by distance from original time
+        suggestions.sort((a, b) => a.distance - b.distance);
+        
+        return suggestions;
+    }
+    
+    // Display conflict alert with suggestions
+    function displayConflictAlert(conflicts, suggestions) {
+        const conflictAlert = document.getElementById('conflictAlert');
+        const conflictDetails = document.getElementById('conflictDetails');
+        const recommendationsDiv = document.getElementById('recommendations');
+        
+        if (!conflictAlert || !conflictDetails || !recommendationsDiv) return;
+        
+        // Show conflict details
+        const conflictMessages = conflicts.map(c => c.message).join('; ');
+        conflictDetails.textContent = conflictMessages;
+        
+        // Show suggestions
+        if (suggestions.length > 0) {
+            recommendationsDiv.innerHTML = `
+                <strong>Suggested alternative times:</strong>
+                <div class="suggestion-list">
+                    ${suggestions.map((sug, index) => `
+                        <button type="button" class="suggestion-btn" data-start="${sug.startTime}" data-end="${sug.endTime}">
+                            ${sug.startTime} - ${sug.endTime}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            
+            // Add click handlers for suggestions
+            recommendationsDiv.querySelectorAll('.suggestion-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.getElementById('startTime').value = this.dataset.start;
+                    document.getElementById('endTime').value = this.dataset.end;
+                    conflictAlert.style.display = 'none';
+                    showBubbleMessage('Time updated to suggested slot. Please review and submit again.', 'info');
+                });
+            });
+        } else {
+            recommendationsDiv.innerHTML = '<p>No alternative time slots available nearby. Please choose a different time manually.</p>';
+        }
+        
+        conflictAlert.style.display = 'block';
+    }
+    
+    // Hide conflict alert
+    function hideConflictAlert() {
+        const conflictAlert = document.getElementById('conflictAlert');
+        if (conflictAlert) conflictAlert.style.display = 'none';
+    }
+    
+    // Convert 24-hour time to 12-hour format with AM/PM
+    function convertTo12Hour(time24) {
+        const [hours24, minutes] = time24.split(':').map(Number);
+        let hours12 = hours24 % 12;
+        if (hours12 === 0) hours12 = 12;
+        const period = hours24 >= 12 ? 'PM' : 'AM';
+        const time12 = `${String(hours12).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        return { time: time12, period };
+    }
+    
     // Form submit
     if (form) {
         form.onsubmit = async (e) => {
             e.preventDefault();
+            
+            // Hide previous conflict alerts
+            hideConflictAlert();
+            
+            const startTime24 = document.getElementById('startTime').value;
+            const endTime24 = document.getElementById('endTime').value;
+            
+            // Convert to 12-hour format for backend
+            const startConverted = convertTo12Hour(startTime24);
+            const endConverted = convertTo12Hour(endTime24);
+            
             const formData = {
                 subject: document.getElementById('subjectSelect').value,
                 teacher: document.getElementById('teacherSelect').value,
                 section: document.getElementById('sectionSelect').value,
                 room: document.getElementById('roomSelect').value,
                 day: document.getElementById('daySelect').value,
-                startTime: document.getElementById('startTime').value,
-                endTime: document.getElementById('endTime').value,
-                startPeriod: document.getElementById('startPeriod').value,
-                endPeriod: document.getElementById('endPeriod').value,
+                startTime: startConverted.time,
+                endTime: endConverted.time,
+                startPeriod: startConverted.period,
+                endPeriod: endConverted.period,
                 scheduleType: document.querySelector('input[name="scheduleType"]:checked').value
             };
 
             // Basic validation
-            if (!formData.subject || !formData.teacher || !formData.section || !formData.room || !formData.day || !formData.startTime || !formData.endTime) {
+            if (!formData.subject || !formData.teacher || !formData.section || !formData.room || !formData.day || !startTime24 || !endTime24) {
                 showBubbleMessage('Please fill all required fields.', 'error');
+                return;
+            }
+            
+            // Validate time range using 24-hour format
+            const startMinutes = timeToMinutes(startTime24);
+            const endMinutes = timeToMinutes(endTime24);
+            
+            if (endMinutes <= startMinutes) {
+                showBubbleMessage('End time must be after start time.', 'error');
+                return;
+            }
+            
+            // Check for conflicts using 24-hour format
+            const conflictCheckData = {
+                ...formData,
+                startTime: startTime24,
+                endTime: endTime24
+            };
+            
+            const conflicts = checkScheduleConflicts(conflictCheckData);
+            
+            if (conflicts.length > 0) {
+                const suggestions = suggestAlternativeTimeSlots(conflictCheckData, conflicts);
+                displayConflictAlert(conflicts, suggestions);
+                showBubbleMessage('Schedule conflict detected! Please review the suggestions below.', 'error');
                 return;
             }
 
@@ -557,6 +912,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     url += `/${editingScheduleId}`;
                     method = 'PUT';
                 }
+
+                console.log('Submitting schedule data:', formData);
 
                 const res = await fetch(url, {
                     method,
@@ -673,11 +1030,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('sectionSelect').value = schedule.section._id;
                 document.getElementById('roomSelect').value = schedule.room._id;
                 document.getElementById('daySelect').value = schedule.day;
-                document.getElementById('startTime').value = schedule.startTime;
-                document.getElementById('endTime').value = schedule.endTime;
-                document.getElementById('startPeriod').value = schedule.startPeriod;
-                document.getElementById('endPeriod').value = schedule.endPeriod;
+                
+                // Convert old format (with AM/PM) to 24-hour format if needed
+                let startTime = schedule.startTime;
+                let endTime = schedule.endTime;
+                
+                if (schedule.startPeriod && schedule.endPeriod) {
+                    // Convert from 12-hour to 24-hour format
+                    startTime = convertTo24Hour(schedule.startTime, schedule.startPeriod);
+                    endTime = convertTo24Hour(schedule.endTime, schedule.endPeriod);
+                }
+                
+                document.getElementById('startTime').value = startTime;
+                document.getElementById('endTime').value = endTime;
                 document.querySelector(`input[name="scheduleType"][value="${schedule.scheduleType}"]`).checked = true;
+            }
+            
+            // Helper function to convert 12-hour to 24-hour format
+            function convertTo24Hour(time, period) {
+                let [hours, minutes] = time.split(':').map(Number);
+                
+                if (period === 'PM' && hours !== 12) {
+                    hours += 12;
+                } else if (period === 'AM' && hours === 12) {
+                    hours = 0;
+                }
+                
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
             }
 
             const modalTitle = document.getElementById('scheduleModalTitle');

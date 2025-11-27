@@ -243,32 +243,66 @@ body {
     border-color: var(--ctu-light-blue);
 }
 
-.shift-toggle {
+/* Section Selector */
+.section-selector {
     display: flex;
+    align-items: center;
+    gap: 10px;
     background: var(--ctu-white);
+    padding: 12px 16px;
     border-radius: 12px;
-    padding: 4px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.shift-btn {
-    padding: 10px 20px;
-    border: none;
-    background: transparent;
-    border-radius: 8px;
+.section-selector label {
     font-weight: 600;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--ctu-text-secondary);
+    color: var(--ctu-deep-blue);
+    font-size: 0.95em;
+    margin: 0;
 }
 
-.shift-btn.active {
-    background: var(--ctu-soft-gold);
+.section-filter-dropdown {
+    padding: 10px 12px;
+    border: 2px solid #e5e8eb;
+    border-radius: 8px;
+    font-size: 0.95em;
+    background: white;
+    min-width: 200px;
+    cursor: pointer;
+}
+
+.section-filter-dropdown:focus {
+    outline: none;
+    border-color: var(--ctu-light-blue);
+}
+
+/* Optgroup styling for year grouping */
+.section-filter-dropdown optgroup {
+    font-weight: 700;
+    font-size: 0.95em;
     color: var(--ctu-deep-blue);
+    background: var(--tint-gold-bg);
+    padding: 8px 0;
+}
+
+.section-filter-dropdown option {
+    padding: 8px 12px;
+    font-weight: 500;
+    color: var(--ctu-text-primary);
+}
+
+.mobile-filter-select optgroup {
+    font-weight: 700;
+    font-size: 0.95em;
+    color: var(--ctu-deep-blue);
+    background: var(--tint-gold-bg);
+    padding: 8px 0;
+}
+
+.mobile-filter-select option {
+    padding: 8px 12px;
+    font-weight: 500;
+    color: var(--ctu-text-primary);
 }
 
 /* Create Schedule Container - Positioned below shift toggle */
@@ -969,3 +1003,89 @@ body {
     text-align: center;
     padding: 20px;
 }   
+
+
+/* Conflict Alert Styles */
+.conflict-alert {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.conflict-alert i {
+    color: #ff9800;
+    font-size: 1.5rem;
+    margin-right: 12px;
+}
+
+.conflict-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.conflict-message strong {
+    color: #d8000c;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.recommendations {
+    margin-top: 8px;
+}
+
+.recommendations strong {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--ctu-deep-blue);
+}
+
+.suggestion-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestion-btn {
+    background: var(--ctu-light-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.suggestion-btn:hover {
+    background: var(--ctu-deep-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.suggestion-btn:active {
+    transform: translateY(0);
+}
+
+/* Time input improvements */
+input[type="time"] {
+    padding: 10px 12px;
+    border: 2px solid #e5e8eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #fff;
+    transition: all 0.2s ease;
+}
+
+input[type="time"]:focus {
+    outline: none;
+    border-color: var(--ctu-light-blue);
+    box-shadow: 0 0 0 3px rgba(62, 142, 222, 0.1);
+}

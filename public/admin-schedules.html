@@ -43,26 +43,13 @@
         <div class="admin-center-container">
             <!-- View Toggle -->
             <div class="view-toggle-container">
-                <!-- Year Level Selector -->
-                <div class="year-level-selector">
-                    <label for="yearLevelSelect">Year Level:</label>
-                    <select id="yearLevelSelect" class="year-level-dropdown">
-                        <option value="">Select Year Level</option>
-                        <option value="1">Year 1</option>
-                        <option value="2">Year 2</option>
-                        <option value="3">Year 3</option>
-                        <option value="4">Year 4</option>
+                <!-- Year and Section Selector -->
+                <div class="section-selector">
+                    <label for="sectionFilterSelect">Year and Section: </label>
+                    <select id="sectionFilterSelect" class="section-filter-dropdown">
+                        <option value="">Select Year and Section</option>
+                        <!-- Populated by JS with all sections -->
                     </select>
-                </div>
-                
-                <!-- Shift Toggle -->
-                <div class="shift-toggle">
-                    <button class="shift-btn active" id="dayShiftBtn">
-                        <i class="bi bi-sun"></i> Day Classes
-                    </button>
-                    <button class="shift-btn" id="nightShiftBtn">
-                        <i class="bi bi-moon"></i> Night Classes
-                    </button>
                 </div>
             </div>
 
@@ -169,26 +156,13 @@
                     
                     <div class="form-row compact">
                         <label>Start Time *</label>
-                        <div class="time-input-group compact">
-                            <input type="time" name="startTime" id="startTime" class="compact-input" required>
-                            <select name="startPeriod" id="startPeriod" class="compact-input" required>
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
-                            </select>
-                        </div>
+                        <input type="time" name="startTime" id="startTime" class="compact-input" required>
                     </div>
                     
                     <div class="form-row compact">
                         <label>End Time *</label>
-                        <div class="time-input-group compact">
-                            <input type="time" name="endTime" id="endTime" class="compact-input" required>
-                            <select name="endPeriod" id="endPeriod" class="compact-input" required>
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
-                            </select>
-                        </div>
-                    </div>
-                    
+                        <input type="time" name="endTime" id="endTime" class="compact-input" required>
+                    </div>                    
                     <div class="form-row full-width">
                         <label>Schedule Type</label>
                         <div class="schedule-type-toggle compact">

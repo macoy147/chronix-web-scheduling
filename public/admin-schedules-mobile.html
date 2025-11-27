@@ -605,21 +605,10 @@
             <!-- Filters -->
             <div class="mobile-filters">
                 <div class="mobile-filter-row">
-                    <select id="mobileYearLevelSelect" class="mobile-filter-select">
-                        <option value="">Select Year Level</option>
-                        <option value="1">Year 1</option>
-                        <option value="2">Year 2</option>
-                        <option value="3">Year 3</option>
-                        <option value="4">Year 4</option>
+                    <select id="mobileSectionFilterSelect" class="mobile-filter-select">
+                        <option value="">Select Year and Section *</option>
+                        <!-- Populated by JS with all sections -->
                     </select>
-                </div>
-                <div class="mobile-shift-toggle">
-                    <button class="mobile-shift-btn active" id="mobileDayShiftBtn">
-                        <i class="bi bi-sun"></i> Day
-                    </button>
-                    <button class="mobile-shift-btn" id="mobileNightShiftBtn">
-                        <i class="bi bi-moon"></i> Night
-                    </button>
                 </div>
             </div>
             
@@ -771,33 +760,92 @@
         
         updateMobileProfileInfo();
         
-        // Mobile shift toggle
-        const mobileDayShiftBtn = document.getElementById('mobileDayShiftBtn');
-        const mobileNightShiftBtn = document.getElementById('mobileNightShiftBtn');
-        let currentShift = 'day'; // lowercase to match database
-        
-        mobileDayShiftBtn.addEventListener('click', () => {
-            currentShift = 'day';
-            mobileDayShiftBtn.classList.add('active');
-            mobileNightShiftBtn.classList.remove('active');
-            loadMobileSchedules();
-        });
-        
-        mobileNightShiftBtn.addEventListener('click', () => {
-            currentShift = 'night';
-            mobileNightShiftBtn.classList.add('active');
-            mobileDayShiftBtn.classList.remove('active');
-            loadMobileSchedules();
-        });
-        
-        // Mobile year level selector
-        const mobileYearLevelSelect = document.getElementById('mobileYearLevelSelect');
+        // Mobile section selector (Year and Section combined)
+        const mobileSectionFilterSelect = document.getElementById('mobileSectionFilterSelect');
         let currentYearLevel = '';
+        let currentSection = '';
+        let allSections = [];
         
-        mobileYearLevelSelect.addEventListener('change', () => {
-            currentYearLevel = mobileYearLevelSelect.value;
-            loadMobileSchedules();
+        // Load sections
+        async function loadSections() {
+            try {
+                const res = await fetch('/sections');
+                if (res.ok) {
+                    allSections = await res.json();
+                    populateMobileSectionFilter();
+                }
+            } catch (error) {
+                console.error('Error loading sections:', error);
+            }
+        }
+        
+        // Populate section filter with ALL sections grouped by year
+        function populateMobileSectionFilter() {
+            mobileSectionFilterSelect.innerHTML = '<option value="">Select Year and Section *</option>';
+            
+            // Group sections by year level
+            const sectionsByYear = {};
+            allSections.forEach(section => {
+                const year = section.yearLevel;
+                if (!sectionsByYear[year]) {
+                    sectionsByYear[year] = [];
+                }
+                sectionsByYear[year].push(section);
+            });
+            
+            // Sort years
+            const years = Object.keys(sectionsByYear).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            // Create optgroups for each year
+            years.forEach(year => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = `━━━ Year ${year} ━━━`;
+                
+                // Sort sections within year by shift, then name
+                const yearSections = sectionsByYear[year].sort((a, b) => {
+                    if (a.shift !== b.shift) {
+                        return a.shift.localeCompare(b.shift);
+                    }
+                    return a.sectionName.localeCompare(b.sectionName);
+                });
+                
+                yearSections.forEach(section => {
+                    const option = document.createElement('option');
+                    option.value = section._id;
+                    option.textContent = `${section.sectionName} (${section.shift})`;
+                    optgroup.appendChild(option);
+                });
+                
+                mobileSectionFilterSelect.appendChild(optgroup);
+            });
+        }
+        
+        mobileSectionFilterSelect.addEventListener('change', () => {
+            currentSection = mobileSectionFilterSelect.value;
+            
+            // Auto-set year level based on selected section
+            if (currentSection) {
+                const selectedSection = allSections.find(s => s._id === currentSection);
+                if (selectedSection) {
+                    currentYearLevel = selectedSection.yearLevel.toString();
+                }
+                loadMobileSchedules();
+            } else {
+                currentYearLevel = '';
+                const mobileSchedulesList = document.getElementById('mobileSchedulesList');
+                if (mobileSchedulesList) {
+                    mobileSchedulesList.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px; color: #999;">
+                            <i class="bi bi-funnel" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                            <span>Select year and section to view schedules...</span>
+                        </div>
+                    `;
+                }
+            }
         });
+        
+        // Initialize sections
+        loadSections();
         
         let allMobileSchedules = [];
         
@@ -834,19 +882,28 @@
                     let dayHTML = `<div class="mobile-day-header">${day}</div>`;
                     
                     daySchedules.forEach(schedule => {
-                        const isLab = schedule.subjectType === 'Lab';
+                        const isLab = schedule.scheduleType === 'lab';
+                        const startTime = schedule.startTime || '00:00';
+                        const endTime = schedule.endTime || '00:00';
+                        const startPeriod = schedule.startPeriod || 'AM';
+                        const endPeriod = schedule.endPeriod || 'PM';
+                        const timeDisplay = `${startTime} ${startPeriod} - ${endTime} ${endPeriod}`;
+                        const subjectCode = schedule.subject?.courseCode || 'N/A';
+                        const teacherName = schedule.teacher?.fullname || 'No teacher';
+                        const roomName = schedule.room?.roomName || 'No room';
+                        
                         dayHTML += `
                             <div class="mobile-schedule-card ${isLab ? 'lab' : ''}">
                                 <div class="mobile-schedule-time">
-                                    ${schedule.startTime} - ${schedule.endTime}
+                                    ${timeDisplay}
                                 </div>
                                 <div class="mobile-schedule-subject">
-                                    ${schedule.subjectCode || 'N/A'}
+                                    ${subjectCode}
                                 </div>
                                 <div class="mobile-schedule-details">
-                                    <div><i class="bi bi-person"></i> ${schedule.teacherName || 'No teacher'}</div>
-                                    <div><i class="bi bi-door-open"></i> ${schedule.roomName || 'No room'}</div>
-                                    <div><i class="bi bi-layers"></i> ${schedule.sectionName || 'No section'}</div>
+                                    <div><i class="bi bi-person"></i> ${teacherName}</div>
+                                    <div><i class="bi bi-door-open"></i> ${roomName}</div>
+                                    <div><i class="bi bi-bookmark"></i> ${schedule.scheduleType || 'lecture'}</div>
                                 </div>
                                 <div class="mobile-schedule-actions">
                                     <button class="mobile-schedule-action-btn edit" data-id="${schedule._id}">
@@ -929,27 +986,30 @@
                 return;
             }
             
+            if (!currentSection) {
+                const mobileSchedulesList = document.getElementById('mobileSchedulesList');
+                if (mobileSchedulesList) {
+                    mobileSchedulesList.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px; color: #999;">
+                            <i class="bi bi-funnel" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                            <span>Select a section to view schedules...</span>
+                        </div>
+                    `;
+                }
+                return;
+            }
+            
             try {
                 const res = await fetch('/schedules');
                 const data = await res.json();
                 
                 console.log('Fetched schedules:', data);
-                console.log('Filtering by yearLevel:', currentYearLevel, 'shift:', currentShift);
+                console.log('Filtering by section:', currentSection);
                 
-                // Filter by year level and shift
+                // Filter by section
                 allMobileSchedules = Array.isArray(data) ? data.filter(schedule => {
-                    // Handle both string and number year levels
-                    const yearMatch = schedule.yearLevel == currentYearLevel || 
-                                     schedule.yearLevel === parseInt(currentYearLevel);
-                    
-                    // Handle case-insensitive shift matching
-                    const shiftMatch = schedule.shift && 
-                                      schedule.shift.toLowerCase() === currentShift.toLowerCase();
-                    
-                    console.log('Schedule:', schedule.subjectCode, 'Year:', schedule.yearLevel, 'Shift:', schedule.shift, 
-                               'YearMatch:', yearMatch, 'ShiftMatch:', shiftMatch);
-                    
-                    return yearMatch && shiftMatch;
+                    const sectionId = schedule.section._id || schedule.section;
+                    return sectionId === currentSection;
                 }) : [];
                 
                 console.log('Filtered schedules:', allMobileSchedules.length);
