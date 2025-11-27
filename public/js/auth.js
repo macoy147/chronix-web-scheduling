@@ -473,13 +473,8 @@
                         window.location.hash = '#t1';
                     }, 1500);
                 } else {
-                    if (result.error && result.error.includes('ID already exists')) {
-                        showNotification("This Student/Faculty ID is already registered. Please use a different ID.", "error");
-                    } else if (result.error && result.error.includes('email already exists')) {
-                        showNotification("This email is already registered. Please use a different email.", "error");
-                    } else {
-                        showNotification(result.error || "Registration failed. Please try again.", "error");
-                    }
+                    // Display the specific error message from the server
+                    showNotification(result.error || "Registration failed. Please try again.", "error");
                 }
             } catch (error) {
                 console.error('Registration error:', error);

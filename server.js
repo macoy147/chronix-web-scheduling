@@ -366,20 +366,42 @@ app.post('/register', async (req, res) => {
             return res.status(403).json({ error: 'Admin registration is not allowed' });
         }
 
+        // Check for duplicate full name
+        const oldUserByName = await User.findOne({ fullname: fullname.trim() });
+        if (oldUserByName) {
+            return res.status(400).json({ error: 'A user with this name already exists. Please use a different name.' });
+        }
+
         // Check for duplicate email
-        const oldUserByEmail = await User.findOne({ email });
-        if (oldUserByEmail) return res.status(400).json({ error: 'User with this email already exists' });
+        const oldUserByEmail = await User.findOne({ email: email.trim().toLowerCase() });
+        if (oldUserByEmail) {
+            return res.status(400).json({ error: 'This email address is already registered. Please use a different email.' });
+        }
 
-        // NEW: Check for duplicate CTU ID
-        const oldUserByCtuid = await User.findOne({ ctuid });
-        if (oldUserByCtuid) return res.status(400).json({ error: 'User with this ID already exists' });
+        // Check for duplicate CTU ID
+        const oldUserByCtuid = await User.findOne({ ctuid: ctuid.trim() });
+        if (oldUserByCtuid) {
+            return res.status(400).json({ error: 'This Student/Faculty ID is already registered. Please use a different ID.' });
+        }
 
-        const user = new User({ fullname, email, userrole, ctuid, password, section, room, birthdate, gender });
+        const user = new User({ 
+            fullname: fullname.trim(), 
+            email: email.trim().toLowerCase(), 
+            userrole, 
+            ctuid: ctuid.trim(), 
+            password, 
+            section, 
+            room, 
+            birthdate, 
+            gender 
+        });
         await user.save();
-        res.json({ message: 'User registered!' });
+        
+        logger.info('✅ New user registered:', { fullname: user.fullname, email: user.email, userrole: user.userrole });
+        res.json({ message: 'User registered successfully!' });
     } catch (error) {
         logger.error('Error registering user:', error);
-        res.status(500).json({ error: 'Error registering user' });
+        res.status(500).json({ error: 'Error registering user. Please try again.' });
     }
 });
 

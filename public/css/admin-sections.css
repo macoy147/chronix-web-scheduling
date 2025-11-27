@@ -206,13 +206,26 @@ body {
 .dashboard-title {
     text-align: left;
     padding-left: 0;
-    margin-bottom: 18px;
-    font-size: 1.28em;
+    margin-bottom: 24px;
+    font-size: 1.5em;
     font-weight: 800;
     letter-spacing: 0.02em;
     color: var(--ctu-deep-blue);
     width: 100%;
     justify-content: left;
+    position: relative;
+    display: inline-block;
+}
+
+.dashboard-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: var(--ctu-soft-gold);
+    border-radius: 2px;
 }
 
 /* Table and Table Controls */
@@ -241,29 +254,109 @@ body {
     background: linear-gradient(90deg, var(--ctu-light-blue, #3E8EDE) 0%, var(--ctu-deep-blue, #002D62) 100%);
 }
 
+/* Table Controls */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+    max-width: 400px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ctu-text-secondary);
+    font-size: 1.1em;
+    pointer-events: none;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 16px 12px 45px;
+    border: 2px solid #e5e8eb;
+    border-radius: 10px;
+    font-size: 0.95em;
+    background: #fff;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--ctu-light-blue);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(62, 142, 222, 0.12);
+    transform: translateY(-2px);
+}
+
+.search-box input::placeholder {
+    color: #999;
+}
+
 .section-create-btn {
-    background: var(--ctu-light-blue, #3E8EDE);
+    background: linear-gradient(135deg, var(--ctu-light-blue, #3E8EDE) 0%, #2E7ECE 100%);
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 0.95em;
     font-weight: 600;
-    padding: 11px 24px;
+    padding: 12px 28px;
     cursor: pointer;
-    margin: 24px 24px 0 24px;
-    transition: all .25s ease;
+    transition: all .3s ease;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 0 2px 8px rgba(62, 142, 222, 0.2);
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(62, 142, 222, 0.3);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
 }
+
+.section-create-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.section-create-btn:hover::before {
+    left: 100%;
+}
+
 .section-create-btn:hover {
-    background: var(--ctu-deep-blue, #002D62);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(62, 142, 222, 0.3);
+    background: linear-gradient(135deg, var(--ctu-deep-blue, #002D62) 0%, #001D42 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(62, 142, 222, 0.4);
 }
+
 .section-create-btn:active {
     transform: translateY(0);
+}
+
+.section-create-btn i {
+    font-size: 1.1em;
+    transition: transform 0.3s ease;
+}
+
+.section-create-btn:hover i {
+    transform: rotate(90deg);
 }
 
 .sections-table {
@@ -592,6 +685,24 @@ body {
     .sections-table th, .sections-table td {
         font-size: 0.82em;
         padding: 7px 4px;
+    }
+    
+    .table-controls {
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .search-box {
+        max-width: 100%;
+        width: 100%;
+    }
+    
+    .section-create-btn {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 0.9em;
+        justify-content: center;
     }
     
     .horizontal-modal .horizontal-grid {

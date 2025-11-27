@@ -16,6 +16,7 @@
             <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="admin-logo">
             <span class="admin-app-title">CHRONIX</span>
         </div>
+        </div>
         
         <ul class="nav-links">
             <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
@@ -43,10 +44,20 @@
         <div class="admin-center-container sections-container">
             <h2 class="dashboard-title">Manage Sections</h2>
             <div id="sectionBubbleMessage" class="section-bubble-message"></div>
-            <div class="sections-table-wrapper">
+            
+            <!-- Search and Filter Bar -->
+            <div class="table-controls">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="sectionsSearchInput" placeholder="Search sections..." />
+                </div>
                 <button class="section-create-btn" id="openSectionModal">
-                    <i class="bi bi-plus"></i> Create New Section
+                    <i class="bi bi-plus-circle"></i> 
+                    <span>Create New Section</span>
                 </button>
+            </div>
+            
+            <div class="sections-table-wrapper">
                 <table class="sections-table">
                     <thead>
                         <tr>

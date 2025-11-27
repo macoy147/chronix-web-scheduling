@@ -86,9 +86,90 @@ document.addEventListener('DOMContentLoaded', function() {
             ]);
             renderSectionsTable();
             populateAcademicYearDropdown();
+            setupSearchFunctionality();
         } catch (error) {
             console.error('Error loading data:', error);
             showBubbleMessage('Error loading section data', 'error');
+        }
+    }
+
+    // Setup search functionality
+    function setupSearchFunctionality() {
+        const searchInput = document.getElementById('sectionsSearchInput');
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            filterSections(searchTerm);
+        });
+    }
+
+    // Filter sections based on search term
+    function filterSections(searchTerm) {
+        const tbody = document.getElementById('sectionsTableBody');
+        if (!tbody) return;
+
+        // If search is cleared and we have no data rows, re-render the table
+        if (searchTerm === '' && sections.length > 0) {
+            const dataRows = Array.from(tbody.getElementsByTagName('tr')).filter(row => row.cells.length > 1);
+            if (dataRows.length === 0) {
+                renderSectionsTable();
+                return;
+            }
+        }
+
+        const rows = tbody.getElementsByTagName('tr');
+        let visibleCount = 0;
+        let hasNoResultsRow = false;
+
+        Array.from(rows).forEach(row => {
+            // Check if this is a "no results" message row
+            if (row.cells.length === 1) {
+                hasNoResultsRow = true;
+                return;
+            }
+
+            const sectionName = row.cells[0]?.textContent.toLowerCase() || '';
+            const program = row.cells[1]?.textContent.toLowerCase() || '';
+            const yearLevel = row.cells[2]?.textContent.toLowerCase() || '';
+            const shift = row.cells[3]?.textContent.toLowerCase() || '';
+            const adviser = row.cells[4]?.textContent.toLowerCase() || '';
+            const academicYear = row.cells[6]?.textContent.toLowerCase() || '';
+            const semester = row.cells[7]?.textContent.toLowerCase() || '';
+
+            const matches = sectionName.includes(searchTerm) ||
+                          program.includes(searchTerm) ||
+                          yearLevel.includes(searchTerm) ||
+                          shift.includes(searchTerm) ||
+                          adviser.includes(searchTerm) ||
+                          academicYear.includes(searchTerm) ||
+                          semester.includes(searchTerm);
+
+            if (matches || searchTerm === '') {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Remove existing "no results" row if it exists
+        if (hasNoResultsRow) {
+            const noResultsRow = Array.from(rows).find(row => row.cells.length === 1);
+            if (noResultsRow) {
+                noResultsRow.remove();
+            }
+        }
+
+        // Show "no results" message if no sections match
+        if (visibleCount === 0 && searchTerm !== '') {
+            const noResultsRow = document.createElement('tr');
+            noResultsRow.innerHTML = `
+                <td colspan="10" style="text-align: center; padding: 48px 24px; color: #999; font-style: italic;">
+                    No sections found matching "${searchTerm}". Try a different search term.
+                </td>
+            `;
+            tbody.appendChild(noResultsRow);
         }
     }
 
