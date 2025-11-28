@@ -271,44 +271,10 @@
             padding: 16px;
         }
         
-        .schedule-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        
         .welcome-header h1,
         .schedule-header h1,
         .profile-header h1 {
             font-size: 1.5em;
-        }
-        
-        .export-schedule-btn-mobile {
-            background: linear-gradient(135deg, #3E8EDE 0%, #2E7ECE 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 16px;
-            font-size: 0.9em;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(62, 142, 222, 0.3);
-            white-space: nowrap;
-        }
-        
-        .export-schedule-btn-mobile:active {
-            transform: scale(0.95);
-            box-shadow: 0 1px 4px rgba(62, 142, 222, 0.4);
-        }
-        
-        .export-schedule-btn-mobile i {
-            font-size: 1em;
         }
         
         /* Stats Grid Mobile */
@@ -696,14 +662,8 @@
         <div id="scheduleView" class="view-section">
             <div class="student-center-container">
                 <div class="schedule-header">
-                    <div>
-                        <h1>My Class Schedule</h1>
-                        <p>View your complete weekly class schedule</p>
-                    </div>
-                    <button class="export-schedule-btn-mobile" id="exportScheduleBtn">
-                        <i class="bi bi-download"></i>
-                        <span>Export</span>
-                    </button>
+                    <h1>My Class Schedule</h1>
+                    <p>View your complete weekly class schedule</p>
                 </div>
 
                 <!-- Schedule Filters -->
