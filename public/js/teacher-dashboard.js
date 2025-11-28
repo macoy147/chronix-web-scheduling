@@ -141,7 +141,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 profileAvatar.src = ProfilePictureHelper.getProfilePictureUrl(currentUser.profilePicture);
             }
             
+            // Update mobile profile info
+            updateMobileProfileInfo();
+            
             console.log('🔄 Profile info updated in navigation');
+        }
+    }
+
+    // Update mobile profile information
+    function updateMobileProfileInfo() {
+        const currentUser = AuthGuard.getCurrentUser();
+        if (currentUser) {
+            // Update mobile top bar avatar
+            const mobileProfileAvatar = document.getElementById('mobileProfileAvatar');
+            if (mobileProfileAvatar) {
+                mobileProfileAvatar.src = ProfilePictureHelper.getProfilePictureUrl(currentUser.profilePicture);
+            }
+
+            // Update mobile menu profile
+            const menuProfileAvatar = document.getElementById('menuProfileAvatar');
+            const menuUserName = document.getElementById('menuUserName');
+            const menuUserEmail = document.getElementById('menuUserEmail');
+            
+            if (menuProfileAvatar) {
+                menuProfileAvatar.src = ProfilePictureHelper.getProfilePictureUrl(currentUser.profilePicture);
+            }
+            if (menuUserName) {
+                menuUserName.textContent = currentUser.fullname || 'Teacher';
+            }
+            if (menuUserEmail) {
+                menuUserEmail.textContent = currentUser.email || 'teacher@example.com';
+            }
         }
     }
 
@@ -345,6 +375,295 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (scheduleLink) updateNavActive(scheduleLink);
                 renderScheduleViews();
             });
+        }
+    }
+
+    // Mobile Navigation
+    function setupMobileNavigation() {
+        // Mobile bottom navigation
+        const mobileDashboardLink = document.getElementById('mobileDashboardLink');
+        const mobileScheduleLink = document.getElementById('mobileScheduleLink');
+        const mobileProfileLink = document.getElementById('mobileProfileLink');
+        
+        if (mobileDashboardLink) {
+            mobileDashboardLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('dashboardView');
+                updateMobileNavActive(this);
+                updateDashboard();
+            });
+        }
+
+        if (mobileScheduleLink) {
+            mobileScheduleLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('scheduleView');
+                updateMobileNavActive(this);
+                renderScheduleViews();
+            });
+        }
+
+        if (mobileProfileLink) {
+            mobileProfileLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('profileView');
+                updateMobileNavActive(this);
+                updateProfileView();
+            });
+        }
+
+        // Mobile menu navigation
+        const menuDashboardLink = document.getElementById('menuDashboardLink');
+        const menuScheduleLink = document.getElementById('menuScheduleLink');
+        const menuProfileLink = document.getElementById('menuProfileLink');
+        
+        if (menuDashboardLink) {
+            menuDashboardLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('dashboardView');
+                closeMobileMenu();
+                updateMobileNavActive(document.getElementById('mobileDashboardLink'));
+                updateDashboard();
+            });
+        }
+
+        if (menuScheduleLink) {
+            menuScheduleLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('scheduleView');
+                closeMobileMenu();
+                updateMobileNavActive(document.getElementById('mobileScheduleLink'));
+                renderScheduleViews();
+            });
+        }
+
+        if (menuProfileLink) {
+            menuProfileLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('profileView');
+                closeMobileMenu();
+                updateMobileNavActive(document.getElementById('mobileProfileLink'));
+                updateProfileView();
+            });
+        }
+
+        // Mobile menu toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const mobileMenuClose = document.getElementById('mobileMenuClose');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        const mobileSideMenu = document.getElementById('mobileSideMenu');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openMobileMenu();
+            });
+        }
+
+        if (mobileMenuClose) {
+            mobileMenuClose.addEventListener('click', closeMobileMenu);
+        }
+
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+        }
+
+        // Mobile profile toggle
+        const mobileProfileToggle = document.getElementById('mobileProfileToggle');
+        const mobileProfileMenu = document.getElementById('mobileProfileMenu');
+        const mobileProfileBtn = document.getElementById('mobileProfileBtn');
+
+        if (mobileProfileToggle) {
+            mobileProfileToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                mobileProfileMenu.classList.toggle('show');
+            });
+        }
+
+        if (mobileProfileBtn) {
+            mobileProfileBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('profileView');
+                mobileProfileMenu.classList.remove('show');
+                updateMobileNavActive(document.getElementById('mobileProfileLink'));
+                updateProfileView();
+            });
+        }
+
+        // Close profile menu when clicking outside
+        document.addEventListener('click', function() {
+            if (mobileProfileMenu) {
+                mobileProfileMenu.classList.remove('show');
+            }
+        });
+
+        // Mobile export button
+        const mobileExportBtn = document.getElementById('mobileExportScheduleBtn');
+        if (mobileExportBtn) {
+            mobileExportBtn.addEventListener('click', async function() {
+                try {
+                    if (!teacherSchedules || teacherSchedules.length === 0) {
+                        NotificationHelper.showNotification('No schedules to export', 'error');
+                        return;
+                    }
+
+                    // Filter schedules based on current shift selection
+                    let schedulesToExport = teacherSchedules;
+                    let shiftDescription = '';
+                    
+                    if (currentShift !== 'all') {
+                        schedulesToExport = teacherSchedules.filter(schedule => 
+                            schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift
+                        );
+                        shiftDescription = ` (${currentShift.charAt(0).toUpperCase() + currentShift.slice(1)} Shift)`;
+                    }
+
+                    if (schedulesToExport.length === 0) {
+                        NotificationHelper.showNotification('No schedules to export with current filter', 'error');
+                        return;
+                    }
+
+                    // Import the export module
+                    const { default: scheduleExporter } = await import('./schedule-export.js');
+
+                    // Prepare user info
+                    const advisorySection = currentTeacher?.section || 'N/A';
+                    const userInfo = {
+                        name: currentTeacher?.fullname || 'Teacher',
+                        role: 'Teacher',
+                        section: advisorySection + shiftDescription,
+                        ctuid: currentTeacher?.ctuid || 'N/A',
+                        profilePicture: currentTeacher?.profilePicture || null
+                    };
+
+                    // Generate filename
+                    const shiftSuffix = currentShift !== 'all' ? `_${currentShift}` : '';
+                    const filename = `teacher_schedule_${currentTeacher?.ctuid || 'export'}${shiftSuffix}`;
+
+                    // Show export dialog
+                    const result = await scheduleExporter.showExportDialog(
+                        schedulesToExport,
+                        userInfo,
+                        filename
+                    );
+
+                    if (result) {
+                        NotificationHelper.showNotification(
+                            `Schedule exported successfully as ${result.toUpperCase()}! (${schedulesToExport.length} class${schedulesToExport.length !== 1 ? 'es' : ''})`,
+                            'success'
+                        );
+                    }
+                } catch (error) {
+                    console.error('Mobile export error:', error);
+                    NotificationHelper.showNotification(
+                        'Failed to export schedule: ' + error.message,
+                        'error'
+                    );
+                }
+            });
+        }
+
+        // Mobile logout functionality
+        const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+        const menuLogoutLink = document.getElementById('menuLogoutLink');
+        const logoutDialogOverlay = document.getElementById('logoutDialogOverlay');
+        const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+        const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+
+        function showLogoutDialog() {
+            if (logoutDialogOverlay) {
+                logoutDialogOverlay.classList.add('show');
+            }
+        }
+
+        function hideLogoutDialog() {
+            if (logoutDialogOverlay) {
+                logoutDialogOverlay.classList.remove('show');
+            }
+        }
+
+        if (mobileLogoutBtn) {
+            mobileLogoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                mobileProfileMenu.classList.remove('show');
+                showLogoutDialog();
+            });
+        }
+
+        if (menuLogoutLink) {
+            menuLogoutLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                closeMobileMenu();
+                showLogoutDialog();
+            });
+        }
+
+        if (cancelLogoutBtn) {
+            cancelLogoutBtn.addEventListener('click', hideLogoutDialog);
+        }
+
+        if (confirmLogoutBtn) {
+            confirmLogoutBtn.addEventListener('click', function() {
+                hideLogoutDialog();
+                AuthGuard.logout();
+            });
+        }
+
+        // Close logout dialog when clicking overlay
+        if (logoutDialogOverlay) {
+            logoutDialogOverlay.addEventListener('click', function(e) {
+                if (e.target === logoutDialogOverlay) {
+                    hideLogoutDialog();
+                }
+            });
+        }
+    }
+
+    function openMobileMenu() {
+        const mobileSideMenu = document.getElementById('mobileSideMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        
+        if (mobileSideMenu && mobileMenuOverlay) {
+            mobileSideMenu.classList.add('show');
+            mobileMenuOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeMobileMenu() {
+        const mobileSideMenu = document.getElementById('mobileSideMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        
+        if (mobileSideMenu && mobileMenuOverlay) {
+            mobileSideMenu.classList.remove('show');
+            mobileMenuOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function updateMobileNavActive(clickedElement) {
+        // Update bottom nav
+        document.querySelectorAll('.mobile-nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        if (clickedElement) {
+            clickedElement.classList.add('active');
+        }
+
+        // Update side menu
+        document.querySelectorAll('.mobile-menu-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        const menuItems = {
+            'mobileDashboardLink': 'menuDashboardLink',
+            'mobileScheduleLink': 'menuScheduleLink',
+            'mobileProfileLink': 'menuProfileLink'
+        };
+
+        const correspondingMenuItem = document.getElementById(menuItems[clickedElement.id]);
+        if (correspondingMenuItem) {
+            correspondingMenuItem.classList.add('active');
         }
     }
 
@@ -810,6 +1129,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (navAvatar) {
             navAvatar.src = imageUrl;
         }
+        
+        // Update mobile avatars
+        updateMobileProfileInfo();
     }
 
     // Cancel changes
@@ -1091,6 +1413,13 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             updateProfileInfo();
             await loadUserProfile();
+            
+            // Setup navigation based on device
+            if (window.innerWidth <= 768 || document.querySelector('.mobile-nav')) {
+                setupMobileNavigation();
+            } else {
+                setupNavigation();
+            }
             
             // Setup schedule controls
             setupShiftToggle();

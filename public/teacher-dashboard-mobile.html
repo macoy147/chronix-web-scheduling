@@ -23,7 +23,7 @@
         :root {
             --mobile-padding: 16px;
             --mobile-nav-height: 60px;
-            --mobile-bottom-nav-height: 70px;
+            --mobile-bottom-nav-height: 80px;
         }
         
         /* Prevent horizontal scrolling */
@@ -51,7 +51,7 @@
         
         /* Hide desktop navigation */
         .teacher-nav {
-            display: none;
+            display: none !important;
         }
         
         /* Mobile Top Bar */
@@ -300,23 +300,25 @@
             visibility: visible;
         }
         
-        /* Mobile Bottom Navigation - ALWAYS VISIBLE - APP-LIKE DESIGN */
+        /* Enhanced Mobile Bottom Navigation - APP-LIKE DESIGN */
         .mobile-nav {
             position: fixed !important;
             bottom: 0 !important;
             left: 0 !important;
             right: 0 !important;
-            background: linear-gradient(180deg, rgba(0, 45, 98, 0.98) 0%, rgba(0, 45, 98, 1) 100%) !important;
+            background: linear-gradient(180deg, 
+                rgba(0, 45, 98, 0.95) 0%, 
+                rgba(0, 45, 98, 0.98) 100%) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
             height: var(--mobile-bottom-nav-height) !important;
             z-index: 1000 !important;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25), 0 -1px 3px rgba(0, 0, 0, 0.1) !important;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3) !important;
             display: flex !important;
             justify-content: space-around !important;
             align-items: center !important;
             padding: 8px 12px !important;
-            border-top: 1px solid rgba(242, 210, 131, 0.3);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(242, 210, 131, 0.4);
         }
         
         .mobile-nav-item {
@@ -325,15 +327,14 @@
             align-items: center !important;
             justify-content: center !important;
             flex: 1 !important;
-            padding: 10px 8px !important;
-            color: rgba(255, 255, 255, 0.65) !important;
+            padding: 12px 8px !important;
+            color: rgba(255, 255, 255, 0.7) !important;
             text-decoration: none !important;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            border-radius: 12px !important;
-            gap: 5px !important;
-            min-height: 60px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            border-radius: 16px !important;
+            gap: 6px !important;
+            min-height: 64px;
             cursor: pointer;
-            user-select: none;
             position: relative;
             overflow: hidden;
         }
@@ -347,14 +348,14 @@
             width: 0;
             height: 0;
             border-radius: 50%;
-            background: rgba(242, 210, 131, 0.3);
+            background: rgba(242, 210, 131, 0.2);
             transform: translate(-50%, -50%);
             transition: width 0.6s, height 0.6s;
         }
         
         .mobile-nav-item:active::before {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
         }
         
         .mobile-nav-item:active {
@@ -362,36 +363,44 @@
         }
         
         .mobile-nav-item i {
-            font-size: 1.6em !important;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.8em !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             z-index: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
         
         .mobile-nav-item span {
-            font-size: 0.72em !important;
+            font-size: 0.75em !important;
             font-weight: 600 !important;
             white-space: nowrap;
             letter-spacing: 0.3px;
             position: relative;
             z-index: 1;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .mobile-nav-item.active {
             color: var(--ctu-soft-gold) !important;
-            background: linear-gradient(135deg, rgba(242, 210, 131, 0.25) 0%, rgba(242, 210, 131, 0.15) 100%) !important;
-            box-shadow: 0 2px 8px rgba(242, 210, 131, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+            background: linear-gradient(135deg, 
+                rgba(242, 210, 131, 0.25) 0%, 
+                rgba(242, 210, 131, 0.15) 100%) !important;
+            box-shadow: 
+                0 4px 16px rgba(242, 210, 131, 0.4),
+                inset 0 1px 2px rgba(255, 255, 255, 0.2),
+                0 0 0 1px rgba(242, 210, 131, 0.3) !important;
+            transform: translateY(-4px) !important;
         }
         
         .mobile-nav-item.active i {
-            transform: scale(1.15) translateY(-2px);
-            filter: drop-shadow(0 2px 4px rgba(242, 210, 131, 0.4));
+            transform: scale(1.2) translateY(-2px);
+            filter: drop-shadow(0 4px 8px rgba(242, 210, 131, 0.6));
         }
         
         .mobile-nav-item.active span {
             font-weight: 700;
             transform: translateY(-1px);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         /* Hover effect for devices that support it */
@@ -416,6 +425,63 @@
             width: 100%;
             padding: var(--mobile-padding);
             padding-bottom: 20px;
+        }
+        
+        /* Enhanced Export Button for Mobile */
+        .export-schedule-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--ctu-light-blue) 0%, #2d7ac7 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(62, 142, 222, 0.4);
+            margin: 8px 0;
+        }
+        
+        .export-schedule-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 3px 12px rgba(62, 142, 222, 0.4);
+        }
+        
+        /* Improved Schedule Display for Mobile */
+        .weekly-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            background: #e5e8eb;
+        }
+        
+        .weekly-day {
+            background: white;
+            padding: 16px;
+            border-radius: 0;
+        }
+        
+        .schedule-item-small {
+            background: var(--schedule-lecture);
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .schedule-item-small:active {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         
         /* Mobile-optimized cards */
@@ -469,33 +535,6 @@
             margin: 0;
             color: var(--ctu-text-secondary);
             font-size: 0.95em;
-        }
-        
-        .export-schedule-btn {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 20px;
-            background: linear-gradient(135deg, var(--ctu-light-blue) 0%, #2d7ac7 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.95em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(62, 142, 222, 0.3);
-        }
-        
-        .export-schedule-btn:active {
-            transform: scale(0.97);
-            box-shadow: 0 2px 8px rgba(62, 142, 222, 0.3);
-        }
-        
-        .export-schedule-btn i {
-            font-size: 1.2em;
         }
         
         /* Stats Grid Mobile - Enhanced */
@@ -656,13 +695,6 @@
             font-weight: 700;
         }
         
-        .weekly-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            background: #e5e8eb;
-        }
-        
         .weekly-day {
             background: white;
             padding: 14px;
@@ -676,27 +708,6 @@
             font-weight: 700;
             padding-bottom: 8px;
             border-bottom: 2px solid var(--ctu-light-blue);
-        }
-        
-        .schedule-item-small {
-            background: var(--schedule-lecture);
-            color: white;
-            padding: 8px 10px;
-            border-radius: 6px;
-            margin-bottom: 6px;
-            font-size: 0.8em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-        
-        .schedule-item-small.lab {
-            background: var(--schedule-lab);
-        }
-        
-        .schedule-item-small:active {
-            transform: translateX(4px);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
         
         .weekly-grid-preview {
@@ -1420,12 +1431,12 @@
             }
             
             .mobile-nav {
-                height: 60px;
+                height: 70px !important;
             }
             
             .teacher-main {
                 padding-top: 50px;
-                padding-bottom: 60px;
+                padding-bottom: 70px;
             }
             
             .mobile-menu-header {
@@ -1440,6 +1451,19 @@
             .mobile-menu-item {
                 padding: 10px 20px;
             }
+            
+            .mobile-nav-item {
+                padding: 8px 6px !important;
+                min-height: 54px;
+            }
+            
+            .mobile-nav-item i {
+                font-size: 1.5em !important;
+            }
+            
+            .mobile-nav-item span {
+                font-size: 0.7em !important;
+            }
         }
         
         /* Safe area insets for notched devices */
@@ -1453,7 +1477,7 @@
             .mobile-nav {
                 padding-left: max(8px, env(safe-area-inset-left));
                 padding-right: max(8px, env(safe-area-inset-right));
-                padding-bottom: env(safe-area-inset-bottom);
+                padding-bottom: max(8px, env(safe-area-inset-bottom));
             }
         }
         
@@ -1863,438 +1887,87 @@
     <script type="module" src="/js/error-handler.js"></script>
     <script type="module" src="/js/auth-guard.js"></script>
     <script type="module" src="/js/teacher-dashboard.js"></script>
+    
+    <!-- Enhanced Mobile Initialization -->
     <script>
-        // Mobile-specific navigation
+        // Enhanced mobile initialization
         document.addEventListener('DOMContentLoaded', function() {
-            // Mobile side menu toggle
-            const menuToggle = document.getElementById('mobileMenuToggle');
-            const menuClose = document.getElementById('mobileMenuClose');
-            const sideMenu = document.getElementById('mobileSideMenu');
-            const menuOverlay = document.getElementById('mobileMenuOverlay');
+            // Prevent zoom on input focus
+            document.addEventListener('touchstart', function() {}, {passive: true});
             
-            function openSideMenu() {
-                sideMenu.classList.add('show');
-                menuOverlay.classList.add('show');
-                document.body.style.overflow = 'hidden';
+            // Add loading state
+            const mainContent = document.querySelector('.teacher-main');
+            if (mainContent) {
+                mainContent.style.opacity = '0';
+                setTimeout(() => {
+                    mainContent.style.transition = 'opacity 0.3s ease';
+                    mainContent.style.opacity = '1';
+                }, 100);
+            }
+        });
+
+        // Enhanced touch interactions
+        document.addEventListener('touchmove', function(e) {
+            // Prevent scrolling when menu is open
+            const mobileSideMenu = document.getElementById('mobileSideMenu');
+            if (mobileSideMenu && mobileSideMenu.classList.contains('show')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Mobile detection and redirection
+        function isMobileDevice() {
+            return window.innerWidth <= 768 || 
+                   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Prevent redirect loops and multiple rapid redirects
+        let lastRedirectTime = 0;
+        const REDIRECT_COOLDOWN = 1000; // 1 second cooldown
+
+        function shouldRedirectToDesktop() {
+            const now = Date.now();
+            if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+                return false; // Too soon since last redirect
             }
             
-            function closeSideMenu() {
-                sideMenu.classList.remove('show');
-                menuOverlay.classList.remove('show');
-                document.body.style.overflow = '';
+            return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+        }
+
+        function shouldRedirectToMobile() {
+            const now = Date.now();
+            if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+                return false; // Too soon since last redirect
             }
             
-            if (menuToggle) {
-                menuToggle.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    openSideMenu();
-                });
-            }
-            
-            if (menuClose) {
-                menuClose.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    closeSideMenu();
-                });
-            }
-            
-            if (menuOverlay) {
-                menuOverlay.addEventListener('click', closeSideMenu);
-            }
-            
-            // Swipe to close menu
-            let touchStartX = 0;
-            let touchEndX = 0;
-            
-            if (sideMenu) {
-                sideMenu.addEventListener('touchstart', function(e) {
-                    touchStartX = e.changedTouches[0].screenX;
-                }, { passive: true });
-                
-                sideMenu.addEventListener('touchend', function(e) {
-                    touchEndX = e.changedTouches[0].screenX;
-                    handleSwipe();
-                }, { passive: true });
-            }
-            
-            function handleSwipe() {
-                if (touchStartX - touchEndX > 50) {
-                    closeSideMenu();
+            return isMobileDevice() && !window.location.pathname.includes('-mobile');
+        }
+
+        // Initial redirect check
+        if (shouldRedirectToDesktop()) {
+            lastRedirectTime = Date.now();
+            console.log('Redirecting to desktop version...');
+            window.location.href = '/teacher-dashboard.html';
+        }
+
+        // Handle resize events with debouncing
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                // Redirect to desktop if needed
+                if (shouldRedirectToDesktop()) {
+                    lastRedirectTime = Date.now();
+                    console.log('Screen resized - redirecting to desktop version...');
+                    window.location.href = '/teacher-dashboard.html';
                 }
-            }
-            
-            // Update menu profile info
-            function updateMenuProfile() {
-                const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-                if (currentUser) {
-                    const menuUserName = document.getElementById('menuUserName');
-                    const menuUserEmail = document.getElementById('menuUserEmail');
-                    const menuProfileAvatar = document.getElementById('menuProfileAvatar');
-                    
-                    if (menuUserName) {
-                        menuUserName.textContent = currentUser.fullname || 'Teacher';
-                    }
-                    if (menuUserEmail) {
-                        menuUserEmail.textContent = currentUser.email || 'teacher@example.com';
-                    }
-                    if (menuProfileAvatar && currentUser.profilePicture) {
-                        menuProfileAvatar.src = currentUser.profilePicture.startsWith('data:image/') 
-                            ? currentUser.profilePicture 
-                            : './img/default_teacher_avatar.png';
-                    }
+                // Redirect to mobile if needed
+                else if (shouldRedirectToMobile()) {
+                    lastRedirectTime = Date.now();
+                    console.log('Screen resized - redirecting to mobile version...');
+                    window.location.href = '/teacher-dashboard-mobile.html';
                 }
-            }
-            
-            // Call on load
-            setTimeout(updateMenuProfile, 500);
-            
-            // Mobile profile toggle
-            const profileToggle = document.getElementById('mobileProfileToggle');
-            const profileMenu = document.getElementById('mobileProfileMenu');
-            
-            if (profileToggle && profileMenu) {
-                profileToggle.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    profileMenu.classList.toggle('show');
-                });
-                
-                document.addEventListener('click', function() {
-                    profileMenu.classList.remove('show');
-                });
-            }
-            
-            // Mobile navigation
-            const mobileDashboardLink = document.getElementById('mobileDashboardLink');
-            const mobileScheduleLink = document.getElementById('mobileScheduleLink');
-            const mobileProfileLink = document.getElementById('mobileProfileLink');
-            const mobileProfileBtn = document.getElementById('mobileProfileBtn');
-            const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
-            
-            // Menu navigation
-            const menuDashboardLink = document.getElementById('menuDashboardLink');
-            const menuScheduleLink = document.getElementById('menuScheduleLink');
-            const menuProfileLink = document.getElementById('menuProfileLink');
-            const menuLogoutLink = document.getElementById('menuLogoutLink');
-            
-            // Helper function to switch views
-            function switchToView(viewId) {
-                // Hide all view sections
-                document.querySelectorAll('.view-section').forEach(view => {
-                    view.classList.remove('active');
-                });
-                
-                // Show target view
-                const targetView = document.getElementById(viewId);
-                if (targetView) {
-                    targetView.classList.add('active');
-                    console.log('Switched to view:', viewId);
-                }
-            }
-            
-            function updateMobileNavActive(clickedElement) {
-                document.querySelectorAll('.mobile-nav-item').forEach(item => {
-                    item.classList.remove('active');
-                });
-                if (clickedElement) {
-                    clickedElement.classList.add('active');
-                }
-            }
-            
-            function updateMenuActive(section) {
-                document.querySelectorAll('.mobile-menu-item').forEach(item => {
-                    item.classList.remove('active');
-                });
-                const menuItem = document.getElementById(`menu${section}Link`);
-                if (menuItem) {
-                    menuItem.classList.add('active');
-                }
-            }
-            
-            // Bottom nav handlers
-            if (mobileDashboardLink) {
-                mobileDashboardLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    switchToView('dashboardView');
-                    updateMobileNavActive(this);
-                    updateMenuActive('Dashboard');
-                });
-            }
-            
-            if (mobileScheduleLink) {
-                mobileScheduleLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    switchToView('scheduleView');
-                    updateMobileNavActive(this);
-                    updateMenuActive('Schedule');
-                    // Trigger schedule rendering
-                    if (typeof window.renderScheduleViews === 'function') {
-                        window.renderScheduleViews();
-                    }
-                });
-            }
-            
-            if (mobileProfileLink) {
-                mobileProfileLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    switchToView('profileView');
-                    updateMobileNavActive(this);
-                    updateMenuActive('Profile');
-                });
-            }
-            
-            // Side menu handlers
-            if (menuDashboardLink) {
-                menuDashboardLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    switchToView('dashboardView');
-                    updateMobileNavActive(mobileDashboardLink);
-                    updateMenuActive('Dashboard');
-                    closeSideMenu();
-                });
-            }
-            
-            if (menuScheduleLink) {
-                menuScheduleLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    switchToView('scheduleView');
-                    updateMobileNavActive(mobileScheduleLink);
-                    updateMenuActive('Schedule');
-                    closeSideMenu();
-                    // Trigger schedule rendering
-                    if (typeof window.renderScheduleViews === 'function') {
-                        window.renderScheduleViews();
-                    }
-                });
-            }
-            
-            if (menuProfileLink) {
-                menuProfileLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    switchToView('profileView');
-                    updateMobileNavActive(mobileProfileLink);
-                    updateMenuActive('Profile');
-                    closeSideMenu();
-                });
-            }
-            
-            if (menuLogoutLink) {
-                menuLogoutLink.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showLogoutDialog();
-                    closeSideMenu();
-                });
-            }
-            
-            if (mobileProfileBtn) {
-                mobileProfileBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    switchToView('profileView');
-                    profileMenu.classList.remove('show');
-                    updateMobileNavActive(mobileProfileLink);
-                    updateMenuActive('Profile');
-                });
-            }
-            
-            if (mobileLogoutBtn) {
-                mobileLogoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showLogoutDialog();
-                });
-            }
-            
-            // Logout confirmation dialog
-            function showLogoutDialog() {
-                const dialogOverlay = document.getElementById('logoutDialogOverlay');
-                if (dialogOverlay) {
-                    dialogOverlay.classList.add('show');
-                    document.body.style.overflow = 'hidden';
-                }
-            }
-            
-            function hideLogoutDialog() {
-                const dialogOverlay = document.getElementById('logoutDialogOverlay');
-                if (dialogOverlay) {
-                    dialogOverlay.classList.remove('show');
-                    document.body.style.overflow = '';
-                }
-            }
-            
-            const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
-            const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
-            const logoutDialogOverlay = document.getElementById('logoutDialogOverlay');
-            
-            if (cancelLogoutBtn) {
-                cancelLogoutBtn.addEventListener('click', hideLogoutDialog);
-            }
-            
-            if (confirmLogoutBtn) {
-                confirmLogoutBtn.addEventListener('click', async function() {
-                    hideLogoutDialog();
-                    // Import AuthGuard dynamically if needed
-                    try {
-                        const AuthGuardModule = await import('/js/auth-guard.js');
-                        const AuthGuard = AuthGuardModule.default;
-                        AuthGuard.logout();
-                    } catch (error) {
-                        console.error('Logout error:', error);
-                        // Fallback logout
-                        sessionStorage.clear();
-                        window.location.href = 'auth.html?mode=signin';
-                    }
-                });
-            }
-            
-            if (logoutDialogOverlay) {
-                logoutDialogOverlay.addEventListener('click', function(e) {
-                    if (e.target === logoutDialogOverlay) {
-                        hideLogoutDialog();
-                    }
-                });
-            }
-            
-            // Track current shift filter for export
-            window.currentShift = 'all';
-            
-            // Setup shift toggle buttons
-            const shiftButtons = document.querySelectorAll('.shift-btn-small');
-            shiftButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // Update active state
-                    shiftButtons.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Update current shift
-                    window.currentShift = this.getAttribute('data-shift');
-                    
-                    console.log('Shift filter changed to:', window.currentShift);
-                });
-            });
-            
-            // Mobile Export Schedule Button - Enhanced with same logic as desktop
-            const mobileExportBtn = document.getElementById('mobileExportScheduleBtn');
-            if (mobileExportBtn) {
-                mobileExportBtn.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    
-                    try {
-                        // Get current user data - prefer window.currentTeacher (has latest data) over sessionStorage
-                        const currentUser = window.currentTeacher || JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-                        
-                        // Get schedule data from the page (set by teacher-dashboard.js)
-                        const teacherSchedules = window.teacherSchedules || [];
-                        
-                        console.log('Export: window.currentTeacher =', window.currentTeacher);
-                        console.log('Export: currentUser =', currentUser);
-                        console.log('Export: profilePicture =', currentUser.profilePicture);
-                        console.log('Export: teacherSchedules length =', teacherSchedules.length);
-                        
-                        if (!teacherSchedules || teacherSchedules.length === 0) {
-                            alert('No schedules to export. Please ensure your schedule is loaded.');
-                            return;
-                        }
-                        
-                        // Get current shift filter (if available)
-                        const currentShift = window.currentShift || 'all';
-                        
-                        // Filter schedules based on current shift selection
-                        let schedulesToExport = teacherSchedules;
-                        let shiftDescription = '';
-                        
-                        if (currentShift !== 'all') {
-                            schedulesToExport = teacherSchedules.filter(schedule =>
-                                schedule.section?.shift && 
-                                schedule.section.shift.toLowerCase() === currentShift
-                            );
-                            shiftDescription = ` (${currentShift.charAt(0).toUpperCase() + currentShift.slice(1)} Shift)`;
-                        }
-                        
-                        if (schedulesToExport.length === 0) {
-                            alert('No schedules to export with current filter.');
-                            return;
-                        }
-                        
-                        // Dynamically import the ScheduleExporter
-                        const { default: scheduleExporter } = await import('/js/schedule-export.js');
-                        
-                        // Get profile picture from page if not in sessionStorage
-                        let profilePicture = currentUser.profilePicture;
-                        if (!profilePicture) {
-                            // Try to get from the profile avatar image on the page
-                            const profileImg = document.getElementById('mobileProfileAvatar') || 
-                                             document.getElementById('menuProfileAvatar') ||
-                                             document.getElementById('profileViewAvatar');
-                            if (profileImg && profileImg.src && !profileImg.src.includes('default_teacher_avatar')) {
-                                profilePicture = profileImg.src;
-                                console.log('Export: Got profile picture from page:', profilePicture);
-                            }
-                        }
-                        
-                        // Prepare user info (same format as desktop)
-                        const userInfo = {
-                            name: currentUser.fullname || 'Teacher',
-                            role: 'Teacher',
-                            section: (currentUser.section || 'N/A') + shiftDescription,
-                            ctuid: currentUser.ctuid || 'N/A',
-                            email: currentUser.email || 'N/A',
-                            profilePicture: profilePicture || null
-                        };
-                        
-                        console.log('Export: Final userInfo =', userInfo);
-                        
-                        // Generate filename (same format as desktop)
-                        const shiftSuffix = currentShift !== 'all' ? `_${currentShift}` : '';
-                        const filename = `teacher_schedule_${currentUser.ctuid || 'export'}${shiftSuffix}`;
-                        
-                        // Show loading state
-                        mobileExportBtn.disabled = true;
-                        mobileExportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> <span>Loading...</span>';
-                        
-                        // Use the same export dialog as desktop version
-                        const result = await scheduleExporter.showExportDialog(
-                            schedulesToExport,
-                            userInfo,
-                            filename
-                        );
-                        
-                        // Reset button
-                        mobileExportBtn.disabled = false;
-                        mobileExportBtn.innerHTML = '<i class="bi bi-download"></i> <span>Export</span>';
-                        
-                        if (result) {
-                            // Show success notification
-                            const notification = document.getElementById('teacherNotification');
-                            if (notification) {
-                                notification.textContent = `Schedule exported successfully as ${result.toUpperCase()}! (${schedulesToExport.length} class${schedulesToExport.length !== 1 ? 'es' : ''})${shiftDescription}`;
-                                notification.className = 'notification success show';
-                                setTimeout(() => {
-                                    notification.classList.remove('show');
-                                }, 5000);
-                            } else {
-                                alert(`Schedule exported successfully as ${result.toUpperCase()}!`);
-                            }
-                        }
-                        
-                    } catch (error) {
-                        console.error('Export error:', error);
-                        
-                        // Reset button
-                        mobileExportBtn.disabled = false;
-                        mobileExportBtn.innerHTML = '<i class="bi bi-download"></i> <span>Export</span>';
-                        
-                        // Show error notification
-                        const notification = document.getElementById('teacherNotification');
-                        if (notification) {
-                            notification.textContent = 'Failed to export schedule: ' + error.message;
-                            notification.className = 'notification error show';
-                            setTimeout(() => {
-                                notification.classList.remove('show');
-                            }, 5000);
-                        } else {
-                            alert('Failed to export schedule. Please try again.');
-                        }
-                    }
-                });
-            }
+            }, 250); // Wait 250ms after resize stops
         });
     </script>
 </body>
