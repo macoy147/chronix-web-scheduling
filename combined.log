@@ -20211,3 +20211,217 @@
 {"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
 {"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
 {"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /auth.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/auth.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/educ_animated1.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{"email":"admin@gmail.com","password":"admin"},"level":"info","message":"POST /login","service":"chronix-backend"}
+{"email":"admin@gmail.com","level":"info","message":"🔐 Login attempt received:","password":"***","service":"chronix-backend","timestamp":"2025-11-28T09:16:12.135Z"}
+{"level":"info","message":"📧 Searching for user with email:","service":"chronix-backend"}
+{"email":"admin@gmail.com","id":"68f2578b54c010056928c9b2","inputPassword":"admin","level":"info","message":"✅ User found:","service":"chronix-backend","storedPassword":"admin"}
+{"level":"info","message":"✅ Password matches!","service":"chronix-backend"}
+{"level":"info","message":"🎉 Login successful for:","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-dashboard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /users/students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"level":"info","message":"✅ Fetched 7 students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /users/students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /manifest.json","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"level":"info","message":"✅ Fetched 7 students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-subjects.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-subjects.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-subjects.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{"coPrerequisite":"CC 112, CC 112 L","courseCode":"CC 123 L","description":"","descriptiveTitle":"Computer Programming 2 (Lab)","labHours":"9","lecHours":"0","remarks":"","semester":"2nd Semester","totalHours":"9","units":"3","yearLevel":1},"level":"info","message":"PUT /subjects/6927d987739bc50d27e0f714","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{"coPrerequisite":"None","courseCode":"CC 112","description":"Computer Programming 1 (Lec) introduces the fundamentals of programming, focusing on problem-solving, algorithm design, and basic coding concepts. Students learn how to write, test, and debug simple programs using a programming language, typically C, while developing logical thinking and computational skills.","descriptiveTitle":"COMPUTER PROGRAMMING 1 (LEC)","labHours":"0","lecHours":"3","remarks":"","semester":"2nd Semester","totalHours":"3","units":"3","yearLevel":1},"level":"info","message":"PUT /subjects/68e8d192c908c22f3778db9a","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-sections.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-sections.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-sections.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-rooms.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-rooms.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-rooms.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-sections.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-sections.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-sections.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-rooms.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-rooms.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-rooms.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-schedules.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-schedules.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-schedules.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /subjects","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/schedule-export.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-students.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-students.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-students.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_student_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /users/students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"level":"info","message":"✅ Fetched 7 students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-teachers.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-teachers.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-teachers.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_teacher_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-students.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-students.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-students.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_student_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /users/students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"level":"info","message":"✅ Fetched 7 students","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /admin-teachers.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/admin-teachers.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/admin-teachers.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_teacher_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f2578b54c010056928c9b2","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teachers","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /rooms","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /auth.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/auth.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/educ_animated1.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{"email":"sobavon@gmail.com","password":"123123"},"level":"info","message":"POST /login","service":"chronix-backend"}
+{"email":"sobavon@gmail.com","level":"info","message":"🔐 Login attempt received:","password":"***","service":"chronix-backend","timestamp":"2025-11-28T09:18:22.664Z"}
+{"level":"info","message":"📧 Searching for user with email:","service":"chronix-backend"}
+{"email":"sobavon@gmail.com","id":"68f8ef7c8b73028a7ae896df","inputPassword":"123123","level":"info","message":"✅ User found:","service":"chronix-backend","storedPassword":"123123"}
+{"level":"info","message":"✅ Password matches!","service":"chronix-backend"}
+{"level":"info","message":"🎉 Login successful for:","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /teacher-dashboard.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/teacher-dashboard.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/teacher-dashboard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_teacher_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f8ef7c8b73028a7ae896df","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/schedule-export.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /auth.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/auth.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/educ_animated1.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{"email":"marcomontellano147@gmail.com","password":"123123"},"level":"info","message":"POST /login","service":"chronix-backend"}
+{"email":"marcomontellano147@gmail.com","level":"info","message":"🔐 Login attempt received:","password":"***","service":"chronix-backend","timestamp":"2025-11-28T09:18:47.700Z"}
+{"level":"info","message":"📧 Searching for user with email:","service":"chronix-backend"}
+{"email":"marcomontellano147@gmail.com","id":"68f255c8324a8711cc82f149","inputPassword":"123123","level":"info","message":"✅ User found:","service":"chronix-backend","storedPassword":"123123"}
+{"level":"info","message":"✅ Password matches!","service":"chronix-backend"}
+{"level":"info","message":"🎉 Login successful for:","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /student-dashboard.html","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /css/student-dashboard.css","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img//img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/error-handler.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/auth-guard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/student-dashboard.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/api-config.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/default_student_avatar.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /user/68f255c8324a8711cc82f149","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sections","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /schedules","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /js/schedule-export.js","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CTU_new_logo-removebg-preview.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /img/img/CHRONIX_LOGO.png","service":"chronix-backend"}
+{"body":{},"level":"info","message":"GET /sw.js","service":"chronix-backend"}

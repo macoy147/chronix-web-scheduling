@@ -680,16 +680,29 @@
             updateMobileProfileInfo();
 
             let allTeachers = [];
+            let allSchedules = [];
 
-            // Load teachers
+            // Load teachers and schedules
             async function loadTeachers() {
                 try {
-                    const res = await fetch('/teachers');
-                    if (res.ok) {
-                        allTeachers = await res.json();
-                        updateStats();
-                        displayTeachers(allTeachers);
+                    // Load teachers
+                    const teachersRes = await fetch('/teachers');
+                    if (teachersRes.ok) {
+                        allTeachers = await teachersRes.json();
                     }
+                    
+                    // Load schedules for stats
+                    try {
+                        const schedulesRes = await fetch('/schedules');
+                        if (schedulesRes.ok) {
+                            allSchedules = await schedulesRes.json();
+                        }
+                    } catch (err) {
+                        console.log('Could not load schedules for stats');
+                    }
+                    
+                    updateStats();
+                    displayTeachers(allTeachers);
                 } catch (error) {
                     console.error('Error loading teachers:', error);
                     document.getElementById('mobileTeachersList').innerHTML = `
