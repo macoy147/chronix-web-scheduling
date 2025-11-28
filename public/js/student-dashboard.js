@@ -6,7 +6,7 @@ import AuthGuard from './auth-guard.js';
 const ProfilePictureHelper = {
     getProfilePictureUrl(profilePicturePath) {
         if (!profilePicturePath) {
-            return './img/default_teacher_avatar.png';
+            return './img/default_student_avatar.png';
         }
         
         // Check if it's a base64 data URL
@@ -27,7 +27,7 @@ const ProfilePictureHelper = {
             return '/uploads/' + profilePicturePath;
         }
         
-        return './img/default_teacher_avatar.png';
+        return './img/default_student_avatar.png';
     },
     
     validateFile(file) {
@@ -49,7 +49,7 @@ const ProfilePictureHelper = {
 // Notification helper
 const NotificationHelper = {
     showNotification(message, type = 'success', duration = 5000) {
-        let notification = document.getElementById('teacherNotification');
+        let notification = document.getElementById('studentNotification');
         if (!notification) {
             notification = this.createNotificationElement();
         }
@@ -66,7 +66,7 @@ const NotificationHelper = {
     
     createNotificationElement() {
         const notification = document.createElement('div');
-        notification.id = 'teacherNotification';
+        notification.id = 'studentNotification';
         notification.className = 'notification';
         document.body.appendChild(notification);
         return notification;
@@ -74,10 +74,10 @@ const NotificationHelper = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🏁 Teacher Dashboard loaded - Initializing...');
+    console.log('🏁 Student Dashboard loaded - Initializing...');
     
     // Use AuthGuard for authentication check
-    if (!AuthGuard.checkAuthentication('teacher')) {
+    if (!AuthGuard.checkAuthentication('student')) {
         return;
     }
 
@@ -89,8 +89,8 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('👤 Current user from AuthGuard:', currentUser);
 
     // State management
-    let currentTeacher = null;
-    let teacherSchedules = [];
+    let currentStudent = null;
+    let studentSchedules = [];
     let allSchedules = [];
     let allSections = [];
     let currentView = 'weekly';
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedFile = null;
 
     // Profile dropdown
-    const profileDropdown = document.querySelector('.teacher-profile-dropdown');
+    const profileDropdown = document.querySelector('.student-profile-dropdown');
     if (profileDropdown) {
         profileDropdown.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Logout functionality - Use AuthGuard's logout
-    const logoutBtn = document.getElementById('teacherLogoutBtn');
+    const logoutBtn = document.getElementById('studentLogoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -124,14 +124,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateProfileInfo() {
         const currentUser = AuthGuard.getCurrentUser();
         if (currentUser) {
-            currentTeacher = currentUser;
-            const firstName = currentUser.fullname?.split(' ')[0] || 'Teacher';
-            const profileName = document.getElementById('teacherProfileName');
+            currentStudent = currentUser;
+            const firstName = currentUser.fullname?.split(' ')[0] || 'Student';
+            const profileName = document.getElementById('studentProfileName');
             if (profileName) {
                 profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down"></i>`;
             }
 
-            const profileAvatar = document.getElementById('teacherProfileAvatar');
+            const profileAvatar = document.getElementById('studentProfileAvatar');
             if (profileAvatar) {
                 profileAvatar.src = ProfilePictureHelper.getProfilePictureUrl(currentUser.profilePicture);
             }
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Load additional data
             await loadSectionsData();
-            await loadTeacherSchedules();
+            await loadStudentSchedules();
             updateDashboard();
             
         } catch (error) {
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (emailEl) emailEl.value = userData.email || '';
         
         const userRoleEl = document.getElementById('profileUserRole');
-        if (userRoleEl) userRoleEl.textContent = userData.userrole ? userData.userrole.charAt(0).toUpperCase() + userData.userrole.slice(1) : 'Teacher';
+        if (userRoleEl) userRoleEl.textContent = userData.userrole ? userData.userrole.charAt(0).toUpperCase() + userData.userrole.slice(1) : 'Student';
         
         // Profile picture
         const profilePicture = document.getElementById('profileViewAvatar');
@@ -214,9 +214,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Update profile view elements
-        document.getElementById('profileViewName').textContent = userData.fullname || 'Teacher';
+        document.getElementById('profileViewName').textContent = userData.fullname || 'Student';
         document.getElementById('profileViewEmail').textContent = userData.email || 'No email provided';
-        document.getElementById('profileViewRole').textContent = 'Teacher';
+        document.getElementById('profileViewRole').textContent = 'Student';
 
         // Personal information
         document.getElementById('profileCtuid').value = userData.ctuid || '';
@@ -224,20 +224,20 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('profileGender').value = userData.gender || '';
 
         // Update greeting
-        const greetingName = document.getElementById('teacherGreetingName');
+        const greetingName = document.getElementById('studentGreetingName');
         if (greetingName) {
-            const firstName = userData.fullname?.split(' ')[0] || 'Teacher';
+            const firstName = userData.fullname?.split(' ')[0] || 'Student';
             greetingName.textContent = firstName;
         }
     }
 
-    // Load sections data to find advisory sections
+    // Load sections data to find student's section
     async function loadSectionsData() {
         try {
             const res = await fetch(`${API_BASE_URL}/sections`);
             if (res.ok) {
                 allSections = await res.json();
-                console.log('Loaded sections for advisory check:', allSections);
+                console.log('Loaded sections for student:', allSections);
             } else {
                 console.error('Failed to load sections');
                 allSections = [];
@@ -248,25 +248,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Load teacher schedules
-    async function loadTeacherSchedules() {
+    // Load student schedules based on their section
+    async function loadStudentSchedules() {
         try {
             const res = await fetch(`${API_BASE_URL}/schedules`);
             if (res.ok) {
                 allSchedules = await res.json();
-                // Filter schedules for current teacher
-                teacherSchedules = allSchedules.filter(schedule => {
-                    const teacherId = schedule.teacher?._id || schedule.teacher;
-                    return teacherId === currentTeacher._id;
+                // Filter schedules for current student's section
+                studentSchedules = allSchedules.filter(schedule => {
+                    const studentSection = currentStudent.section;
+                    if (!studentSection) return false;
+                    
+                    const scheduleSectionName = schedule.section?.sectionName || schedule.section;
+                    return scheduleSectionName === studentSection;
                 });
-                console.log('Loaded teacher schedules:', teacherSchedules);
+                console.log('Loaded student schedules:', studentSchedules);
             } else {
                 console.error('Failed to load schedules');
-                teacherSchedules = [];
+                studentSchedules = [];
             }
         } catch (error) {
             console.error('Error loading schedules:', error);
-            teacherSchedules = [];
+            studentSchedules = [];
         }
     }
 
@@ -306,10 +309,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Teacher profile button
-        const teacherProfileBtn = document.getElementById('teacherProfileBtn');
-        if (teacherProfileBtn) {
-            teacherProfileBtn.addEventListener('click', function(e) {
+        // Student profile button
+        const studentProfileBtn = document.getElementById('studentProfileBtn');
+        if (studentProfileBtn) {
+            studentProfileBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 switchView('profileView');
                 const profileLink = document.getElementById('profileLink');
@@ -350,20 +353,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Find advisory sections for current teacher
-    function findAdvisorySections() {
-        if (!currentTeacher || !allSections.length) return [];
-        
-        const advisorySections = allSections.filter(section => {
-            const isAdviserById = section.adviserTeacher === currentTeacher._id;
-            const isAdviserByName = section.adviserTeacher === currentTeacher.fullname;
-            return isAdviserById || isAdviserByName;
-        });
-        
-        console.log('Advisory sections found:', advisorySections);
-        return advisorySections;
-    }
-
     // Calculate schedule duration
     function calculateScheduleDuration(schedule) {
         const { startTime, endTime, startPeriod, endPeriod } = schedule;
@@ -390,54 +379,52 @@ document.addEventListener('DOMContentLoaded', function() {
         return durationMinutes / 60;
     }
 
-    // Calculate teaching load
-    function calculateTeachingLoad(schedules) {
-        const classMap = new Map();
+    // Calculate academic load
+    function calculateAcademicLoad(schedules) {
+        const subjectMap = new Map();
         
         schedules.forEach(schedule => {
             const subjectId = schedule.subject?._id || schedule.subject;
             if (!subjectId) return;
             
-            const sectionId = schedule.section?._id || schedule.section;
-            const classKey = `${subjectId}-${sectionId}`;
+            const subjectKey = subjectId;
             
-            if (!classMap.has(classKey)) {
-                classMap.set(classKey, {
+            if (!subjectMap.has(subjectKey)) {
+                subjectMap.set(subjectKey, {
                     subject: schedule.subject,
-                    section: schedule.section,
                     lecHours: 0,
                     labHours: 0,
                     sessions: []
                 });
             }
             
-            const classInfo = classMap.get(classKey);
+            const subjectInfo = subjectMap.get(subjectKey);
             const duration = calculateScheduleDuration(schedule);
             
             if (schedule.scheduleType === 'lecture') {
-                classInfo.lecHours += duration;
+                subjectInfo.lecHours += duration;
             } else if (schedule.scheduleType === 'lab') {
-                classInfo.labHours += duration;
+                subjectInfo.labHours += duration;
             }
         });
         
-        const distinctClasses = Array.from(classMap.values());
-        const totalClasses = distinctClasses.length;
+        const distinctSubjects = Array.from(subjectMap.values());
+        const totalSubjects = distinctSubjects.length;
         
-        const lectureHours = distinctClasses.reduce((total, classInfo) => total + classInfo.lecHours, 0);
-        const labHours = distinctClasses.reduce((total, classInfo) => total + classInfo.labHours, 0);
+        const lectureHours = distinctSubjects.reduce((total, subjectInfo) => total + subjectInfo.lecHours, 0);
+        const labHours = distinctSubjects.reduce((total, subjectInfo) => total + subjectInfo.labHours, 0);
         const totalWeeklyHours = lectureHours + labHours;
         
         return {
-            totalClasses,
+            totalSubjects,
             lectureHours: Math.round(lectureHours * 10) / 10,
             labHours: Math.round(labHours * 10) / 10,
             totalWeeklyHours: Math.round(totalWeeklyHours * 10) / 10,
-            distinctClasses
+            distinctSubjects
         };
     }
 
-    // Update dashboard with teacher data
+    // Update dashboard with student data
     function updateDashboard() {
         // Update current date
         const currentDateDisplay = document.getElementById('currentDateDisplay');
@@ -451,29 +438,26 @@ document.addEventListener('DOMContentLoaded', function() {
             currentDateDisplay.textContent = currentDate;
         }
 
-        // Display advisory section from teacher's profile (selected during signup)
-        const advisoryDisplay = currentTeacher?.section || 'Not assigned';
-        const advisorySectionEl = document.getElementById('advisorySection');
-        if (advisorySectionEl) {
-            advisorySectionEl.textContent = advisoryDisplay;
-        }
-
-        if (!teacherSchedules.length) {
-            console.log('No schedules found for teacher');
-            document.getElementById('totalClasses').textContent = '0';
+        if (!studentSchedules.length) {
+            console.log('No schedules found for student');
+            document.getElementById('totalSubjects').textContent = '0';
             document.getElementById('lectureHours').textContent = '0';
             document.getElementById('labHours').textContent = '0';
+            document.getElementById('studentSection').textContent = currentStudent?.section || 'Not assigned';
             
             updateTodaysSchedule();
             updateWeeklyPreview();
             return;
         }
 
-        const teachingLoad = calculateTeachingLoad(teacherSchedules);
+        const academicLoad = calculateAcademicLoad(studentSchedules);
         
-        document.getElementById('totalClasses').textContent = teachingLoad.totalClasses;
-        document.getElementById('lectureHours').textContent = teachingLoad.lectureHours;
-        document.getElementById('labHours').textContent = teachingLoad.labHours;
+        document.getElementById('totalSubjects').textContent = academicLoad.totalSubjects;
+        document.getElementById('lectureHours').textContent = academicLoad.lectureHours;
+        document.getElementById('labHours').textContent = academicLoad.labHours;
+        
+        const studentSection = currentStudent?.section || 'Not assigned';
+        document.getElementById('studentSection').textContent = studentSection;
 
         updateTodaysSchedule();
         updateWeeklyPreview();
@@ -487,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
         
-        const todaysSchedules = teacherSchedules.filter(schedule => 
+        const todaysSchedules = studentSchedules.filter(schedule => 
             schedule.day === today
         ).sort((a, b) => {
             const getTimeValue = (schedule) => {
@@ -512,8 +496,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         todayScheduleList.innerHTML = todaysSchedules.map(schedule => {
             const roomName = schedule.room?.roomName || schedule.room || 'No room';
-            const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
             const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+            const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
             
             return `
                 <div class="schedule-item-today ${schedule.scheduleType}">
@@ -522,9 +506,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="schedule-details">
                         <div class="schedule-subject">${subjectCode}</div>
-                        <div class="schedule-meta">${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
+                        <div class="schedule-meta">${teacherName} • ${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
                     </div>
-                    <div class="schedule-section">${sectionName}</div>
+                    <div class="schedule-section">${currentStudent?.section || 'No Section'}</div>
                 </div>
             `;
         }).join('');
@@ -538,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         
         weeklyPreview.innerHTML = days.map(day => {
-            const daySchedules = teacherSchedules
+            const daySchedules = studentSchedules
                 .filter(schedule => schedule.day === day)
                 .slice(0, 3);
             
@@ -548,11 +532,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${daySchedules.length > 0 ? 
                         daySchedules.map(schedule => {
                             const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
-                            const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
+                            const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
                             return `
                                 <div class="schedule-item-preview ${schedule.scheduleType}">
                                     <strong>${subjectCode}</strong><br>
-                                    <small>${schedule.startTime} ${schedule.startPeriod} - ${sectionName}</small>
+                                    <small>${schedule.startTime} ${schedule.startPeriod} - ${teacherName}</small>
                                 </div>
                             `;
                         }).join('') : 
@@ -565,31 +549,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update profile view
     function updateProfileView() {
-        if (!currentTeacher) {
-            console.log('No teacher data available');
+        if (!currentStudent) {
+            console.log('No student data available');
             return;
         }
 
         try {
-            // Update teaching information
-            // Advisory section comes from teacher's profile (selected during signup)
-            const advisoryDisplay = currentTeacher.section || 'Not assigned';
-            const roomDisplay = currentTeacher.room ? 
-                `Room of ${currentTeacher.section}: ${currentTeacher.room}` : 
-                'Not assigned';
+            // Update academic information
+            const academicLoad = calculateAcademicLoad(studentSchedules);
             
-            const teachingLoad = calculateTeachingLoad(teacherSchedules);
-            
-            document.getElementById('profileAdvisorySection').textContent = advisoryDisplay;
-            document.getElementById('profileAssignedRoom').textContent = roomDisplay;
-            document.getElementById('profileTotalClasses').textContent = teachingLoad.totalClasses;
-            document.getElementById('profileWeeklyHours').textContent = teachingLoad.totalWeeklyHours;
+            document.getElementById('profileClassSection').textContent = currentStudent.section || 'Not assigned';
+            document.getElementById('profileAssignedRoom').textContent = currentStudent.room || 'Not assigned';
+            document.getElementById('profileTotalSubjects').textContent = academicLoad.totalSubjects;
+            document.getElementById('profileWeeklyHours').textContent = academicLoad.totalWeeklyHours;
 
             // Update account information
-            document.getElementById('profileLastLogin').textContent = currentTeacher.lastLogin ? 
-                new Date(currentTeacher.lastLogin).toLocaleString() : 'Never';
-            document.getElementById('profileAccountCreated').textContent = currentTeacher.createdAt ? 
-                new Date(currentTeacher.createdAt).toLocaleDateString() : 'Unknown';
+            document.getElementById('profileLastLogin').textContent = currentStudent.lastLogin ? 
+                new Date(currentStudent.lastLogin).toLocaleString() : 'Never';
+            document.getElementById('profileAccountCreated').textContent = currentStudent.createdAt ? 
+                new Date(currentStudent.createdAt).toLocaleDateString() : 'Unknown';
 
         } catch (error) {
             console.error('Error updating profile view:', error);
@@ -669,6 +647,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('ctuid', document.getElementById('profileCtuid').value.trim());
                 formData.append('birthdate', document.getElementById('profileBirthdate').value);
                 formData.append('gender', document.getElementById('profileGender').value);
+                formData.append('section', currentStudent?.section || '');
+                formData.append('room', currentStudent?.room || '');
 
                 // Add profile picture if selected
                 if (selectedFile) {
@@ -706,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Update session storage using AuthGuard
                 AuthGuard.storeUserSession(updatedUser);
-                currentTeacher = updatedUser;
+                currentStudent = updatedUser;
                 
                 // Update all profile pictures
                 updateAllProfilePictures(updatedUser.profilePicture);
@@ -761,7 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
             profilePicture.src = imageUrl;
         }
         
-        const navAvatar = document.getElementById('teacherProfileAvatar');
+        const navAvatar = document.getElementById('studentProfileAvatar');
         if (navAvatar) {
             navAvatar.src = imageUrl;
         }
@@ -780,9 +760,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Schedule view functions (keep your existing schedule functions here)
+    // Schedule view functions
     function renderScheduleViews() {
-        if (!teacherSchedules.length) {
+        if (!studentSchedules.length) {
             console.log('No schedules to render');
             document.getElementById('scheduleLectureCount').textContent = '0';
             document.getElementById('scheduleLabCount').textContent = '0';
@@ -790,11 +770,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const teachingLoad = calculateTeachingLoad(teacherSchedules);
+        const academicLoad = calculateAcademicLoad(studentSchedules);
         
-        document.getElementById('scheduleLectureCount').textContent = teachingLoad.lectureHours;
-        document.getElementById('scheduleLabCount').textContent = teachingLoad.labHours;
-        document.getElementById('scheduleTotalHours').textContent = teachingLoad.totalWeeklyHours;
+        document.getElementById('scheduleLectureCount').textContent = academicLoad.lectureHours;
+        document.getElementById('scheduleLabCount').textContent = academicLoad.labHours;
+        document.getElementById('scheduleTotalHours').textContent = academicLoad.totalWeeklyHours;
 
         if (currentView === 'weekly') {
             renderWeeklySchedule();
@@ -802,7 +782,7 @@ document.addEventListener('DOMContentLoaded', function() {
             renderDailySchedule();
         }
     }
-
+    
     // Setup shift toggle buttons
     function setupShiftToggle() {
         const shiftButtons = document.querySelectorAll('.shift-btn-small');
@@ -820,7 +800,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
+    
     // Setup schedule view selector
     function setupScheduleViewSelector() {
         const scheduleViewSelect = document.getElementById('scheduleViewSelect');
@@ -829,44 +809,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentView = this.value;
                 console.log('View changed to:', currentView);
                 
+                // Toggle visibility of views
                 const weeklyView = document.getElementById('weeklyScheduleView');
                 const dailyView = document.getElementById('dailyScheduleView');
                 
                 if (currentView === 'weekly') {
-                    weeklyView.style.display = 'block';
-                    dailyView.style.display = 'none';
+                    if (weeklyView) weeklyView.style.display = 'block';
+                    if (dailyView) dailyView.style.display = 'none';
                     renderWeeklySchedule();
                 } else {
-                    weeklyView.style.display = 'none';
-                    dailyView.style.display = 'block';
+                    if (weeklyView) weeklyView.style.display = 'none';
+                    if (dailyView) dailyView.style.display = 'block';
                     renderDailySchedule();
                 }
             });
         }
     }
-
-    // Setup daily navigation
+    
+    // Setup daily navigation buttons
     function setupDailyNavigation() {
         const prevDayBtn = document.getElementById('prevDayBtn');
         const nextDayBtn = document.getElementById('nextDayBtn');
         
         if (prevDayBtn) {
             prevDayBtn.addEventListener('click', function() {
-                currentDayIndex = (currentDayIndex - 1 + 6) % 6;
+                currentDayIndex = (currentDayIndex - 1 + 6) % 6; // 6 days (Mon-Sat)
                 renderDailySchedule();
             });
         }
         
         if (nextDayBtn) {
             nextDayBtn.addEventListener('click', function() {
-                currentDayIndex = (currentDayIndex + 1) % 6;
+                currentDayIndex = (currentDayIndex + 1) % 6; // 6 days (Mon-Sat)
                 renderDailySchedule();
             });
         }
     }
 
     function renderWeeklySchedule() {
-        // Your existing weekly schedule rendering code
         const weeklyGrid = document.getElementById('weeklyGrid');
         if (!weeklyGrid) return;
 
@@ -879,7 +859,7 @@ document.addEventListener('DOMContentLoaded', function() {
             dayDiv.className = 'weekly-day';
             dayDiv.innerHTML = `<h5>${day}</h5>`;
 
-            const daySchedules = teacherSchedules.filter(schedule => {
+            const daySchedules = studentSchedules.filter(schedule => {
                 const matchesDay = schedule.day === day;
                 const matchesShift = currentShift === 'all' || 
                     (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
@@ -897,13 +877,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     item.className = `schedule-item-small ${schedule.scheduleType}`;
                     
                     const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
-                    const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
+                    const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
                     const roomName = schedule.room?.roomName || schedule.room || 'No room';
                     const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
                     
                     item.innerHTML = `
                         <div><strong>${subjectCode}</strong></div>
-                        <div>${sectionName}</div>
+                        <div>${teacherName}</div>
                         <div>${roomName}</div>
                         <div><small>${timeDisplay}</small></div>
                     `;
@@ -915,19 +895,21 @@ document.addEventListener('DOMContentLoaded', function() {
             weeklyGrid.appendChild(dayDiv);
         });
     }
-
+    
     function renderDailySchedule() {
         const dailySchedule = document.getElementById('dailySchedule');
         const currentDayDisplay = document.getElementById('currentDayDisplay');
         
-        if (!dailySchedule || !currentDayDisplay) return;
-
+        if (!dailySchedule) return;
+        
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const currentDay = days[currentDayIndex];
         
-        currentDayDisplay.textContent = currentDay;
-
-        const daySchedules = teacherSchedules.filter(schedule => {
+        if (currentDayDisplay) {
+            currentDayDisplay.textContent = currentDay;
+        }
+        
+        const daySchedules = studentSchedules.filter(schedule => {
             const matchesDay = schedule.day === currentDay;
             const matchesShift = currentShift === 'all' || 
                 (schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift);
@@ -941,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             return getTimeValue(a) - getTimeValue(b);
         });
-
+        
         if (daySchedules.length === 0) {
             dailySchedule.innerHTML = `
                 <div class="empty-state">
@@ -951,27 +933,29 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             return;
         }
-
+        
         dailySchedule.innerHTML = daySchedules.map(schedule => {
             const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
-            const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
+            const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
             const roomName = schedule.room?.roomName || schedule.room || 'No room';
             const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
             
             return `
-                <div class="daily-schedule-item ${schedule.scheduleType}">
-                    <div class="schedule-time">${timeDisplay}</div>
-                    <div class="schedule-details">
-                        <div class="schedule-subject">${subjectCode}</div>
-                        <div class="schedule-meta">${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
+                <div class="schedule-item-daily ${schedule.scheduleType}">
+                    <div class="schedule-time-daily">${timeDisplay}</div>
+                    <div class="schedule-details-daily">
+                        <div class="schedule-subject-daily">${subjectCode}</div>
+                        <div class="schedule-meta-daily">
+                            <span><i class="bi bi-person"></i> ${teacherName}</span>
+                            <span><i class="bi bi-door-open"></i> ${roomName}</span>
+                            <span><i class="bi bi-tag"></i> ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</span>
+                        </div>
                     </div>
-                    <div class="schedule-section">${sectionName}</div>
                 </div>
             `;
         }).join('');
     }
 
-    // Initialize the application
     // Export schedule functionality
     async function setupExportButton() {
         const exportBtn = document.getElementById('exportScheduleBtn');
@@ -979,17 +963,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         exportBtn.addEventListener('click', async function() {
             try {
-                if (!teacherSchedules || teacherSchedules.length === 0) {
+                if (!studentSchedules || studentSchedules.length === 0) {
                     NotificationHelper.showNotification('No schedules to export', 'error');
                     return;
                 }
 
                 // Filter schedules based on current shift selection
-                let schedulesToExport = teacherSchedules;
+                let schedulesToExport = studentSchedules;
                 let shiftDescription = '';
                 
                 if (currentShift !== 'all') {
-                    schedulesToExport = teacherSchedules.filter(schedule => 
+                    schedulesToExport = studentSchedules.filter(schedule => 
                         schedule.section?.shift && schedule.section.shift.toLowerCase() === currentShift
                     );
                     shiftDescription = ` (${currentShift.charAt(0).toUpperCase() + currentShift.slice(1)} Shift)`;
@@ -1004,18 +988,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const { default: scheduleExporter } = await import('./schedule-export.js');
 
                 // Prepare user info
-                const advisorySection = currentTeacher?.section || 'N/A';
                 const userInfo = {
-                    name: currentTeacher?.fullname || 'Teacher',
-                    role: 'Teacher',
-                    section: advisorySection + shiftDescription,
-                    ctuid: currentTeacher?.ctuid || 'N/A',
-                    profilePicture: currentTeacher?.profilePicture || null
+                    name: currentStudent?.fullname || 'Student',
+                    role: 'Student',
+                    section: (currentStudent?.section || 'N/A') + shiftDescription,
+                    ctuid: currentStudent?.ctuid || 'N/A',
+                    profilePicture: currentStudent?.profilePicture || null
                 };
 
                 // Generate filename
                 const shiftSuffix = currentShift !== 'all' ? `_${currentShift}` : '';
-                const filename = `teacher_schedule_${currentTeacher?.ctuid || 'export'}${shiftSuffix}`;
+                const filename = `student_schedule_${currentStudent?.ctuid || 'export'}${shiftSuffix}`;
 
                 // Show export dialog
                 const result = await scheduleExporter.showExportDialog(
@@ -1040,6 +1023,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Initialize the application
     async function initializeApp() {
         try {
             updateProfileInfo();
