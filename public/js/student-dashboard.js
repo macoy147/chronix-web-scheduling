@@ -783,6 +783,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Expose renderScheduleViews globally for mobile navigation
+    window.renderScheduleViews = renderScheduleViews;
+    
     // Setup shift toggle buttons
     function setupShiftToggle() {
         const shiftButtons = document.querySelectorAll('.shift-btn-small');

@@ -1128,6 +1128,10 @@
                     switchToView('scheduleView');
                     updateMobileNavActive(this);
                     updateMenuActive('Schedule');
+                    // Trigger schedule rendering
+                    if (typeof window.renderScheduleViews === 'function') {
+                        window.renderScheduleViews();
+                    }
                 });
             }
             
@@ -1158,6 +1162,10 @@
                     updateMobileNavActive(mobileScheduleLink);
                     updateMenuActive('Schedule');
                     closeSideMenu();
+                    // Trigger schedule rendering
+                    if (typeof window.renderScheduleViews === 'function') {
+                        window.renderScheduleViews();
+                    }
                 });
             }
             
