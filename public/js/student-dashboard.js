@@ -515,6 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const roomName = schedule.room?.roomName || schedule.room || 'No room';
             const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
             const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
+            const sectionName = schedule.section?.sectionName || schedule.section || currentStudent?.section || 'No Section';
             
             return `
                 <div class="schedule-item-today ${schedule.scheduleType}">
@@ -523,9 +524,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="schedule-details">
                         <div class="schedule-subject">${subjectCode}</div>
-                        <div class="schedule-meta">${teacherName} • ${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
+                        <div class="schedule-meta">${sectionName} • ${teacherName} • ${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
                     </div>
-                    <div class="schedule-section">${currentStudent?.section || 'No Section'}</div>
                 </div>
             `;
         }).join('');
@@ -549,11 +549,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${daySchedules.length > 0 ? 
                         daySchedules.map(schedule => {
                             const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
-                            const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
+                            const sectionName = schedule.section?.sectionName || schedule.section || currentStudent?.section || 'No Section';
                             return `
                                 <div class="schedule-item-preview ${schedule.scheduleType}">
-                                    <strong>${subjectCode}</strong><br>
-                                    <small>${schedule.startTime} ${schedule.startPeriod} - ${teacherName}</small>
+                                    <strong>${subjectCode} - ${sectionName}</strong><br>
+                                    <small>${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}</small>
                                 </div>
                             `;
                         }).join('') : 
@@ -898,12 +898,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     item.className = `schedule-item-small ${schedule.scheduleType}`;
                     
                     const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+                    const sectionName = schedule.section?.sectionName || schedule.section || currentStudent?.section || 'No Section';
                     const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
                     const roomName = schedule.room?.roomName || schedule.room || 'No room';
                     const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
                     
                     item.innerHTML = `
                         <div><strong>${subjectCode}</strong></div>
+                        <div>${sectionName}</div>
                         <div>${teacherName}</div>
                         <div>${roomName}</div>
                         <div><small>${timeDisplay}</small></div>
@@ -957,6 +959,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         dailySchedule.innerHTML = daySchedules.map(schedule => {
             const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
+            const sectionName = schedule.section?.sectionName || schedule.section || currentStudent?.section || 'No Section';
             const teacherName = schedule.teacher?.fullname || schedule.teacher || 'No teacher';
             const roomName = schedule.room?.roomName || schedule.room || 'No room';
             const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
@@ -967,6 +970,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="schedule-details-daily">
                         <div class="schedule-subject-daily">${subjectCode}</div>
                         <div class="schedule-meta-daily">
+                            <span><i class="bi bi-people"></i> ${sectionName}</span>
                             <span><i class="bi bi-person"></i> ${teacherName}</span>
                             <span><i class="bi bi-door-open"></i> ${roomName}</span>
                             <span><i class="bi bi-tag"></i> ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</span>

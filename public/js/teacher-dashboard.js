@@ -549,9 +549,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="schedule-details">
                         <div class="schedule-subject">${subjectCode}</div>
-                        <div class="schedule-meta">${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
+                        <div class="schedule-meta">${sectionName} • ${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
                     </div>
-                    <div class="schedule-section">${sectionName}</div>
                 </div>
             `;
         }).join('');
@@ -578,8 +577,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
                             return `
                                 <div class="schedule-item-preview ${schedule.scheduleType}">
-                                    <strong>${subjectCode}</strong><br>
-                                    <small>${schedule.startTime} ${schedule.startPeriod} - ${sectionName}</small>
+                                    <strong>${subjectCode} - ${sectionName}</strong><br>
+                                    <small>${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}</small>
                                 </div>
                             `;
                         }).join('') : 
@@ -1012,9 +1011,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="schedule-time">${timeDisplay}</div>
                     <div class="schedule-details">
                         <div class="schedule-subject">${subjectCode}</div>
-                        <div class="schedule-meta">${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
+                        <div class="schedule-meta">${sectionName} • ${roomName} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
                     </div>
-                    <div class="schedule-section">${sectionName}</div>
                 </div>
             `;
         }).join('');
