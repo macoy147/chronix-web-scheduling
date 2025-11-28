@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // State management
     let teachers = [];
     let schedules = [];
+    let sections = [];
+    let rooms = [];
     let currentTeacherId = null;
     let currentView = 'weekly';
     let currentShift = 'all';
@@ -87,7 +89,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoadingState(true);
             await Promise.all([
                 loadTeachers(),
-                loadSchedules()
+                loadSchedules(),
+                loadSections(),
+                loadRooms()
             ]);
             renderTeachersTable();
             showLoadingState(false);
@@ -127,6 +131,38 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error loading schedules:', error);
             schedules = [];
+        }
+    }
+
+    async function loadSections() {
+        try {
+            const res = await fetch('/sections');
+            if (res.ok) {
+                sections = await res.json();
+                console.log('Loaded sections:', sections);
+            } else {
+                console.error('Failed to load sections');
+                sections = [];
+            }
+        } catch (error) {
+            console.error('Error loading sections:', error);
+            sections = [];
+        }
+    }
+
+    async function loadRooms() {
+        try {
+            const res = await fetch('/rooms');
+            if (res.ok) {
+                rooms = await res.json();
+                console.log('Loaded rooms:', rooms);
+            } else {
+                console.error('Failed to load rooms');
+                rooms = [];
+            }
+        } catch (error) {
+            console.error('Error loading rooms:', error);
+            rooms = [];
         }
     }
 
@@ -236,11 +272,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalTeacherName = document.getElementById('modalTeacherName');
         const modalTeacherEmail = document.getElementById('modalTeacherEmail');
         const modalTeacherId = document.getElementById('modalTeacherId');
+        const modalAdvisorySection = document.getElementById('modalAdvisorySection');
         const teacherScheduleTitle = document.getElementById('teacherScheduleTitle');
         
         if (modalTeacherName) modalTeacherName.textContent = safeDisplay(teacher.fullname);
         if (modalTeacherEmail) modalTeacherEmail.textContent = safeDisplay(teacher.email);
         if (modalTeacherId) modalTeacherId.textContent = safeDisplay(teacher.ctuid);
+        if (modalAdvisorySection) modalAdvisorySection.textContent = safeDisplay(teacher.section, 'Not assigned');
         if (teacherScheduleTitle) teacherScheduleTitle.textContent = `${safeDisplay(teacher.fullname)}'s Schedule`;
 
         // Load teacher avatar if available
@@ -286,8 +324,80 @@ document.addEventListener('DOMContentLoaded', function() {
         if (editCtuid) editCtuid.value = safeDisplay(teacher.ctuid, '');
         if (editBirthdate) editBirthdate.value = safeDisplay(teacher.birthdate, '');
         if (editGender) editGender.value = safeDisplay(teacher.gender, '');
-        if (editSection) editSection.value = safeDisplay(teacher.section, '');
-        if (editRoom) editRoom.value = safeDisplay(teacher.room, '');
+
+        // Populate Section dropdown
+        if (editSection) {
+            editSection.innerHTML = '<option value="">No Advisory Section</option>';
+            sections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section.sectionName;
+                option.textContent = `${section.sectionName} (Year ${section.yearLevel} - ${section.shift})`;
+                editSection.appendChild(option);
+            });
+            editSection.value = safeDisplay(teacher.section, '');
+        }
+
+        // Populate Room dropdown
+        if (editRoom) {
+            editRoom.innerHTML = '<option value="">No Room Assigned</option>';
+            rooms.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room.roomName;
+                option.textContent = `${room.roomName} (${room.building})`;
+                editRoom.appendChild(option);
+            });
+            editRoom.value = safeDisplay(teacher.room, '');
+        }
+
+        // Add event listeners for auto-sync between Section and Room
+        if (editSection && editRoom) {
+            // When section changes, auto-fill corresponding room
+            editSection.addEventListener('change', function() {
+                const selectedSection = this.value;
+                if (selectedSection) {
+                    // Find room where this section is assigned
+                    const assignedRoom = rooms.find(room => 
+                        room.daySection === selectedSection || room.nightSection === selectedSection
+                    );
+                    if (assignedRoom) {
+                        editRoom.value = assignedRoom.roomName;
+                        console.log(`✅ Auto-filled room: ${assignedRoom.roomName} for section: ${selectedSection}`);
+                    } else {
+                        console.log(`⚠️ No room found for section: ${selectedSection}`);
+                    }
+                } else {
+                    // If no section selected, clear room
+                    editRoom.value = '';
+                }
+            });
+
+            // When room changes, auto-fill corresponding section
+            editRoom.addEventListener('change', function() {
+                const selectedRoom = this.value;
+                if (selectedRoom) {
+                    // Find the room object
+                    const roomObj = rooms.find(room => room.roomName === selectedRoom);
+                    if (roomObj) {
+                        // Check if current section value matches either daySection or nightSection
+                        const currentSection = editSection.value;
+                        
+                        // If current section doesn't match room's sections, update it
+                        if (roomObj.daySection && roomObj.daySection !== 'None' && 
+                            roomObj.daySection !== currentSection) {
+                            editSection.value = roomObj.daySection;
+                            console.log(`✅ Auto-filled section: ${roomObj.daySection} for room: ${selectedRoom}`);
+                        } else if (roomObj.nightSection && roomObj.nightSection !== 'None' && 
+                                   roomObj.nightSection !== currentSection) {
+                            editSection.value = roomObj.nightSection;
+                            console.log(`✅ Auto-filled section: ${roomObj.nightSection} for room: ${selectedRoom}`);
+                        }
+                    }
+                } else {
+                    // If no room selected, clear section
+                    editSection.value = '';
+                }
+            });
+        }
 
         // Set current teacher ID for form submission
         currentTeacherId = teacherId;
@@ -366,17 +476,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (res.ok) {
-                    const updatedTeacher = await res.json();
+                    const result = await res.json();
+                    const updatedTeacher = result.user || result; // Handle both response formats
+                    
+                    console.log('✅ Teacher updated:', updatedTeacher);
+                    
                     showBubbleMessage('Teacher updated successfully!', 'success');
                     const editModal = document.getElementById('editTeacherModal');
                     if (editModal) editModal.style.display = 'none';
                     document.body.style.overflow = 'auto';
                     
-                    // Update local teachers array and re-render
+                    // Update local teachers array with the full updated user object
                     const teacherIndex = teachers.findIndex(t => t._id === currentTeacherId);
                     if (teacherIndex !== -1) {
                         teachers[teacherIndex] = updatedTeacher;
+                        console.log('✅ Updated teacher in local array:', teachers[teacherIndex]);
                     }
+                    
+                    // Re-render the table to show updated data
                     renderTeachersTable();
                 } else {
                     const error = await res.json();

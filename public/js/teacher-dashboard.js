@@ -451,18 +451,27 @@ document.addEventListener('DOMContentLoaded', function() {
             currentDateDisplay.textContent = currentDate;
         }
 
+        // Ensure currentTeacher is set
+        if (!currentTeacher) {
+            currentTeacher = AuthGuard.getCurrentUser();
+        }
+
+        // Display advisory section from teacher's profile (selected during signup)
+        console.log('📋 Current teacher data:', currentTeacher);
+        console.log('📋 Advisory section:', currentTeacher?.section);
+        
+        const advisoryDisplay = currentTeacher?.section || 'Not assigned';
+        const advisorySectionEl = document.getElementById('advisorySection');
+        if (advisorySectionEl) {
+            advisorySectionEl.textContent = advisoryDisplay;
+            console.log('✅ Set advisory section to:', advisoryDisplay);
+        }
+
         if (!teacherSchedules.length) {
             console.log('No schedules found for teacher');
             document.getElementById('totalClasses').textContent = '0';
             document.getElementById('lectureHours').textContent = '0';
             document.getElementById('labHours').textContent = '0';
-            
-            const advisorySections = findAdvisorySections();
-            let advisoryDisplay = 'Not assigned';
-            if (advisorySections.length > 0) {
-                advisoryDisplay = advisorySections.map(section => section.sectionName).join(', ');
-            }
-            document.getElementById('advisorySection').textContent = advisoryDisplay;
             
             updateTodaysSchedule();
             updateWeeklyPreview();
@@ -474,15 +483,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('totalClasses').textContent = teachingLoad.totalClasses;
         document.getElementById('lectureHours').textContent = teachingLoad.lectureHours;
         document.getElementById('labHours').textContent = teachingLoad.labHours;
-        
-        const advisorySections = findAdvisorySections();
-        let advisoryDisplay = 'Not assigned';
-        
-        if (advisorySections.length > 0) {
-            advisoryDisplay = advisorySections.map(section => section.sectionName).join(', ');
-        }
-        
-        document.getElementById('advisorySection').textContent = advisoryDisplay;
 
         updateTodaysSchedule();
         updateWeeklyPreview();
@@ -574,6 +574,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update profile view
     function updateProfileView() {
+        // Ensure currentTeacher is set
+        if (!currentTeacher) {
+            currentTeacher = AuthGuard.getCurrentUser();
+        }
+        
         if (!currentTeacher) {
             console.log('No teacher data available');
             return;
@@ -581,25 +586,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             // Update teaching information
-            const advisorySections = findAdvisorySections();
-            let advisoryDisplay = 'Not assigned';
-            
-            if (advisorySections.length > 0) {
-                advisoryDisplay = advisorySections.map(section => section.sectionName).join(', ');
-            }
+            // Advisory section comes from teacher's profile (selected during signup)
+            const advisoryDisplay = currentTeacher.section || 'Not assigned';
+            const roomDisplay = currentTeacher.room ? 
+                `Room of ${currentTeacher.section}: ${currentTeacher.room}` : 
+                'Not assigned';
             
             const teachingLoad = calculateTeachingLoad(teacherSchedules);
             
-            document.getElementById('profileAdvisorySection').textContent = advisoryDisplay;
-            document.getElementById('profileAssignedRoom').textContent = currentTeacher.room || 'Not assigned';
-            document.getElementById('profileTotalClasses').textContent = teachingLoad.totalClasses;
-            document.getElementById('profileWeeklyHours').textContent = teachingLoad.totalWeeklyHours;
+            const profileAdvisorySection = document.getElementById('profileAdvisorySection');
+            const profileAssignedRoom = document.getElementById('profileAssignedRoom');
+            const profileTotalClasses = document.getElementById('profileTotalClasses');
+            const profileWeeklyHours = document.getElementById('profileWeeklyHours');
+            
+            if (profileAdvisorySection) profileAdvisorySection.textContent = advisoryDisplay;
+            if (profileAssignedRoom) profileAssignedRoom.textContent = roomDisplay;
+            if (profileTotalClasses) profileTotalClasses.textContent = teachingLoad.totalClasses;
+            if (profileWeeklyHours) profileWeeklyHours.textContent = teachingLoad.totalWeeklyHours;
 
             // Update account information
-            document.getElementById('profileLastLogin').textContent = currentTeacher.lastLogin ? 
-                new Date(currentTeacher.lastLogin).toLocaleString() : 'Never';
-            document.getElementById('profileAccountCreated').textContent = currentTeacher.createdAt ? 
-                new Date(currentTeacher.createdAt).toLocaleDateString() : 'Unknown';
+            const profileLastLogin = document.getElementById('profileLastLogin');
+            const profileAccountCreated = document.getElementById('profileAccountCreated');
+            
+            if (profileLastLogin) {
+                profileLastLogin.textContent = currentTeacher.lastLogin ? 
+                    new Date(currentTeacher.lastLogin).toLocaleString() : 'Never';
+            }
+            if (profileAccountCreated) {
+                profileAccountCreated.textContent = currentTeacher.createdAt ? 
+                    new Date(currentTeacher.createdAt).toLocaleDateString() : 'Unknown';
+            }
 
         } catch (error) {
             console.error('Error updating profile view:', error);

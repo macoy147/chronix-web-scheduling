@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let students = [];
     let schedules = [];
     let sections = [];
+    let rooms = [];
     let currentStudentId = null;
     let currentView = 'weekly';
     let currentShift = 'all';
@@ -89,7 +90,8 @@ document.addEventListener('DOMContentLoaded', function() {
             await Promise.all([
                 loadStudents(),
                 loadSchedules(),
-                loadSections()
+                loadSections(),
+                loadRooms()
             ]);
             updateStatistics();
             populateSectionFilter();
@@ -168,6 +170,22 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error loading sections:', error);
             sections = [];
+        }
+    }
+
+    async function loadRooms() {
+        try {
+            const res = await fetch('/rooms');
+            if (res.ok) {
+                rooms = await res.json();
+                console.log(`✅ Loaded ${rooms.length} rooms`);
+            } else {
+                console.error('Failed to load rooms');
+                rooms = [];
+            }
+        } catch (error) {
+            console.error('Error loading rooms:', error);
+            rooms = [];
         }
     }
 
@@ -476,8 +494,61 @@ document.addEventListener('DOMContentLoaded', function() {
         if (editCtuid) editCtuid.value = safeDisplay(student.ctuid, '');
         if (editBirthdate) editBirthdate.value = safeDisplay(student.birthdate, '');
         if (editGender) editGender.value = safeDisplay(student.gender, '');
-        if (editSection) editSection.value = safeDisplay(student.section, '');
-        if (editRoom) editRoom.value = safeDisplay(student.room, '');
+
+        // Populate Section dropdown
+        if (editSection) {
+            editSection.innerHTML = '<option value="">Select Section</option>';
+            sections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section.sectionName;
+                option.textContent = `${section.sectionName} (Year ${section.yearLevel} - ${section.shift})`;
+                editSection.appendChild(option);
+            });
+            // Set the value after populating options
+            editSection.value = safeDisplay(student.section, '');
+            console.log('📋 Section dropdown populated, selected value:', editSection.value);
+        }
+
+        // Populate Room dropdown
+        if (editRoom) {
+            editRoom.innerHTML = '<option value="">No Room Assigned</option>';
+            rooms.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room.roomName;
+                option.textContent = `${room.roomName} (${room.building})`;
+                editRoom.appendChild(option);
+            });
+            // Set the value after populating options
+            editRoom.value = safeDisplay(student.room, '');
+            console.log('📋 Room dropdown populated, selected value:', editRoom.value);
+        }
+
+        // Add event listener for auto-sync: when section changes, auto-fill room
+        // Use a named function to avoid duplicates
+        const handleSectionChange = function() {
+            const selectedSection = this.value;
+            if (selectedSection) {
+                // Find room where this section is assigned
+                const assignedRoom = rooms.find(room => 
+                    room.daySection === selectedSection || room.nightSection === selectedSection
+                );
+                if (assignedRoom) {
+                    const editRoomEl = document.getElementById('editRoom');
+                    if (editRoomEl) {
+                        editRoomEl.value = assignedRoom.roomName;
+                        console.log(`✅ Auto-filled room: ${assignedRoom.roomName} for section: ${selectedSection}`);
+                    }
+                } else {
+                    console.log(`⚠️ No room found for section: ${selectedSection}`);
+                }
+            }
+        };
+
+        if (editSection) {
+            // Remove old listener if exists and add new one
+            editSection.removeEventListener('change', handleSectionChange);
+            editSection.addEventListener('change', handleSectionChange);
+        }
 
         // Set current student ID for form submission
         currentStudentId = studentId;
@@ -547,17 +618,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (res.ok) {
-                    const updatedStudent = await res.json();
+                    const result = await res.json();
+                    const updatedStudent = result.user || result; // Handle both response formats
+                    
+                    console.log('✅ Student updated:', updatedStudent);
+                    
                     showBubbleMessage('Student updated successfully!', 'success');
                     const editModal = document.getElementById('editStudentModal');
                     if (editModal) editModal.style.display = 'none';
                     document.body.style.overflow = 'auto';
                     
-                    // Update local students array and re-render
+                    // Update local students array with the full updated user object
                     const studentIndex = students.findIndex(s => s._id === currentStudentId);
                     if (studentIndex !== -1) {
                         students[studentIndex] = updatedStudent;
+                        console.log('✅ Updated student in local array:', students[studentIndex]);
                     }
+                    
+                    // Re-render the table to show updated data
                     renderStudentsTable();
                     updateStatistics();
                 } else {

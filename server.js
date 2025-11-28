@@ -49,7 +49,6 @@ if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'public')));
 }
 
-
 // Connect to MongoDB with updated options
 mongoose.connect(MONGODB_URI, {
     // Remove deprecated options
@@ -360,7 +359,7 @@ app.put('/notifications/user/:userId/read-all', async (req, res) => {
 // --------------------- ROUTES ---------------------
 // Register
 app.post('/register', async (req, res) => {
-    const { fullname, email, userrole, ctuid, password, section, room, birthdate, gender } = req.body;
+    const { fullname, email, userrole, ctuid, password, section, birthdate, gender } = req.body;
     try {
         // Prevent registering as admin through the API
         if (userrole === 'admin') {
@@ -385,6 +384,41 @@ app.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'This Student/Faculty ID is already registered. Please use a different ID.' });
         }
 
+        // Check for duplicate advisory section (teachers only)
+        if (userrole === 'teacher' && section) {
+            const existingAdvisor = await User.findOne({ 
+                userrole: 'teacher', 
+                section: section 
+            });
+            if (existingAdvisor) {
+                return res.status(400).json({ 
+                    error: `Section ${section} already has an advisor (${existingAdvisor.fullname}). Each section can only have one advisory teacher.` 
+                });
+            }
+        }
+
+        // Auto-assign room based on section
+        let assignedRoom = '';
+        if (section) {
+            // Find the section details
+            const sectionData = await Section.findOne({ sectionName: section });
+            if (sectionData) {
+                // Find room where this section is assigned (either day or night shift)
+                const room = await Room.findOne({
+                    $or: [
+                        { daySection: section },
+                        { nightSection: section }
+                    ]
+                });
+                if (room) {
+                    assignedRoom = room.roomName;
+                    logger.info(`✅ Auto-assigned room ${assignedRoom} for section ${section}`);
+                } else {
+                    logger.warn(`⚠️ No room found for section ${section}`);
+                }
+            }
+        }
+
         const user = new User({ 
             fullname: fullname.trim(), 
             email: email.trim().toLowerCase(), 
@@ -392,13 +426,19 @@ app.post('/register', async (req, res) => {
             ctuid: ctuid.trim(), 
             password, 
             section, 
-            room, 
+            room: assignedRoom, 
             birthdate, 
             gender 
         });
         await user.save();
         
-        logger.info('✅ New user registered:', { fullname: user.fullname, email: user.email, userrole: user.userrole });
+        logger.info('✅ New user registered:', { 
+            fullname: user.fullname, 
+            email: user.email, 
+            userrole: user.userrole,
+            section: user.section,
+            room: user.room
+        });
         res.json({ message: 'User registered successfully!' });
     } catch (error) {
         logger.error('Error registering user:', error);
@@ -532,6 +572,19 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
             changes.push(`gender changed from "${currentUser.gender}" to "${gender}"`);
         }
         if (section !== undefined && section !== currentUser.section) {
+            // Check for duplicate advisory section (teachers only)
+            if (currentUser.userrole === 'teacher' && section) {
+                const existingAdvisor = await User.findOne({ 
+                    userrole: 'teacher', 
+                    section: section,
+                    _id: { $ne: req.params.id } // Exclude current user
+                });
+                if (existingAdvisor) {
+                    return res.status(400).json({ 
+                        error: `Section ${section} already has an advisor (${existingAdvisor.fullname}). Each section can only have one advisory teacher.` 
+                    });
+                }
+            }
             updateFields.section = section;
             changes.push(`section changed from "${currentUser.section}" to "${section}"`);
         }

@@ -285,13 +285,19 @@
                     </div>
                     
                     <div class="form-row">
-                        <label for="editSection">Section</label>
-                        <input type="text" id="editSection" name="section" placeholder="e.g., BSIT 3A">
+                        <label for="editSection">Class Section</label>
+                        <select id="editSection" name="section">
+                            <option value="">Select Section</option>
+                            <!-- Sections will be populated by JavaScript -->
+                        </select>
                     </div>
                     
                     <div class="form-row">
-                        <label for="editRoom">Room</label>
-                        <input type="text" id="editRoom" name="room" placeholder="Optional">
+                        <label for="editRoom">Assigned Room</label>
+                        <select id="editRoom" name="room">
+                            <option value="">No Room Assigned</option>
+                            <!-- Rooms will be populated by JavaScript -->
+                        </select>
                     </div>
                 </div>
 

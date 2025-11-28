@@ -113,6 +113,9 @@
                     <h4 id="modalTeacherName">Loading...</h4>
                     <p id="modalTeacherEmail">Loading...</p>
                     <p id="modalTeacherId">Loading...</p>
+                    <p id="modalTeacherAdvisory" style="color: var(--ctu-soft-gold); font-weight: 600;">
+                        <i class="bi bi-people"></i> Advisory Section: <span id="modalAdvisorySection">-</span>
+                    </p>
                 </div>
             </div>
 
@@ -241,13 +244,19 @@
                     </div>
                     
                     <div class="form-row">
-                        <label for="editSection">Section</label>
-                        <input type="text" id="editSection" name="section" placeholder="Optional">
+                        <label for="editSection">Advisory Section</label>
+                        <select id="editSection" name="section">
+                            <option value="">No Advisory Section</option>
+                            <!-- Sections will be populated by JavaScript -->
+                        </select>
                     </div>
                     
                     <div class="form-row">
                         <label for="editRoom">Room</label>
-                        <input type="text" id="editRoom" name="room" placeholder="Optional">
+                        <select id="editRoom" name="room">
+                            <option value="">No Room Assigned</option>
+                            <!-- Rooms will be populated by JavaScript -->
+                        </select>
                     </div>
                 </div>
 

@@ -678,6 +678,20 @@ a {
     padding: 10px;
 }
 
+/* Disabled select styling */
+.input-group select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+}
+
+.input-group select:disabled + i {
+    opacity: 0.5;
+}
+
 /* Password Toggle - Inside Field */
 .password-wrapper {
     position: relative;

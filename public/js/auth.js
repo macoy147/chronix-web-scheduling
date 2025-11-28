@@ -191,33 +191,29 @@
 
         function setupUserRoleHandler() {
             const userRoleSelect = document.getElementById('userRoleSelect');
-            const roomSelect = document.getElementById('roomSelect');
             const sectionSelect = document.getElementById('sectionSelect');
+            const ctuIdInput = registerForm ? registerForm.querySelector('input[name="ctuid"]') : null;
 
-            if (userRoleSelect) {
+            if (userRoleSelect && sectionSelect) {
                 userRoleSelect.addEventListener('change', function() {
                     const isTeacher = this.value === 'teacher';
                     const isStudent = this.value === 'student';
 
-                    // Show/hide room and section based on role
-                    if (roomSelect) {
-                        const roomWrapper = roomSelect.closest('.row-two-fields');
-                        if (roomWrapper) {
-                            roomWrapper.style.display = isTeacher ? 'flex' : 'none';
-                        }
-                    }
-
-                    if (sectionSelect) {
-                        const sectionWrapper = sectionSelect.closest('.row-two-fields');
-                        if (sectionWrapper) {
-                            sectionWrapper.style.display = isStudent ? 'flex' : 'none';
-                        }
-                    }
-
-                    // Update placeholders
-                    const ctuIdInput = registerForm.querySelector('input[name="ctuid"]');
+                    // Both students and teachers need to select a section
+                    // Students: Select their class section (room will be auto-assigned)
+                    // Teachers: Select their advisory section (room will be auto-assigned)
+                    sectionSelect.required = true;
+                    
+                    // Update CTU ID placeholder with smooth transition
                     if (ctuIdInput) {
-                        ctuIdInput.placeholder = isTeacher ? 'Faculty ID' : 'Student ID';
+                        ctuIdInput.style.transition = 'all 0.3s ease';
+                        ctuIdInput.placeholder = isTeacher ? 'Faculty ID' : isStudent ? 'Student ID' : 'Student/Faculty ID';
+                    }
+                    
+                    // Update section label hint based on role
+                    const sectionLabel = sectionSelect.previousElementSibling;
+                    if (sectionLabel && sectionLabel.tagName === 'LABEL') {
+                        sectionLabel.textContent = isTeacher ? 'Advisory Section' : 'Class Section';
                     }
                 });
             }
@@ -295,40 +291,22 @@
 
 
 
-        // Load rooms and sections from server
+        // Load sections from server
         async function loadRoomsAndSections() {
             try {
-                console.log('Loading rooms and sections...');
+                console.log('Loading sections...');
                 
-                // Load rooms
-                const roomsResponse = await fetch('/rooms');
-                if (roomsResponse.ok) {
-                    const rooms = await roomsResponse.json();
-                    const roomSelect = document.getElementById('roomSelect');
-                    if (roomSelect) {
-                        roomSelect.innerHTML = '<option value="" selected>Select Room</option>';
-                        rooms.forEach(room => {
-                            const option = document.createElement('option');
-                            option.value = room.roomName;
-                            option.textContent = `${room.roomName} (${room.building})`;
-                            roomSelect.appendChild(option);
-                        });
-                    }
-                } else {
-                    console.warn('Failed to load rooms:', roomsResponse.status);
-                }
-
                 // Load sections
                 const sectionsResponse = await fetch('/sections');
                 if (sectionsResponse.ok) {
                     const sections = await sectionsResponse.json();
                     const sectionSelect = document.getElementById('sectionSelect');
                     if (sectionSelect) {
-                        sectionSelect.innerHTML = '<option value="" selected>Select Section</option>';
+                        sectionSelect.innerHTML = '<option value="" disabled selected>Select Section</option>';
                         sections.forEach(section => {
                             const option = document.createElement('option');
                             option.value = section.sectionName;
-                            option.textContent = `${section.sectionName} (Year ${section.yearLevel})`;
+                            option.textContent = `${section.sectionName} (Year ${section.yearLevel} - ${section.shift})`;
                             sectionSelect.appendChild(option);
                         });
                     }
@@ -445,8 +423,7 @@
                 password: password,
                 birthdate: form.birthdate.value,
                 gender: form.gender.value,
-                section: form.section.value || '',
-                room: form.room.value || ''
+                section: form.section.value
             };
 
             try {
