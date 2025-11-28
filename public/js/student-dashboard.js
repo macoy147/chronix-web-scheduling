@@ -97,6 +97,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentShift = 'all';
     let currentDayIndex = 0;
     let selectedFile = null;
+    
+    // Initialize window variables for mobile access
+    window.studentSchedules = [];
+    window.currentStudent = null;
 
     // Profile dropdown
     const profileDropdown = document.querySelector('.student-profile-dropdown');
@@ -125,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const currentUser = AuthGuard.getCurrentUser();
         if (currentUser) {
             currentStudent = currentUser;
+            window.currentStudent = currentUser; // Expose for mobile
             const firstName = currentUser.fullname?.split(' ')[0] || 'Student';
             const profileName = document.getElementById('studentProfileName');
             if (profileName) {
@@ -255,21 +260,33 @@ document.addEventListener('DOMContentLoaded', function() {
             if (res.ok) {
                 allSchedules = await res.json();
                 // Filter schedules for current student's section
-                studentSchedules = allSchedules.filter(schedule => {
+                const filteredSchedules = allSchedules.filter(schedule => {
                     const studentSection = currentStudent.section;
                     if (!studentSection) return false;
                     
                     const scheduleSectionName = schedule.section?.sectionName || schedule.section;
                     return scheduleSectionName === studentSection;
                 });
-                console.log('Loaded student schedules:', studentSchedules);
+                
+                // Clear and repopulate the array to maintain reference
+                studentSchedules.length = 0;
+                studentSchedules.push(...filteredSchedules);
+                
+                // Also update window reference
+                window.studentSchedules.length = 0;
+                window.studentSchedules.push(...filteredSchedules);
+                
+                console.log('Loaded student schedules:', studentSchedules.length, 'schedules');
+                console.log('Window schedules:', window.studentSchedules.length, 'schedules');
             } else {
                 console.error('Failed to load schedules');
-                studentSchedules = [];
+                studentSchedules.length = 0;
+                window.studentSchedules.length = 0;
             }
         } catch (error) {
             console.error('Error loading schedules:', error);
-            studentSchedules = [];
+            studentSchedules.length = 0;
+            window.studentSchedules.length = 0;
         }
     }
 
@@ -687,6 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update session storage using AuthGuard
                 AuthGuard.storeUserSession(updatedUser);
                 currentStudent = updatedUser;
+                window.currentStudent = updatedUser; // Expose for mobile
                 
                 // Update all profile pictures
                 updateAllProfilePictures(updatedUser.profilePicture);

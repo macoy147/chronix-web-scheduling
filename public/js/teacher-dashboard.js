@@ -97,6 +97,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentShift = 'all';
     let currentDayIndex = 0;
     let selectedFile = null;
+    
+    // Initialize window variables for mobile access
+    window.teacherSchedules = [];
+    window.currentTeacher = null;
 
     // Profile dropdown
     const profileDropdown = document.querySelector('.teacher-profile-dropdown');
@@ -125,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const currentUser = AuthGuard.getCurrentUser();
         if (currentUser) {
             currentTeacher = currentUser;
+            window.currentTeacher = currentUser; // Expose for mobile
             const firstName = currentUser.fullname?.split(' ')[0] || 'Teacher';
             const profileName = document.getElementById('teacherProfileName');
             if (profileName) {
@@ -255,18 +260,30 @@ document.addEventListener('DOMContentLoaded', function() {
             if (res.ok) {
                 allSchedules = await res.json();
                 // Filter schedules for current teacher
-                teacherSchedules = allSchedules.filter(schedule => {
+                const filteredSchedules = allSchedules.filter(schedule => {
                     const teacherId = schedule.teacher?._id || schedule.teacher;
                     return teacherId === currentTeacher._id;
                 });
-                console.log('Loaded teacher schedules:', teacherSchedules);
+                
+                // Clear and repopulate the array to maintain reference
+                teacherSchedules.length = 0;
+                teacherSchedules.push(...filteredSchedules);
+                
+                // Also update window reference
+                window.teacherSchedules.length = 0;
+                window.teacherSchedules.push(...filteredSchedules);
+                
+                console.log('Loaded teacher schedules:', teacherSchedules.length, 'schedules');
+                console.log('Window schedules:', window.teacherSchedules.length, 'schedules');
             } else {
                 console.error('Failed to load schedules');
-                teacherSchedules = [];
+                teacherSchedules.length = 0;
+                window.teacherSchedules.length = 0;
             }
         } catch (error) {
             console.error('Error loading schedules:', error);
-            teacherSchedules = [];
+            teacherSchedules.length = 0;
+            window.teacherSchedules.length = 0;
         }
     }
 
@@ -454,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ensure currentTeacher is set
         if (!currentTeacher) {
             currentTeacher = AuthGuard.getCurrentUser();
+            window.currentTeacher = currentTeacher; // Expose for mobile
         }
 
         // Display advisory section from teacher's profile (selected during signup)
@@ -577,6 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ensure currentTeacher is set
         if (!currentTeacher) {
             currentTeacher = AuthGuard.getCurrentUser();
+            window.currentTeacher = currentTeacher; // Expose for mobile
         }
         
         if (!currentTeacher) {
@@ -733,6 +752,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update session storage using AuthGuard
                 AuthGuard.storeUserSession(updatedUser);
                 currentTeacher = updatedUser;
+                window.currentTeacher = updatedUser; // Expose for mobile
                 
                 // Update all profile pictures
                 updateAllProfilePictures(updatedUser.profilePicture);
@@ -828,6 +848,9 @@ document.addEventListener('DOMContentLoaded', function() {
             renderDailySchedule();
         }
     }
+    
+    // Expose renderScheduleViews globally for mobile navigation
+    window.renderScheduleViews = renderScheduleViews;
 
     // Setup shift toggle buttons
     function setupShiftToggle() {

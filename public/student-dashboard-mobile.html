@@ -1279,11 +1279,16 @@
                     e.preventDefault();
                     
                     try {
-                        // Get current user data
-                        const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+                        // Get current user data - prefer window.currentStudent (has latest data) over sessionStorage
+                        const currentUser = window.currentStudent || JSON.parse(sessionStorage.getItem('currentUser') || '{}');
                         
                         // Get schedule data from the page (set by student-dashboard.js)
                         const studentSchedules = window.studentSchedules || [];
+                        
+                        console.log('Export: window.currentStudent =', window.currentStudent);
+                        console.log('Export: currentUser =', currentUser);
+                        console.log('Export: profilePicture =', currentUser.profilePicture);
+                        console.log('Export: studentSchedules length =', studentSchedules.length);
                         
                         if (!studentSchedules || studentSchedules.length === 0) {
                             alert('No schedules to export. Please ensure your schedule is loaded.');
@@ -1313,14 +1318,30 @@
                         // Dynamically import the ScheduleExporter
                         const { default: scheduleExporter } = await import('/js/schedule-export.js');
                         
+                        // Get profile picture from page if not in sessionStorage
+                        let profilePicture = currentUser.profilePicture;
+                        if (!profilePicture) {
+                            // Try to get from the profile avatar image on the page
+                            const profileImg = document.getElementById('mobileProfileAvatar') || 
+                                             document.getElementById('menuProfileAvatar') ||
+                                             document.getElementById('profileViewAvatar');
+                            if (profileImg && profileImg.src && !profileImg.src.includes('default_student_avatar')) {
+                                profilePicture = profileImg.src;
+                                console.log('Export: Got profile picture from page:', profilePicture);
+                            }
+                        }
+                        
                         // Prepare user info (same format as desktop)
                         const userInfo = {
                             name: currentUser.fullname || 'Student',
                             role: 'Student',
-                            section: currentUser.section || 'N/A',
+                            section: (currentUser.section || 'N/A') + shiftDescription,
                             ctuid: currentUser.ctuid || 'N/A',
-                            email: currentUser.email || 'N/A'
+                            email: currentUser.email || 'N/A',
+                            profilePicture: profilePicture || null
                         };
+                        
+                        console.log('Export: Final userInfo =', userInfo);
                         
                         // Generate filename (same format as desktop)
                         const shiftSuffix = currentShift !== 'all' ? `_${currentShift}` : '';

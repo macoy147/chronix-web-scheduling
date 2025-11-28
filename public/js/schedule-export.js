@@ -378,6 +378,44 @@ class ScheduleExporter {
         });
     }
 
+    /**
+     * Create circular clipped image from base64
+     */
+    async createCircularImage(base64Image, size = 200) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                // Create circular clip path
+                ctx.beginPath();
+                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                
+                // Draw image centered and scaled to fill circle
+                const scale = Math.max(size / img.width, size / img.height);
+                const x = (size / 2) - (img.width / 2) * scale;
+                const y = (size / 2) - (img.height / 2) * scale;
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                
+                try {
+                    const dataURL = canvas.toDataURL('image/png');
+                    resolve(dataURL);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            img.onerror = function() {
+                reject(new Error('Failed to create circular image'));
+            };
+            img.src = base64Image;
+        });
+    }
+
     async exportToPDF(schedules, filename = 'schedule', userInfo = {}) {
         try {
             await this.loadLibraries();
@@ -487,13 +525,37 @@ class ScheduleExporter {
             // Add profile picture if available
             if (profilePicture) {
                 try {
-                    // Add raw profile picture (no border, no background)
+                    // Profile picture styling
                     const picSize = 24;
                     const picX = doc.internal.pageSize.getWidth() - 40;
                     const picY = yPos + 3;
+                    const centerX = picX + picSize / 2;
+                    const centerY = picY + picSize / 2;
+                    const radius = picSize / 2;
                     
-                    // Add profile picture directly
-                    doc.addImage(profilePicture, 'PNG', picX, picY, picSize, picSize);
+                    // Create circular clipped image
+                    const circularImage = await this.createCircularImage(profilePicture, picSize * 4); // Higher resolution
+                    
+                    // Add subtle shadow circle (outer)
+                    doc.setFillColor(220, 220, 220);
+                    doc.circle(centerX + 0.3, centerY + 0.3, radius + 0.8, 'F');
+                    
+                    // Add white background circle
+                    doc.setFillColor(255, 255, 255);
+                    doc.circle(centerX, centerY, radius + 0.5, 'F');
+                    
+                    // Add circular profile picture
+                    doc.addImage(circularImage, 'PNG', picX, picY, picSize, picSize);
+                    
+                    // Add CTU gold border circle
+                    doc.setDrawColor(242, 210, 131); // CTU Gold
+                    doc.setLineWidth(1.2);
+                    doc.circle(centerX, centerY, radius, 'S');
+                    
+                    // Add inner border for polish
+                    doc.setDrawColor(0, 45, 98); // CTU Deep Blue
+                    doc.setLineWidth(0.4);
+                    doc.circle(centerX, centerY, radius - 0.5, 'S');
                 } catch (error) {
                     console.warn('Failed to add profile picture to PDF:', error);
                 }
