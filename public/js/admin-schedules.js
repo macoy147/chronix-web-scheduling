@@ -675,6 +675,28 @@ document.addEventListener('DOMContentLoaded', function() {
             (!editMode || s._id !== editingScheduleId)
         );
         
+        // CRITICAL CONSTRAINT: Check if another teacher is already assigned to this subject in this section
+        // This check is independent of time/day - it's a global constraint
+        const subjectSectionConflict = schedules.find(s => 
+            (s.subject._id || s.subject) === formData.subject &&
+            (s.section._id || s.section) === formData.section &&
+            (s.teacher._id || s.teacher) !== formData.teacher &&
+            (!editMode || s._id !== editingScheduleId)
+        );
+        
+        if (subjectSectionConflict) {
+            const subject = subjects.find(sub => (sub._id === formData.subject));
+            const section = sections.find(sec => (sec._id === formData.section));
+            const existingTeacher = teachers.find(t => (t._id === (subjectSectionConflict.teacher._id || subjectSectionConflict.teacher)));
+            
+            conflicts.push({
+                type: 'subject-teacher-constraint',
+                schedule: subjectSectionConflict,
+                message: `${subject?.courseCode || 'This subject'} in section ${section?.sectionName || 'this section'} is already assigned to ${existingTeacher?.fullname || 'another teacher'}. Only one teacher can teach a subject per section.`,
+                critical: true // Mark as critical - cannot be overridden
+            });
+        }
+        
         daySchedules.forEach(schedule => {
             // Convert existing schedule to 24-hour format for comparison
             const { startTime24, endTime24 } = scheduleTimeTo24Hour(schedule);
@@ -797,34 +819,51 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!conflictAlert || !conflictDetails || !recommendationsDiv) return;
         
+        // Check if there are critical conflicts (subject-teacher constraint)
+        const hasCriticalConflict = conflicts.some(c => c.critical);
+        
         // Show conflict details
         const conflictMessages = conflicts.map(c => c.message).join('; ');
         conflictDetails.textContent = conflictMessages;
         
-        // Show suggestions
-        if (suggestions.length > 0) {
+        // If there's a critical conflict, don't show time suggestions (they won't help)
+        if (hasCriticalConflict) {
             recommendationsDiv.innerHTML = `
-                <strong>Suggested alternative times:</strong>
-                <div class="suggestion-list">
-                    ${suggestions.map((sug, index) => `
-                        <button type="button" class="suggestion-btn" data-start="${sug.startTime}" data-end="${sug.endTime}">
-                            ${sug.startTime} - ${sug.endTime}
-                        </button>
-                    `).join('')}
+                <div class="critical-conflict-notice">
+                    <strong>⚠️ Critical Constraint Violation</strong>
+                    <p>This conflict cannot be resolved by changing the time. You must either:</p>
+                    <ul>
+                        <li>Select a different teacher for this subject-section combination, OR</li>
+                        <li>Remove the existing schedule for this subject-section before assigning a new teacher</li>
+                    </ul>
                 </div>
             `;
-            
-            // Add click handlers for suggestions
-            recommendationsDiv.querySelectorAll('.suggestion-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.getElementById('startTime').value = this.dataset.start;
-                    document.getElementById('endTime').value = this.dataset.end;
-                    conflictAlert.style.display = 'none';
-                    showBubbleMessage('Time updated to suggested slot. Please review and submit again.', 'info');
-                });
-            });
         } else {
-            recommendationsDiv.innerHTML = '<p>No alternative time slots available nearby. Please choose a different time manually.</p>';
+            // Show suggestions for time-based conflicts
+            if (suggestions.length > 0) {
+                recommendationsDiv.innerHTML = `
+                    <strong>Suggested alternative times:</strong>
+                    <div class="suggestion-list">
+                        ${suggestions.map((sug, index) => `
+                            <button type="button" class="suggestion-btn" data-start="${sug.startTime}" data-end="${sug.endTime}">
+                                ${sug.startTime} - ${sug.endTime}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                
+                // Add click handlers for suggestions
+                recommendationsDiv.querySelectorAll('.suggestion-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.getElementById('startTime').value = this.dataset.start;
+                        document.getElementById('endTime').value = this.dataset.end;
+                        conflictAlert.style.display = 'none';
+                        showBubbleMessage('Time updated to suggested slot. Please review and submit again.', 'info');
+                    });
+                });
+            } else {
+                recommendationsDiv.innerHTML = '<p>No alternative time slots available nearby. Please choose a different time manually.</p>';
+            }
         }
         
         conflictAlert.style.display = 'block';

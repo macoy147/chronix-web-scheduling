@@ -553,6 +553,38 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Critical Conflict Notice */
+.critical-conflict-notice {
+    background: #fff3cd;
+    border: 2px solid #ff9800;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 12px;
+}
+
+.critical-conflict-notice strong {
+    display: block;
+    color: #d84315;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+}
+
+.critical-conflict-notice p {
+    margin: 8px 0;
+    color: #5d4037;
+    font-weight: 500;
+}
+
+.critical-conflict-notice ul {
+    margin: 8px 0 0 20px;
+    color: #5d4037;
+}
+
+.critical-conflict-notice li {
+    margin: 6px 0;
+    line-height: 1.5;
+}
+
 /* Form Grid - COMPACT */
 .form-grid.compact {
     display: grid;
