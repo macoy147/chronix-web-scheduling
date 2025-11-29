@@ -196,7 +196,7 @@ const Subject = mongoose.model('Subject', SubjectSchema);
 
 // Section Model - Updated capacity to totalEnrolled
 const SectionSchema = new mongoose.Schema({
-    sectionName: { type: String, required: true, unique: true },
+    sectionName: { type: String, required: true },
     programID: { type: String, required: true },
     yearLevel: { type: Number, required: true, min: 1, max: 4 },
     shift: { type: String, enum: ['Day', 'Night'], required: true },
@@ -206,6 +206,10 @@ const SectionSchema = new mongoose.Schema({
     semester: { type: String, enum: ["1st Semester", "2nd Semester", "Midyear"], required: true },
     status: { type: String, enum: ['Active', 'Archived'], default: 'Active' }
 });
+
+// Compound unique index: same section name allowed only with different programs
+SectionSchema.index({ sectionName: 1, programID: 1 }, { unique: true });
+
 const Section = mongoose.model('Section', SectionSchema);
 
 // Room Model
@@ -1052,8 +1056,8 @@ app.post('/sections', async (req, res) => {
         if (!sectionName || !programID || !yearLevel || !shift || !academicYear || !semester) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
-        const exists = await Section.findOne({ sectionName: sectionName.trim() });
-        if (exists) return res.status(400).json({ error: `Section "${sectionName}" already exists` });
+        const exists = await Section.findOne({ sectionName: sectionName.trim(), programID: programID });
+        if (exists) return res.status(400).json({ error: `Section "${sectionName}" with program "${programID}" already exists. Same section name is allowed only with different programs.` });
         const section = new Section({
             sectionName: sectionName.trim(),
             programID, yearLevel, shift, adviserTeacher, totalEnrolled, academicYear, semester, status
@@ -1071,8 +1075,8 @@ app.put('/sections/:id', async (req, res) => {
         if (!sectionName || !programID || !yearLevel || !shift || !academicYear || !semester) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
-        const exists = await Section.findOne({ sectionName: sectionName.trim(), _id: { $ne: req.params.id } });
-        if (exists) return res.status(400).json({ error: `Section "${sectionName}" already exists` });
+        const exists = await Section.findOne({ sectionName: sectionName.trim(), programID: programID, _id: { $ne: req.params.id } });
+        if (exists) return res.status(400).json({ error: `Section "${sectionName}" with program "${programID}" already exists. Same section name is allowed only with different programs.` });
         const updated = await Section.findByIdAndUpdate(
             req.params.id,
             { sectionName: sectionName.trim(), programID, yearLevel, shift, adviserTeacher, totalEnrolled, academicYear, semester, status },

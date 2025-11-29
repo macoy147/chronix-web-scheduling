@@ -46,12 +46,101 @@
             <h2 class="dashboard-title">Manage Sections</h2>
             <div id="sectionBubbleMessage" class="section-bubble-message"></div>
             
+            <!-- Statistics Cards -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e3f2fd;">
+                        <i class="bi bi-layers" style="color: #1976d2;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalSections">0</span>
+                        <span class="stat-label">Total Sections</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e8f5e9;">
+                        <i class="bi bi-check-circle" style="color: #388e3c;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="activeSections">0</span>
+                        <span class="stat-label">Active</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #fff3e0;">
+                        <i class="bi bi-archive" style="color: #f57c00;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="archivedSections">0</span>
+                        <span class="stat-label">Archived</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #fce4ec;">
+                        <i class="bi bi-exclamation-triangle" style="color: #c2185b;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="noAdviserSections">0</span>
+                        <span class="stat-label">No Adviser</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Search and Filter Bar -->
             <div class="table-controls">
                 <div class="search-box">
                     <i class="bi bi-search"></i>
                     <input type="text" id="sectionsSearchInput" placeholder="Search sections..." />
                 </div>
+                
+                <!-- Cascading Filter Dropdown -->
+                <div class="filter-dropdown-container">
+                    <button class="filter-btn" id="filterBtn">
+                        <i class="bi bi-funnel"></i>
+                        <span id="filterBtnText">Filter By</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="filter-dropdown" id="filterDropdown">
+                        <div class="filter-option" data-filter="yearLevel">
+                            <i class="bi bi-mortarboard-fill"></i>
+                            <span>Year Level</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                        <div class="filter-option" data-filter="shift">
+                            <i class="bi bi-clock"></i>
+                            <span>Shift</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                        <div class="filter-option" data-filter="status">
+                            <i class="bi bi-toggle-on"></i>
+                            <span>Status</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                        <div class="filter-option" data-filter="program">
+                            <i class="bi bi-book"></i>
+                            <span>Program</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                        <div class="filter-option" data-filter="adviser">
+                            <i class="bi bi-person-badge"></i>
+                            <span>Adviser Status</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Sub-dropdown for filter values -->
+                    <div class="filter-values-dropdown" id="filterValuesDropdown"></div>
+                </div>
+                
+                <!-- Active Filters Display -->
+                <div class="active-filters" id="activeFilters"></div>
+                
+                <!-- Export Button -->
+                <button class="export-btn" id="exportBtn">
+                    <i class="bi bi-download"></i>
+                    <span>Export CSV</span>
+                </button>
+                
                 <button class="section-create-btn" id="openSectionModal">
                     <i class="bi bi-plus-circle"></i> 
                     <span>Create New Section</span>
@@ -69,7 +158,6 @@
                             <th>ADVISER</th>
                             <th>TOTAL ENROLLED</th>
                             <th>ACADEMIC YEAR</th>
-                            <th>SEMESTER</th>
                             <th>STATUS</th>
                             <th>ACTIONS</th>
                         </tr>
@@ -84,12 +172,20 @@
 
     <!-- Modal for Creating/Editing Section -->
     <div id="sectionModal" class="modal-overlay" style="display:none;">
-        <div class="modal-content horizontal-modal">
-            <h3>Create New Section</h3>
+        <div class="modal-content horizontal-modal compact-modal">
+            <h3 id="sectionModalTitle">Create New Section</h3>
+            <!-- Error Alert -->
+            <div id="sectionModalError" class="modal-error-alert" style="display:none;">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span id="sectionModalErrorText"></span>
+            </div>
             <form id="sectionForm">
                 <div class="horizontal-grid">
                     <div class="form-row">
-                        <input type="text" name="sectionName" placeholder="Section Name" required />
+                        <input type="text" name="sectionName" placeholder="Section Name (e.g., 1A, 2B, 3C)" required />
+                        <small style="color: #666; font-size: 0.85em; margin-top: 4px; display: block;">
+                            <i class="bi bi-lightbulb"></i> Tip: Start with 1-4 to auto-set year level
+                        </small>
                     </div>
                     <div class="form-row">
                         <select name="programID" required>
@@ -124,23 +220,21 @@
                     </div>
                     <div class="form-row">
                         <select name="adviserTeacher" id="adviserTeacherSelect">
-                            <option value="">No Adviser yet</option>
+                            <option value="">No Adviser (Assign Later)</option>
                             <!-- Teachers populated by JS -->
                         </select>
+                        <small style="color: #666; font-size: 0.8em; margin-top: 4px; display: block;">
+                            <i class="bi bi-info-circle"></i> Only teachers without advisory shown
+                        </small>
                     </div>
                     <div class="form-row">
                         <input type="number" name="totalEnrolled" min="0" placeholder="Total Enrolled Students" required />
+                        <small id="enrollmentWarning" style="color: #f57c00; font-size: 0.8em; margin-top: 4px; display: none;">
+                            <i class="bi bi-exclamation-triangle"></i> <span id="enrollmentWarningText"></span>
+                        </small>
                     </div>
                     <div class="form-row">
                         <select name="academicYear" required id="academicYearSelect"></select>
-                    </div>
-                    <div class="form-row">
-                        <select name="semester" required>
-                            <option value="" disabled selected>Semester</option>
-                            <option value="1st Semester">1st Semester</option>
-                            <option value="2nd Semester">2nd Semester</option>
-                            <option value="Midyear">Midyear</option>
-                        </select>
                     </div>
                     <div class="form-row">
                         <select name="status" required>
@@ -148,6 +242,8 @@
                             <option value="Archived">Archived</option>
                         </select>
                     </div>
+                    <!-- Hidden semester field for database compatibility -->
+                    <input type="hidden" name="semester" value="1st Semester">
                 </div>
                 <div class="modal-actions" style="grid-column: 1 / -1;">
                     <button type="button" class="modal-cancel" id="closeSectionModal">Cancel</button>

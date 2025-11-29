@@ -692,7 +692,10 @@
             <form id="sectionForm">
                 <div class="horizontal-grid">
                     <div class="form-row">
-                        <input type="text" name="sectionName" placeholder="Section Name" required />
+                        <input type="text" name="sectionName" placeholder="Section Name (e.g., 1A, 2B)" required />
+                        <small style="color: #666; font-size: 0.8em; margin-top: 4px; display: block;">
+                            <i class="bi bi-lightbulb"></i> Start with 1-4 to auto-set year
+                        </small>
                     </div>
                     <div class="form-row">
                         <select name="programID" required>
@@ -723,12 +726,6 @@
                             <option value="" disabled selected>Shift</option>
                             <option value="Day">Day</option>
                             <option value="Night">Night</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <select name="adviserTeacher" id="adviserTeacherSelect">
-                            <option value="">No Adviser yet</option>
-                            <!-- Teachers populated by JS -->
                         </select>
                     </div>
                     <div class="form-row">
@@ -876,13 +873,9 @@
             
             mobileSectionsList.innerHTML = '';
             sections.forEach(section => {
-                // Find adviser teacher name
-                let adviserName = 'No Adviser';
-                if (section.adviserTeacher) {
-                    const adviser = allTeachers.find(teacher => teacher._id === section.adviserTeacher);
-                    adviserName = adviser ? adviser.fullname : section.adviserTeacher;
-                }
-
+                // Find adviser by matching teacher.section with section.sectionName
+                const adviserName = findAdviserForSection(section.sectionName);
+                
                 const card = document.createElement('div');
                 card.className = 'mobile-section-card';
                 card.innerHTML = `
@@ -945,7 +938,6 @@
                         sectionForm.programID.value = section.programID || '';
                         sectionForm.yearLevel.value = section.yearLevel || '';
                         sectionForm.shift.value = section.shift || '';
-                        sectionForm.adviserTeacher.value = section.adviserTeacher || '';
                         sectionForm.totalEnrolled.value = section.totalEnrolled || '';
                         sectionForm.academicYear.value = section.academicYear || '';
                         sectionForm.semester.value = section.semester || '';
@@ -959,6 +951,9 @@
                     if (sectionModalTitle) sectionModalTitle.textContent = 'Edit Section';
                     if (submitSectionBtn) submitSectionBtn.textContent = 'Save Changes';
                     if (sectionModal) sectionModal.style.display = 'flex';
+                    
+                    // Setup auto-detection for edit mode too
+                    setTimeout(() => setupMobileYearLevelAutoDetection(), 100);
                 };
             });
             
@@ -987,6 +982,12 @@
             });
         }
         
+        // Find adviser for a section by matching teacher.section with section.sectionName
+        function findAdviserForSection(sectionName) {
+            const adviser = allTeachers.find(teacher => teacher.section === sectionName);
+            return adviser ? adviser.fullname : 'No Adviser';
+        }
+
         // Load sections and teachers for mobile
         async function loadMobileSections() {
             try {
@@ -1002,7 +1003,6 @@
                 allTeachers = Array.isArray(teachersData) ? teachersData : [];
                 
                 displayMobileSections(allMobileSections);
-                populateAdviserDropdown();
                 populateAcademicYearDropdown();
                 setupMobileSearch();
             } catch (error) {
@@ -1017,23 +1017,6 @@
                     `;
                 }
             }
-        }
-        
-        // Populate adviser dropdown
-        function populateAdviserDropdown() {
-            const select = document.getElementById('adviserTeacherSelect');
-            if (!select) return;
-            
-            while (select.options.length > 1) {
-                select.remove(1);
-            }
-            
-            allTeachers.forEach(teacher => {
-                const option = document.createElement('option');
-                option.value = teacher._id;
-                option.textContent = teacher.fullname;
-                select.appendChild(option);
-            });
         }
         
         // Populate academic year dropdown
@@ -1084,12 +1067,8 @@
                 const academicYear = section.academicYear?.toLowerCase() || '';
                 const semester = section.semester?.toLowerCase() || '';
                 
-                // Find adviser name
-                let adviserName = '';
-                if (section.adviserTeacher) {
-                    const adviser = allTeachers.find(teacher => teacher._id === section.adviserTeacher);
-                    adviserName = adviser ? adviser.fullname.toLowerCase() : '';
-                }
+                // Find adviser name for search
+                const adviserName = findAdviserForSection(section.sectionName).toLowerCase();
                 
                 return sectionName.includes(searchTerm) ||
                        program.includes(searchTerm) ||
@@ -1129,6 +1108,55 @@
             }, 3000);
         }
         
+        // Auto-detect year level from section name (Mobile)
+        function setupMobileYearLevelAutoDetection() {
+            const sectionNameInput = document.querySelector('input[name="sectionName"]');
+            const yearLevelSelect = document.querySelector('select[name="yearLevel"]');
+            
+            if (sectionNameInput && yearLevelSelect) {
+                // Remove existing listeners to avoid duplicates
+                const newSectionNameInput = sectionNameInput.cloneNode(true);
+                sectionNameInput.parentNode.replaceChild(newSectionNameInput, sectionNameInput);
+                
+                // Add blur event listener (when user clicks outside the field)
+                newSectionNameInput.addEventListener('blur', function() {
+                    const sectionName = this.value.trim();
+                    
+                    if (sectionName.length > 0) {
+                        const firstChar = sectionName.charAt(0);
+                        
+                        // Check if first character is 1, 2, 3, or 4
+                        if (['1', '2', '3', '4'].includes(firstChar)) {
+                            yearLevelSelect.value = firstChar;
+                            
+                            // Visual feedback
+                            yearLevelSelect.style.transition = 'all 0.3s ease';
+                            yearLevelSelect.style.background = '#e8f5e9';
+                            setTimeout(() => {
+                                yearLevelSelect.style.background = '';
+                            }, 1000);
+                            
+                            console.log(`✅ Mobile: Auto-detected Year Level: ${firstChar} from section name "${sectionName}"`);
+                        }
+                    }
+                });
+                
+                // Also add input event for real-time detection
+                newSectionNameInput.addEventListener('input', function() {
+                    const sectionName = this.value.trim();
+                    
+                    if (sectionName.length > 0) {
+                        const firstChar = sectionName.charAt(0);
+                        
+                        // Check if first character is 1, 2, 3, or 4
+                        if (['1', '2', '3', '4'].includes(firstChar)) {
+                            yearLevelSelect.value = firstChar;
+                        }
+                    }
+                });
+            }
+        }
+
         if (mobileOpenSectionModal) {
             mobileOpenSectionModal.addEventListener('click', () => {
                 if (sectionForm) {
@@ -1139,6 +1167,9 @@
                 if (sectionModalTitle) sectionModalTitle.textContent = 'Create New Section';
                 if (submitSectionBtn) submitSectionBtn.textContent = 'Create Section';
                 if (sectionModal) sectionModal.style.display = 'flex';
+                
+                // Setup auto-detection after modal is shown
+                setTimeout(() => setupMobileYearLevelAutoDetection(), 100);
             });
         }
         
@@ -1167,7 +1198,6 @@
                     programID: sectionForm.programID.value,
                     yearLevel: parseInt(sectionForm.yearLevel.value),
                     shift: sectionForm.shift.value,
-                    adviserTeacher: sectionForm.adviserTeacher.value,
                     totalEnrolled: parseInt(sectionForm.totalEnrolled.value),
                     academicYear: sectionForm.academicYear.value,
                     semester: sectionForm.semester.value,

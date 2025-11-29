@@ -515,6 +515,19 @@ document.addEventListener('DOMContentLoaded', function() {
             populateTeacherDropdown();
             populateRoomDropdown();
             
+            // AUTO-SELECT SECTION: If user has already selected a section from the filter dropdown,
+            // automatically pre-select it in the modal's section dropdown
+            if (currentSection) {
+                const sectionSelect = document.getElementById('sectionSelect');
+                if (sectionSelect) {
+                    sectionSelect.value = currentSection;
+                    // Trigger the change event to update hours info and auto-select room
+                    const changeEvent = new Event('change');
+                    sectionSelect.dispatchEvent(changeEvent);
+                    console.log('Auto-selected section:', currentSection);
+                }
+            }
+            
             const modalTitle = document.getElementById('scheduleModalTitle');
             if (modalTitle) modalTitle.textContent = 'Create New Schedule';
             

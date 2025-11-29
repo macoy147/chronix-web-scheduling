@@ -1,6 +1,4 @@
-// admin-subjects.js - FIXED VERSION
-import API_BASE_URL from './api-config.js';
-import { handleApiError, showErrorNotification } from './error-handler.js';
+// admin-subjects.js - ENHANCED VERSION
 import AuthGuard from './auth-guard.js';
 
 
@@ -108,6 +106,29 @@ document.addEventListener('DOMContentLoaded', function() {
     let editMode = false;
     let editingId = null;
 
+    // Function to populate Co/Prerequisite dropdown with all subjects
+    function populateCoPrerequisiteDropdown(currentSubjectId = null) {
+        const select = document.getElementById('coPrerequisiteSelect');
+        if (!select) return;
+        
+        // Clear existing options except the first one
+        select.innerHTML = '<option value="">No Co/Prerequisite</option>';
+        
+        // Add all subjects except the current one being edited
+        allSubjects.forEach(subject => {
+            // Don't show the current subject in its own prerequisite list
+            if (currentSubjectId && subject._id === currentSubjectId) {
+                return;
+            }
+            
+            const option = document.createElement('option');
+            option.value = subject.courseCode; // Store course code as value
+            option.textContent = `${subject.courseCode} - ${subject.descriptiveTitle}`;
+            option.title = subject.descriptiveTitle; // Full title on hover
+            select.appendChild(option);
+        });
+    }
+
     // Modal functions
     if (openBtn) {
         openBtn.onclick = () => {
@@ -116,19 +137,30 @@ document.addEventListener('DOMContentLoaded', function() {
             if (form) form.reset();
             if (modalTitle) modalTitle.textContent = 'Create New Subject';
             if (submitBtn) submitBtn.textContent = 'Create';
+            
+            // Hide any previous errors
+            hideModalError();
+            
+            // Populate Co/Prerequisite dropdown
+            populateCoPrerequisiteDropdown();
+            
             if (modal) modal.style.display = 'flex';
         };
     }
 
     if (closeBtn) {
         closeBtn.onclick = () => { 
-            if (modal) modal.style.display = 'none'; 
+            if (modal) modal.style.display = 'none';
+            hideModalError();
         };
     }
 
     if (modal) {
         modal.addEventListener('click', function(e) {
-            if (e.target === modal) modal.style.display = 'none';
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                hideModalError();
+            }
         });
     }
 
@@ -146,6 +178,45 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             bubble.classList.remove("show");
         }, 3000);
+    }
+
+    // Modal error display functions
+    function showModalError(message) {
+        const errorAlert = document.getElementById('subjectModalError');
+        const errorText = document.getElementById('subjectModalErrorText');
+        
+        if (errorAlert && errorText) {
+            errorText.textContent = message;
+            errorAlert.style.display = 'flex';
+            
+            // Scroll to top of modal to show error
+            const modalContent = document.querySelector('#subjectModal .modal-content');
+            if (modalContent) {
+                modalContent.scrollTop = 0;
+            }
+        }
+    }
+
+    function hideModalError() {
+        const errorAlert = document.getElementById('subjectModalError');
+        if (errorAlert) {
+            errorAlert.style.display = 'none';
+        }
+    }
+
+    // Update statistics cards
+    function updateStatistics() {
+        const total = allSubjects.length;
+        const year1 = allSubjects.filter(s => s.yearLevel === 1).length;
+        const year2 = allSubjects.filter(s => s.yearLevel === 2).length;
+        const year3 = allSubjects.filter(s => s.yearLevel === 3).length;
+        const year4 = allSubjects.filter(s => s.yearLevel === 4).length;
+
+        document.getElementById('totalSubjects').textContent = total;
+        document.getElementById('year1Subjects').textContent = year1;
+        document.getElementById('year2Subjects').textContent = year2;
+        document.getElementById('year3Subjects').textContent = year3;
+        document.getElementById('year4Subjects').textContent = year4;
     }
 
     // Load subjects from server
@@ -175,7 +246,10 @@ document.addEventListener('DOMContentLoaded', function() {
             allSubjects = Array.isArray(data) ? data : []; // Store all subjects
             
             if (allSubjects.length > 0) {
+                updateStatistics();
                 renderSubjectsTable(allSubjects);
+                setupFilterDropdown();
+                setupExportButton();
             } else {
                 tbody.innerHTML = `
                     <tr>
@@ -212,17 +286,42 @@ document.addEventListener('DOMContentLoaded', function() {
             const tr = document.createElement('tr');
             const descriptiveTitle = subj.descriptiveTitle || '';
             const semester = subj.semester || '-';
+            
+            // Prerequisite display with icon
+            let prerequisiteDisplay = '-';
+            if (subj.coPrerequisite) {
+                const prereqSubject = allSubjects.find(s => s.courseCode === subj.coPrerequisite);
+                prerequisiteDisplay = `<span class="prerequisite-indicator"><i class="bi bi-diagram-3"></i>${subj.coPrerequisite}</span>`;
+            }
+            
+            // Determine subject type with visual badge
+            const lecHours = parseFloat(subj.lecHours) || 0;
+            const labHours = parseFloat(subj.labHours) || 0;
+            let typeDisplay = '-';
+            
+            if (lecHours > 0 && labHours > 0) {
+                typeDisplay = '<span class="subject-type-badge subject-type-both">Both</span>';
+            } else if (lecHours > 0) {
+                typeDisplay = '<span class="subject-type-badge subject-type-lecture">Lecture</span>';
+            } else if (labHours > 0) {
+                typeDisplay = '<span class="subject-type-badge subject-type-lab">Lab</span>';
+            }
+            
+            // High units indicator (3+ units highlighted)
+            const units = parseFloat(subj.units) || 0;
+            const unitsDisplay = units >= 3 ? `<span class="high-units">${subj.units || '-'}</span>` : (subj.units || '-');
+            
             tr.innerHTML = `
                 <td>${subj.courseCode || ''}</td>
                 <td title="${descriptiveTitle}">${descriptiveTitle}</td>
                 <td>Year ${subj.yearLevel || ''}</td>
                 <td>${semester}</td>
-                <td>${subj.coPrerequisite || '-'}</td>
-                <td>${subj.units || '-'}</td>
+                <td>${prerequisiteDisplay}</td>
+                <td>${unitsDisplay}</td>
                 <td>${subj.lecHours || '0'}</td>
                 <td>${subj.labHours || '0'}</td>
                 <td>${subj.totalHours || '0'}</td>
-                <td>${subj.remarks || '-'}</td>
+                <td>${typeDisplay}</td>
                 <td class="action-cell">
                     <span class="action-link desc" data-id="${subj._id}" title="View Description">
                         <i class="bi bi-info-circle"></i>
@@ -287,9 +386,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Validation
             if (!data.courseCode || !data.descriptiveTitle || !data.yearLevel || !data.semester) {
-                showBubbleMessage("Course Code, Descriptive Title, Year Level, and Semester are required.", "error");
+                showModalError("Course Code, Descriptive Title, Year Level, and Semester are required.");
                 return;
             }
+            
+            // Hide any previous errors before submitting
+            hideModalError();
             
             try {
                 let url = '/subjects';
@@ -317,13 +419,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     );
                     if (modal) modal.style.display = 'none';
                     if (form) form.reset();
+                    hideModalError();
                     loadSubjects();
                 } else {
-                    showBubbleMessage(result.error || "Failed to save subject.", "error");
+                    // Show error in modal instead of bubble
+                    showModalError(result.error || "Failed to save subject. Please check your input.");
                 }
             } catch (error) {
                 console.error('Error saving subject:', error);
-                showBubbleMessage("Network error. Please check your connection.", "error");
+                showModalError("Network error. Please check your connection and try again.");
             }
         };
     }
@@ -345,19 +449,65 @@ document.addEventListener('DOMContentLoaded', function() {
             editMode = true;
             editingId = id;
             
-            // Populate form
+            // Hide any previous errors
+            hideModalError();
+            
+            // Populate form first
             if (form) {
                 form.courseCode.value = subject.courseCode || '';
                 form.descriptiveTitle.value = subject.descriptiveTitle || '';
                 form.yearLevel.value = subject.yearLevel || '';
                 form.semester.value = subject.semester || '';
-                form.coPrerequisite.value = subject.coPrerequisite || '';
                 form.units.value = subject.units || '';
                 form.lecHours.value = subject.lecHours || '';
                 form.labHours.value = subject.labHours || '';
                 form.totalHours.value = subject.totalHours || '';
                 form.remarks.value = subject.remarks || '';
                 form.description.value = subject.description || '';
+            }
+            
+            // Populate Co/Prerequisite dropdown with fresh data (exclude current subject)
+            const select = document.getElementById('coPrerequisiteSelect');
+            if (select) {
+                select.innerHTML = '<option value="">No Co/Prerequisite</option>';
+                
+                data.forEach(subj => {
+                    // Don't show the current subject in its own prerequisite list
+                    if (subj._id === id) {
+                        return;
+                    }
+                    
+                    const option = document.createElement('option');
+                    option.value = subj.courseCode;
+                    option.textContent = `${subj.courseCode} - ${subj.descriptiveTitle}`;
+                    option.title = subj.descriptiveTitle;
+                    select.appendChild(option);
+                });
+                
+                // Set the selected value after DOM updates
+                setTimeout(() => {
+                    if (subject.coPrerequisite) {
+                        const prereqValue = (subject.coPrerequisite || '').trim();
+                        console.log('Setting co/prerequisite to:', prereqValue);
+                        console.log('Available options:', Array.from(select.options).map(o => o.value));
+                        
+                        select.value = prereqValue;
+                        console.log('Select value after setting:', select.value);
+                        
+                        // If value didn't set, try to find and select the option manually
+                        if (select.value !== prereqValue) {
+                            const options = Array.from(select.options);
+                            const matchingOption = options.find(opt => opt.value.trim() === prereqValue);
+                            if (matchingOption) {
+                                matchingOption.selected = true;
+                                console.log('Manually selected option:', matchingOption.textContent);
+                            } else {
+                                console.warn('No matching option found for:', prereqValue);
+                                console.warn('Subject data:', subject);
+                            }
+                        }
+                    }
+                }, 10);
             }
             
             if (modalTitle) modalTitle.textContent = 'Edit Subject';
@@ -499,43 +649,56 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Search and filter functionality
     const searchInput = document.getElementById('subjectSearch');
-    const yearLevelFilter = document.getElementById('yearLevelFilter');
-    const semesterFilter = document.getElementById('semesterFilter');
     let allSubjects = []; // Store all subjects for filtering
+    let activeFilters = {
+        yearLevel: null,
+        semester: null,
+        prerequisite: null,
+        type: null
+    };
     
     if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-            applyFilters();
-        });
-    }
-    
-    if (yearLevelFilter) {
-        yearLevelFilter.addEventListener('change', function() {
-            applyFilters();
-        });
-    }
-    
-    if (semesterFilter) {
-        semesterFilter.addEventListener('change', function() {
+        searchInput.addEventListener('input', function() {
             applyFilters();
         });
     }
     
     function applyFilters() {
         const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const selectedYear = yearLevelFilter ? yearLevelFilter.value : '';
-        const selectedSemester = semesterFilter ? semesterFilter.value : '';
         
         let filtered = allSubjects;
         
-        // Filter by year level
-        if (selectedYear) {
-            filtered = filtered.filter(subj => subj.yearLevel === parseInt(selectedYear));
+        // Apply active filters
+        if (activeFilters.yearLevel) {
+            filtered = filtered.filter(subj => subj.yearLevel === parseInt(activeFilters.yearLevel));
         }
         
-        // Filter by semester
-        if (selectedSemester) {
-            filtered = filtered.filter(subj => subj.semester === selectedSemester);
+        if (activeFilters.semester) {
+            filtered = filtered.filter(subj => subj.semester === activeFilters.semester);
+        }
+        
+        if (activeFilters.prerequisite) {
+            if (activeFilters.prerequisite === 'has') {
+                filtered = filtered.filter(subj => subj.coPrerequisite && subj.coPrerequisite.trim() !== '');
+            } else if (activeFilters.prerequisite === 'none') {
+                filtered = filtered.filter(subj => !subj.coPrerequisite || subj.coPrerequisite.trim() === '');
+            }
+        }
+        
+        if (activeFilters.type) {
+            filtered = filtered.filter(subj => {
+                const lecHours = parseFloat(subj.lecHours) || 0;
+                const labHours = parseFloat(subj.labHours) || 0;
+                
+                if (activeFilters.type === 'lecture') {
+                    return lecHours > 0 && labHours === 0;
+                } else if (activeFilters.type === 'lab') {
+                    return labHours > 0 && lecHours === 0;
+                } else if (activeFilters.type === 'both') {
+                    return lecHours > 0 && labHours > 0;
+                }
+                return true;
+            });
         }
         
         // Filter by search term
@@ -555,6 +718,293 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         renderSubjectsTable(filtered);
+    }
+
+    // Setup cascading filter dropdown
+    function setupFilterDropdown() {
+        const filterBtn = document.getElementById('filterBtn');
+        const filterDropdown = document.getElementById('filterDropdown');
+        const filterValuesDropdown = document.getElementById('filterValuesDropdown');
+        const activeFiltersContainer = document.getElementById('activeFilters');
+        
+        if (!filterBtn || !filterDropdown || !filterValuesDropdown) return;
+        
+        // Toggle main filter dropdown
+        filterBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            filterDropdown.classList.toggle('show');
+            filterValuesDropdown.classList.remove('show');
+        });
+        
+        // Handle filter option selection
+        filterDropdown.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const filterType = this.getAttribute('data-filter');
+                showFilterValues(filterType);
+            });
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function() {
+            filterDropdown.classList.remove('show');
+            filterValuesDropdown.classList.remove('show');
+        });
+        
+        function showFilterValues(filterType) {
+            filterValuesDropdown.innerHTML = '';
+            filterValuesDropdown.classList.add('show');
+            
+            let options = [];
+            
+            switch(filterType) {
+                case 'yearLevel':
+                    options = [
+                        { value: '1', label: 'Year 1' },
+                        { value: '2', label: 'Year 2' },
+                        { value: '3', label: 'Year 3' },
+                        { value: '4', label: 'Year 4' }
+                    ];
+                    break;
+                case 'semester':
+                    options = [
+                        { value: '1st Semester', label: '1st Semester' },
+                        { value: '2nd Semester', label: '2nd Semester' }
+                    ];
+                    break;
+                case 'prerequisite':
+                    options = [
+                        { value: 'has', label: 'Has Prerequisite' },
+                        { value: 'none', label: 'No Prerequisite' }
+                    ];
+                    break;
+                case 'type':
+                    options = [
+                        { value: 'lecture', label: 'Lecture Only' },
+                        { value: 'lab', label: 'Lab Only' },
+                        { value: 'both', label: 'Both Lec & Lab' }
+                    ];
+                    break;
+            }
+            
+            options.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = 'filter-value-option';
+                div.textContent = opt.label;
+                div.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    applyFilter(filterType, opt.value, opt.label);
+                    filterDropdown.classList.remove('show');
+                    filterValuesDropdown.classList.remove('show');
+                });
+                filterValuesDropdown.appendChild(div);
+            });
+        }
+        
+        function applyFilter(filterType, value, label) {
+            activeFilters[filterType] = value;
+            updateActiveFiltersDisplay();
+            applyFilters();
+            
+            // Update filter button to show active state
+            filterBtn.classList.add('active');
+            const filterBtnText = document.getElementById('filterBtnText');
+            if (filterBtnText) {
+                const activeCount = Object.values(activeFilters).filter(v => v !== null).length;
+                filterBtnText.textContent = activeCount > 0 ? `Filters (${activeCount})` : 'Filter By';
+            }
+        }
+        
+        function updateActiveFiltersDisplay() {
+            if (!activeFiltersContainer) return;
+            
+            activeFiltersContainer.innerHTML = '';
+            
+            const filterLabels = {
+                yearLevel: 'Year',
+                semester: 'Semester',
+                prerequisite: 'Prerequisite',
+                type: 'Type'
+            };
+            
+            const filterValueLabels = {
+                '1': 'Year 1',
+                '2': 'Year 2',
+                '3': 'Year 3',
+                '4': 'Year 4',
+                '1st Semester': '1st Sem',
+                '2nd Semester': '2nd Sem',
+                'has': 'Has Prereq',
+                'none': 'No Prereq',
+                'lecture': 'Lecture',
+                'lab': 'Lab',
+                'both': 'Both'
+            };
+            
+            let hasActiveFilters = false;
+            
+            Object.keys(activeFilters).forEach(key => {
+                if (activeFilters[key]) {
+                    hasActiveFilters = true;
+                    const tag = document.createElement('div');
+                    tag.className = 'filter-tag';
+                    tag.innerHTML = `
+                        <span>${filterLabels[key]}: ${filterValueLabels[activeFilters[key]] || activeFilters[key]}</span>
+                        <i class="bi bi-x-circle-fill"></i>
+                    `;
+                    tag.querySelector('i').addEventListener('click', function() {
+                        removeFilter(key);
+                    });
+                    activeFiltersContainer.appendChild(tag);
+                }
+            });
+            
+            if (hasActiveFilters) {
+                const clearBtn = document.createElement('button');
+                clearBtn.className = 'clear-all-filters';
+                clearBtn.textContent = 'Clear All';
+                clearBtn.addEventListener('click', clearAllFilters);
+                activeFiltersContainer.appendChild(clearBtn);
+            }
+        }
+        
+        function removeFilter(filterType) {
+            activeFilters[filterType] = null;
+            updateActiveFiltersDisplay();
+            applyFilters();
+            
+            // Update filter button
+            const activeCount = Object.values(activeFilters).filter(v => v !== null).length;
+            const filterBtnText = document.getElementById('filterBtnText');
+            if (filterBtnText) {
+                filterBtnText.textContent = activeCount > 0 ? `Filters (${activeCount})` : 'Filter By';
+            }
+            if (activeCount === 0) {
+                filterBtn.classList.remove('active');
+            }
+        }
+        
+        function clearAllFilters() {
+            activeFilters = {
+                yearLevel: null,
+                semester: null,
+                prerequisite: null,
+                type: null
+            };
+            updateActiveFiltersDisplay();
+            applyFilters();
+            filterBtn.classList.remove('active');
+            const filterBtnText = document.getElementById('filterBtnText');
+            if (filterBtnText) {
+                filterBtnText.textContent = 'Filter By';
+            }
+        }
+    }
+
+    // Setup export button
+    function setupExportButton() {
+        const exportBtn = document.getElementById('exportBtn');
+        if (!exportBtn) return;
+        
+        exportBtn.addEventListener('click', function() {
+            exportToCSV();
+        });
+    }
+    
+    function exportToCSV() {
+        // Get currently filtered subjects
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        let filtered = allSubjects;
+        
+        // Apply active filters
+        if (activeFilters.yearLevel) {
+            filtered = filtered.filter(subj => subj.yearLevel === parseInt(activeFilters.yearLevel));
+        }
+        
+        if (activeFilters.semester) {
+            filtered = filtered.filter(subj => subj.semester === activeFilters.semester);
+        }
+        
+        if (activeFilters.prerequisite) {
+            if (activeFilters.prerequisite === 'has') {
+                filtered = filtered.filter(subj => subj.coPrerequisite && subj.coPrerequisite.trim() !== '');
+            } else if (activeFilters.prerequisite === 'none') {
+                filtered = filtered.filter(subj => !subj.coPrerequisite || subj.coPrerequisite.trim() === '');
+            }
+        }
+        
+        if (activeFilters.type) {
+            filtered = filtered.filter(subj => {
+                const lecHours = parseFloat(subj.lecHours) || 0;
+                const labHours = parseFloat(subj.labHours) || 0;
+                
+                if (activeFilters.type === 'lecture') {
+                    return lecHours > 0 && labHours === 0;
+                } else if (activeFilters.type === 'lab') {
+                    return labHours > 0 && lecHours === 0;
+                } else if (activeFilters.type === 'both') {
+                    return lecHours > 0 && labHours > 0;
+                }
+                return true;
+            });
+        }
+        
+        // Filter by search term
+        if (searchTerm) {
+            filtered = filtered.filter(subj => {
+                return (
+                    (subj.courseCode || '').toLowerCase().includes(searchTerm) ||
+                    (subj.descriptiveTitle || '').toLowerCase().includes(searchTerm) ||
+                    (subj.yearLevel || '').toString().includes(searchTerm) ||
+                    (subj.semester || '').toLowerCase().includes(searchTerm) ||
+                    (subj.coPrerequisite || '').toLowerCase().includes(searchTerm) ||
+                    (subj.units || '').toString().includes(searchTerm) ||
+                    (subj.remarks || '').toLowerCase().includes(searchTerm) ||
+                    (subj.description || '').toLowerCase().includes(searchTerm)
+                );
+            });
+        }
+        
+        if (filtered.length === 0) {
+            showBubbleMessage('No subjects to export', 'error');
+            return;
+        }
+        
+        // Create CSV content
+        const headers = ['Course Code', 'Descriptive Title', 'Year Level', 'Semester', 'Co-Prerequisite', 'Units', 'Lec Hours', 'Lab Hours', 'Total Hours', 'Remarks', 'Description'];
+        const csvRows = [headers.join(',')];
+        
+        filtered.forEach(subj => {
+            const row = [
+                `"${(subj.courseCode || '').replace(/"/g, '""')}"`,
+                `"${(subj.descriptiveTitle || '').replace(/"/g, '""')}"`,
+                `"Year ${subj.yearLevel || ''}"`,
+                `"${subj.semester || ''}"`,
+                `"${subj.coPrerequisite || ''}"`,
+                `"${subj.units || ''}"`,
+                `"${subj.lecHours || '0'}"`,
+                `"${subj.labHours || '0'}"`,
+                `"${subj.totalHours || '0'}"`,
+                `"${(subj.remarks || '').replace(/"/g, '""')}"`,
+                `"${(subj.description || '').replace(/"/g, '""')}"`
+            ];
+            csvRows.push(row.join(','));
+        });
+        
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        const timestamp = new Date().toISOString().split('T')[0];
+        link.setAttribute('href', url);
+        link.setAttribute('download', `subjects_export_${timestamp}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showBubbleMessage(`Exported ${filtered.length} subject(s) successfully!`, 'success');
     }
 
     // Initial load
