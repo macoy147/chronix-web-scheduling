@@ -301,6 +301,84 @@
             margin-bottom: 16px;
         }
         
+        /* Mobile Stats Grid */
+        .mobile-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .mobile-stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border-left: 3px solid var(--ctu-light-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .mobile-stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            background: var(--tint-blue-bg);
+            color: var(--ctu-light-blue);
+            flex-shrink: 0;
+        }
+        
+        .mobile-stat-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .mobile-stat-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--ctu-deep-blue);
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        
+        .mobile-stat-label {
+            font-size: 0.75rem;
+            color: var(--ctu-text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .mobile-stat-card.available {
+            border-left-color: #4BB543;
+        }
+        .mobile-stat-card.available .mobile-stat-icon {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .mobile-stat-card.occupied {
+            border-left-color: #ef6c00;
+        }
+        .mobile-stat-card.occupied .mobile-stat-icon {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .mobile-stat-card.maintenance {
+            border-left-color: #d8000c;
+        }
+        .mobile-stat-card.maintenance .mobile-stat-icon {
+            background: #fff5f5;
+            color: #d8000c;
+        }
+        
         /* Mobile Search Box */
         .mobile-search-box {
             position: relative;
@@ -606,6 +684,38 @@
         <!-- Rooms Header -->
         <div class="mobile-rooms-header">
             <h1 class="mobile-rooms-title">Manage Rooms</h1>
+            
+            <!-- Mobile Stats Grid -->
+            <div class="mobile-stats-grid">
+                <div class="mobile-stat-card">
+                    <div class="mobile-stat-icon"><i class="bi bi-door-open"></i></div>
+                    <div class="mobile-stat-info">
+                        <div class="mobile-stat-value" id="mobileTotalRooms">0</div>
+                        <div class="mobile-stat-label">Total</div>
+                    </div>
+                </div>
+                <div class="mobile-stat-card available">
+                    <div class="mobile-stat-icon"><i class="bi bi-check-circle"></i></div>
+                    <div class="mobile-stat-info">
+                        <div class="mobile-stat-value" id="mobileAvailableRooms">0</div>
+                        <div class="mobile-stat-label">Available</div>
+                    </div>
+                </div>
+                <div class="mobile-stat-card occupied">
+                    <div class="mobile-stat-icon"><i class="bi bi-people"></i></div>
+                    <div class="mobile-stat-info">
+                        <div class="mobile-stat-value" id="mobileOccupiedRooms">0</div>
+                        <div class="mobile-stat-label">Occupied</div>
+                    </div>
+                </div>
+                <div class="mobile-stat-card maintenance">
+                    <div class="mobile-stat-icon"><i class="bi bi-tools"></i></div>
+                    <div class="mobile-stat-info">
+                        <div class="mobile-stat-value" id="mobileMaintenanceRooms">0</div>
+                        <div class="mobile-stat-label">Maintenance</div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Search Box -->
             <div class="mobile-search-box">
@@ -1266,6 +1376,80 @@
     });
     </script>
     
+    <!-- Mobile Stats Update Script -->
+    <script type="module">
+    // Fetch and update mobile room stats directly
+    async function updateMobileRoomStats() {
+        try {
+            // Fetch rooms data directly from API
+            const response = await fetch('/rooms');
+            if (!response.ok) throw new Error('Failed to fetch rooms');
+            
+            const rooms = await response.json();
+            console.log('Loaded rooms for stats:', rooms.length);
+            
+            // Calculate stats
+            const totalRooms = rooms.length;
+            const availableRooms = rooms.filter(r => r.status === 'Available').length;
+            const occupiedRooms = rooms.filter(r => r.status === 'Occupied').length;
+            const maintenanceRooms = rooms.filter(r => r.status === 'Under Maintenance').length;
+            
+            // Animate counters
+            animateMobileRoomCounter('mobileTotalRooms', totalRooms);
+            animateMobileRoomCounter('mobileAvailableRooms', availableRooms);
+            animateMobileRoomCounter('mobileOccupiedRooms', occupiedRooms);
+            animateMobileRoomCounter('mobileMaintenanceRooms', maintenanceRooms);
+            
+            console.log('Room stats updated:', { totalRooms, availableRooms, occupiedRooms, maintenanceRooms });
+        } catch (error) {
+            console.error('Error updating mobile room stats:', error);
+            // Set to 0 on error
+            ['mobileTotalRooms', 'mobileAvailableRooms', 'mobileOccupiedRooms', 'mobileMaintenanceRooms'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = '0';
+            });
+        }
+    }
+    
+    // Animate mobile room counter
+    function animateMobileRoomCounter(elementId, targetValue) {
+        const element = document.getElementById(elementId);
+        if (!element) {
+            console.warn('Element not found:', elementId);
+            return;
+        }
+        
+        const duration = 800;
+        const startValue = 0;
+        const startTime = performance.now();
+        
+        function updateCounter(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+            const currentValue = Math.floor(startValue + (targetValue - startValue) * easeOutQuart);
+            
+            element.textContent = currentValue;
+            
+            if (progress < 1) {
+                requestAnimationFrame(updateCounter);
+            }
+        }
+        
+        requestAnimationFrame(updateCounter);
+    }
+    
+    // Initialize stats update when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(updateMobileRoomStats, 500); // Small delay to ensure elements exist
+        });
+    } else {
+        setTimeout(updateMobileRoomStats, 500);
+    }
+    </script>
+
     <!-- Mobile detection and redirection -->
     <script>
         let lastRedirectTime = 0;
@@ -1276,7 +1460,7 @@
             if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
                 return false;
             }
-            return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+            return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
         }
 
         if (shouldRedirectToDesktop()) {

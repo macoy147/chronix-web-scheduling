@@ -387,6 +387,92 @@
             transform: scale(0.98);
         }
         
+        /* Mobile Stats Cards */
+        .mobile-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .mobile-stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border-left: 3px solid var(--ctu-light-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .mobile-stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            background: var(--tint-blue-bg);
+            color: var(--ctu-light-blue);
+            flex-shrink: 0;
+        }
+        
+        .mobile-stat-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .mobile-stat-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--ctu-deep-blue);
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        
+        .mobile-stat-label {
+            font-size: 0.75rem;
+            color: var(--ctu-text-secondary);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .mobile-stat-card.year1 {
+            border-left-color: #4BB543;
+        }
+        .mobile-stat-card.year1 .mobile-stat-icon {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .mobile-stat-card.year2 {
+            border-left-color: #ef6c00;
+        }
+        .mobile-stat-card.year2 .mobile-stat-icon {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .mobile-stat-card.year3 {
+            border-left-color: #c2185b;
+        }
+        .mobile-stat-card.year3 .mobile-stat-icon {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+        
+        .mobile-stat-card.year4 {
+            border-left-color: #7b1fa2;
+        }
+        .mobile-stat-card.year4 .mobile-stat-icon {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
         /* Mobile Subject Cards */
         .mobile-subjects-list {
             display: flex;
@@ -402,6 +488,18 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             position: relative;
             overflow: hidden;
+            animation: slideInUp 0.3s ease;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .mobile-subject-card::before {
@@ -640,6 +738,45 @@
         <!-- Subjects Header -->
         <div class="mobile-subjects-header">
             <h1 class="mobile-subjects-title">Manage Subjects</h1>
+            
+            <!-- Mobile Stats Grid -->
+            <div class="mobile-stats-grid">
+                <div class="mobile-stat-card">
+                    <div class="mobile-stat-icon"><i class="bi bi-book"></i></div>
+                    <div class="mobile-stat-info">
+                        <div class="mobile-stat-value" id="mobileTotalSubjects">0</div>
+                        <div class="mobile-stat-label">Total</div>
+                    </div>
+                </div>
+                <div class="mobile-stat-card year1">
+                    <div class="mobile-stat-icon"><i class="bi bi-1-circle"></i></div>
+                    <div class="mobile-stat-info">
+                        <div class="mobile-stat-value" id="mobileYear1Subjects">0</div>
+                        <div class="mobile-stat-label">Year 1</div>
+                    </div>
+                </div>
+                <div class="mobile-stat-card year2">
+                    <div class="mobile-stat-icon"><i class="bi bi-2-circle"></i></div>
+                    <div class="mobile-stat-info">
+                        <div class="mobile-stat-value" id="mobileYear2Subjects">0</div>
+                        <div class="mobile-stat-label">Year 2</div>
+                    </div>
+                </div>
+                <div class="mobile-stat-card year3">
+                    <div class="mobile-stat-icon"><i class="bi bi-3-circle"></i></div>
+                    <div class="mobile-stat-info">
+                        <div class="mobile-stat-value" id="mobileYear3Subjects">0</div>
+                        <div class="mobile-stat-label">Year 3</div>
+                    </div>
+                </div>
+                <div class="mobile-stat-card year4">
+                    <div class="mobile-stat-icon"><i class="bi bi-4-circle"></i></div>
+                    <div class="mobile-stat-info">
+                        <div class="mobile-stat-value" id="mobileYear4Subjects">0</div>
+                        <div class="mobile-stat-label">Year 4</div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Search Box -->
             <div class="mobile-search-box">
@@ -1121,12 +1258,59 @@
             });
         }
         
+        // Update mobile stats
+        function updateMobileStats(subjects) {
+            const totalSubjects = subjects.length;
+            const year1 = subjects.filter(s => s.yearLevel === 1).length;
+            const year2 = subjects.filter(s => s.yearLevel === 2).length;
+            const year3 = subjects.filter(s => s.yearLevel === 3).length;
+            const year4 = subjects.filter(s => s.yearLevel === 4).length;
+            
+            // Animate counters
+            animateMobileCounter('mobileTotalSubjects', totalSubjects);
+            animateMobileCounter('mobileYear1Subjects', year1);
+            animateMobileCounter('mobileYear2Subjects', year2);
+            animateMobileCounter('mobileYear3Subjects', year3);
+            animateMobileCounter('mobileYear4Subjects', year4);
+        }
+        
+        // Animate mobile counter
+        function animateMobileCounter(elementId, targetValue) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const duration = 800;
+            const startValue = 0;
+            const startTime = performance.now();
+            
+            function updateCounter(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+                const currentValue = Math.floor(startValue + (targetValue - startValue) * easeOutQuart);
+                
+                element.textContent = currentValue;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                }
+            }
+            
+            requestAnimationFrame(updateCounter);
+        }
+        
         // Load subjects for mobile
         async function loadMobileSubjects() {
             try {
                 const res = await fetch('/subjects');
                 const data = await res.json();
                 allMobileSubjects = Array.isArray(data) ? data : [];
+                
+                // Update stats
+                updateMobileStats(allMobileSubjects);
+                
+                // Display subjects
                 displayMobileSubjects(allMobileSubjects);
             } catch (error) {
                 console.error('Error loading subjects:', error);
@@ -1412,7 +1596,7 @@
             if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
                 return false;
             }
-            return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+            return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
         }
 
         if (shouldRedirectToDesktop()) {

@@ -875,7 +875,7 @@
             if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
                 return false;
             }
-            return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+            return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
         }
 
         if (shouldRedirectToDesktop()) {

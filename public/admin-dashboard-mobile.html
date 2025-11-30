@@ -632,15 +632,14 @@
             display: block;
         }
         
-        /* Responsive adjustments */
-        @media (max-width: 767px) {
-            .admin-nav, .admin-dashboard-main {
-                display: none;
-            }
-            
-            .mobile-header, .mobile-main-content, .mobile-nav {
-                display: block;
-            }
+        /* Hide desktop elements by default on mobile page */
+        .admin-nav, .admin-dashboard-main {
+            display: none !important;
+        }
+        
+        /* Show mobile elements by default on mobile page */
+        .mobile-header, .mobile-main-content, .mobile-nav {
+            display: block !important;
         }
         
         /* Loading states */
@@ -1258,23 +1257,226 @@
             }, 200);
         }
 
+        // Store chart instances and data
+        let mobileChartInstances = {
+            studentDistribution: null,
+            roomUtilization: null,
+            scheduleDensity: null
+        };
+        let mobileChartData = null;
+
         // Update mobile charts
         function updateMobileCharts(data) {
-            // Placeholder for chart implementation
-            console.log('Updating mobile charts with data:', data);
-            // You would implement Chart.js integration here similar to desktop version
+            console.log('Rendering mobile charts with data:', data);
+            mobileChartData = data;
+            renderMobileStudentDistributionChart(data);
+            renderMobileRoomUtilizationChart(data);
+            renderMobileScheduleDensityChart(data);
+        }
+
+        function renderMobileStudentDistributionChart(data) {
+            const ctx = document.getElementById('mobileStudentDistributionChart');
+            if (!ctx) return;
+            
+            // Destroy existing chart
+            if (mobileChartInstances.studentDistribution) {
+                mobileChartInstances.studentDistribution.destroy();
+            }
+
+            // Aggregate students by section
+            const sectionCounts = {};
+            data.students.forEach(student => {
+                const section = student.section || 'Unassigned';
+                sectionCounts[section] = (sectionCounts[section] || 0) + 1;
+            });
+
+            const entries = Object.entries(sectionCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 6); // Show top 6 for mobile
+
+            const labels = entries.map(([section]) => section);
+            const chartData = entries.map(([, count]) => count);
+            const colors = ['#3E8EDE', '#FF6835', '#4BB543', '#8B5CF6', '#F2D283', '#EC4899'];
+
+            mobileChartInstances.studentDistribution = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Students',
+                        data: chartData,
+                        backgroundColor: colors,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 45, 98, 0.9)',
+                            padding: 10,
+                            cornerRadius: 6
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { display: false },
+                            ticks: { font: { size: 10 } }
+                        },
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMobileRoomUtilizationChart(data) {
+            const ctx = document.getElementById('mobileRoomUtilizationChart');
+            if (!ctx) return;
+            
+            // Destroy existing chart
+            if (mobileChartInstances.roomUtilization) {
+                mobileChartInstances.roomUtilization.destroy();
+            }
+
+            // Aggregate rooms by status
+            const statusCounts = {
+                'Available': 0,
+                'Occupied': 0,
+                'Under Maintenance': 0
+            };
+            
+            data.rooms.forEach(room => {
+                const status = room.status || 'Available';
+                if (statusCounts.hasOwnProperty(status)) {
+                    statusCounts[status]++;
+                }
+            });
+
+            const labels = Object.keys(statusCounts);
+            const chartData = Object.values(statusCounts);
+            const colors = ['#4BB543', '#FF6835', '#D8000C'];
+
+            mobileChartInstances.roomUtilization = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 10 },
+                                padding: 10,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 45, 98, 0.9)',
+                            padding: 10,
+                            cornerRadius: 6
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMobileScheduleDensityChart(data) {
+            const ctx = document.getElementById('mobileScheduleDensityChart');
+            if (!ctx) return;
+            
+            // Destroy existing chart
+            if (mobileChartInstances.scheduleDensity) {
+                mobileChartInstances.scheduleDensity.destroy();
+            }
+
+            // Aggregate schedules by day
+            const dayCounts = {
+                'Monday': 0,
+                'Tuesday': 0,
+                'Wednesday': 0,
+                'Thursday': 0,
+                'Friday': 0,
+                'Saturday': 0
+            };
+            
+            data.schedules.forEach(schedule => {
+                const day = schedule.day || 'Monday';
+                if (dayCounts.hasOwnProperty(day)) {
+                    dayCounts[day]++;
+                }
+            });
+
+            const labels = Object.keys(dayCounts);
+            const chartData = Object.values(dayCounts);
+            const colors = ['#3E8EDE', '#FF6835', '#4BB543', '#8B5CF6', '#F2D283', '#EC4899'];
+
+            mobileChartInstances.scheduleDensity = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Schedules',
+                        data: chartData,
+                        backgroundColor: colors,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 45, 98, 0.9)',
+                            padding: 10,
+                            cornerRadius: 6
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { display: false },
+                            ticks: { font: { size: 10 } }
+                        },
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { font: { size: 10 } }
+                        }
+                    }
+                }
+            });
         }
 
         function updateMobileStudentDistributionChart() {
-            console.log('Updating student distribution chart');
+            if (mobileChartData) {
+                renderMobileStudentDistributionChart(mobileChartData);
+            }
         }
 
         function updateMobileRoomUtilizationChart() {
-            console.log('Updating room utilization chart');
+            if (mobileChartData) {
+                renderMobileRoomUtilizationChart(mobileChartData);
+            }
         }
 
         function updateMobileScheduleDensityChart() {
-            console.log('Updating schedule density chart');
+            if (mobileChartData) {
+                renderMobileScheduleDensityChart(mobileChartData);
+            }
         }
 
         // Update mobile recent activity
@@ -1449,48 +1651,44 @@
         // Initialize the mobile dashboard
         initializeMobileDashboard();
     }); 
-    </script>
-    
-    <!-- Desktop redirection for mobile page -->
-    <script>
-    (function() {
-        'use strict';
-        
-        // Prevent redirect loops
-        let lastRedirectTime = 0;
-        const REDIRECT_COOLDOWN = 1000;
-        
-        function shouldRedirectToDesktop() {
-            const now = Date.now();
-            if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
-                return false;
-            }
-            return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
-        }
+</script>
 
-        // Initial check on mobile page load
+<!-- Desktop redirection for mobile page -->
+<script>
+// Desktop detection and redirection
+function shouldRedirectToDesktop() {
+    return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
+}
+
+// Prevent redirect loops
+let lastRedirectTime = 0;
+const REDIRECT_COOLDOWN = 1000;
+
+// Initial redirect check
+if (shouldRedirectToDesktop()) {
+    const now = Date.now();
+    if (now - lastRedirectTime >= REDIRECT_COOLDOWN) {
+        lastRedirectTime = now;
+        console.log('Redirecting to desktop version...');
+        window.location.href = '/admin-dashboard.html';
+    }
+}
+
+// Handle resize events
+let resizeTimeout;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
         if (shouldRedirectToDesktop()) {
-            lastRedirectTime = Date.now();
-            console.log('[Mobile] Large screen detected - redirecting to desktop version... (width: ' + window.innerWidth + 'px)');
-            window.location.replace('/admin-dashboard.html');
-            return; // Stop execution after redirect
+            const now = Date.now();
+            if (now - lastRedirectTime >= REDIRECT_COOLDOWN) {
+                lastRedirectTime = now;
+                console.log('Screen resized - redirecting to desktop version...');
+                window.location.href = '/admin-dashboard.html';
+            }
         }
-
-        // Handle resize on mobile page too
-        let mobileResizeTimeout;
-        window.addEventListener('resize', function() {
-            clearTimeout(mobileResizeTimeout);
-            mobileResizeTimeout = setTimeout(function() {
-                if (shouldRedirectToDesktop()) {
-                    lastRedirectTime = Date.now();
-                    console.log('[Mobile] Screen enlarged - redirecting to desktop version... (width: ' + window.innerWidth + 'px)');
-                    window.location.replace('/admin-dashboard.html');
-                }
-            }, 250);
-        });
-        
-        console.log('[Mobile] Desktop redirect script loaded (current width: ' + window.innerWidth + 'px)');
-    })();
+    }, 250);
+});
 </script>
 </body>
 </html>
