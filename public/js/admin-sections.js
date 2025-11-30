@@ -1,4 +1,4 @@
-import API_BASE_URL from './api-config.js';
+ import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
 
@@ -8,6 +8,12 @@ import AuthGuard from './auth-guard.js';
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
     if (!AuthGuard.checkAuthentication('admin')) {
+        return;
+    }
+
+    // Skip desktop initialization if on mobile page
+    if (window.location.pathname.includes('-mobile')) {
+        console.log('Mobile page detected, skipping desktop sections.js initialization');
         return;
     }
 

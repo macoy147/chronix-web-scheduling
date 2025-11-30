@@ -13,6 +13,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Skip desktop initialization if on mobile page
+    if (window.location.pathname.includes('-mobile')) {
+        console.log('Mobile page detected, skipping desktop subjects.js initialization');
+        return;
+    }
+
     // Profile dropdown
     const profileDropdown = document.querySelector('.admin-profile-dropdown');
     if (profileDropdown) {

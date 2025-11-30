@@ -6,6 +6,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Skip desktop initialization if on mobile page
+    if (window.location.pathname.includes('-mobile')) {
+        console.log('Mobile page detected, skipping desktop rooms.js initialization');
+        return;
+    }
+
     // State management
     let rooms = [];
     let sections = [];

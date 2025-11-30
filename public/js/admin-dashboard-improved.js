@@ -1,0 +1,764 @@
+// admin-dashboard-improved.js - Main dashboard controller
+// ALL 10 IMPROVEMENTS IMPLEMENTED
+
+import AuthGuard from './auth-guard.js';
+import { cache } from './dashboard-cache.js';
+import { loadDashboardData, exportToCSV, rateLimiter } from './dashboard-api.js';
+import { chartManager, aggregateStudentsBySection, aggregateStudentsByYear, aggregateStudentsByProgram,
+         aggregateRoomsByStatus, aggregateRoomsByBuilding, aggregateRoomsByType,
+         aggregateSchedulesByDay, aggregateSchedulesByType, getCommonChartOptions } from './dashboard-charts.js';
+import { showKPISkeletons, hideKPISkeletons, animateCounter, updateTrend, showLoadingOverlay,
+         hideLoadingOverlay, showNotification, showErrorWithRetry, updateConnectionStatus,
+         updateLastUpdated, animateChartTransition, setupProfileDropdown, setupKeyboardShortcuts,
+         initializeTooltips, addPageAnimations } from './dashboard-ui.js';
+import { sanitizeChartFilter, formatTimeAgo, debounce, createRipple, trackUserInteraction,
+         sanitizeHTML, generateCTUColors } from './dashboard-utils.js';
+
+/**
+ * Dashboard State Management
+ * Improvement #8: Better code organization
+ */
+class DashboardState {
+    constructor() {
+        this.data = {
+            students: [],
+            teachers: [],
+            rooms: [],
+            schedules: [],
+            subjects: [],
+            sections: [],
+            lastUpdate: null
+        };
+        this.filters = {
+            studentDistributionType: 'section',
+            roomChartType: 'status',
+            scheduleDensityType: 'day'
+        };
+        this.isLoading = false;
+        this.isOnline = navigator.onLine;
+        this.autoRefreshInterval = null;
+    }
+
+    updateData(newData) {
+        this.data = { ...this.data, ...newData };
+    }
+
+    updateFilter(filterName, value) {
+        this.filters[filterName] = value;
+    }
+
+    setLoading(loading) {
+        this.isLoading = loading;
+    }
+
+    setOnline(online) {
+        this.isOnline = online;
+    }
+
+    // Improvement #6: Cleanup method to prevent memory leaks
+    cleanup() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+        }
+    }
+}
+
+// Initialize dashboard state
+const dashboardState = new DashboardState();
+
+/**
+ * Main Dashboard Initialization
+ */
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Admin Dashboard (Improved) loaded');
+    
+    // Check authentication first
+    if (!AuthGuard.checkAuthentication('admin')) {
+        return;
+    }
+
+    try {
+        await initializeDashboard();
+    } catch (error) {
+        console.error('Fatal error initializing dashboard:', error);
+        showErrorWithRetry(
+            'Failed to initialize dashboard. Please check your connection.',
+            () => window.location.reload()
+        );
+    }
+});
+
+/**
+ * Initialize Dashboard
+ * Improvement #1: Better error handling with try-catch
+ */
+async function initializeDashboard() {
+    showLoadingOverlay();
+    showKPISkeletons();
+    
+    try {
+        // Setup UI components
+        updateProfileInfo();
+        setupProfileDropdown();
+        setupEventListeners();
+        setupConnectionMonitoring();
+        setupKeyboardShortcuts({ refresh: refreshDashboard });
+        initializeTooltips();
+        
+        // Load data
+        await loadData();
+        
+        // Render dashboard
+        await renderDashboard();
+        
+        // Setup auto-refresh
+        setupAutoRefresh();
+        
+        // Add animations
+        addPageAnimations();
+        
+        showNotification('Dashboard loaded successfully', 'success');
+        trackUserInteraction('dashboard_load', 'dashboard', 'success');
+        
+    } catch (error) {
+        console.error('Error initializing dashboard:', error);
+        
+        // Try to load from cache as fallback
+        const cachedData = cache.get('dashboard_data');
+        if (cachedData) {
+            dashboardState.updateData(cachedData);
+            await renderDashboard();
+            showNotification('Loaded from cache (offline mode)', 'warning', 5000);
+        } else {
+            showErrorWithRetry(
+                'Unable to load dashboard data. Please check your internet connection.',
+                () => initializeDashboard()
+            );
+        }
+        
+        trackUserInteraction('dashboard_load', 'dashboard', 'error');
+    } finally {
+        hideLoadingOverlay();
+        hideKPISkeletons();
+    }
+}
+
+/**
+ * Load dashboard data
+ * Improvement #7: Better data loading with caching
+ */
+async function loadData(forceRefresh = false) {
+    if (!dashboardState.isOnline && !forceRefresh) {
+        throw new Error('No internet connection');
+    }
+
+    // Check rate limit
+    // Improvement #5: Rate limiting
+    if (!rateLimiter.canMakeRequest()) {
+        const waitTime = Math.ceil(rateLimiter.getWaitTime() / 1000);
+        throw new Error(`Rate limit exceeded. Please wait ${waitTime} seconds.`);
+    }
+
+    const data = await loadDashboardData(forceRefresh);
+    dashboardState.updateData(data);
+    
+    return data;
+}
+
+/**
+ * Render dashboard components
+ */
+async function renderDashboard() {
+    updateKPICards();
+    renderAllCharts();
+    updateRecentActivity();
+    updateLastUpdated(dashboardState.data.lastUpdate);
+}
+
+/**
+ * Update KPI cards with animation
+ */
+function updateKPICards() {
+    const { students, teachers, rooms, schedules } = dashboardState.data;
+
+    // Animate counters
+    animateCounter('totalStudents', students.length);
+    animateCounter('totalTeachers', teachers.length);
+    
+    const availableRooms = rooms.filter(room => room.status === 'Available').length;
+    const totalRooms = rooms.length;
+    animateCounter('availableRooms', availableRooms);
+    animateCounter('totalRooms', totalRooms);
+    
+    animateCounter('activeSchedules', schedules.length);
+
+    // Update trends (using 0 as previous for now - could be enhanced with historical data)
+    updateTrend('studentsTrend', students.length, 0);
+    updateTrend('teachersTrend', teachers.length, 0);
+    updateTrend('roomsTrend', availableRooms, 0);
+    updateTrend('schedulesTrend', schedules.length, 0);
+}
+
+/**
+ * Render all charts with lazy loading
+ * Improvement #2: Lazy loading and proper chart updates
+ */
+function renderAllCharts() {
+    // Setup lazy loading for each chart
+    chartManager.setupLazyLoading('studentDistributionChart', () => {
+        renderStudentDistributionChart();
+    });
+    
+    chartManager.setupLazyLoading('roomUtilizationChart', () => {
+        renderRoomUtilizationChart();
+    });
+    
+    chartManager.setupLazyLoading('scheduleDensityChart', () => {
+        renderScheduleDensityChart();
+    });
+}
+
+/**
+ * Render student distribution chart
+ * Improvement #2: Update instead of recreate
+ */
+function renderStudentDistributionChart() {
+    const type = dashboardState.filters.studentDistributionType;
+    const { students, sections } = dashboardState.data;
+    
+    let aggregatedData;
+    switch (type) {
+        case 'section':
+            aggregatedData = aggregateStudentsBySection(students);
+            break;
+        case 'year':
+            aggregatedData = aggregateStudentsByYear(students, sections);
+            break;
+        case 'program':
+            aggregatedData = aggregateStudentsByProgram(students, sections);
+            break;
+        default:
+            aggregatedData = aggregateStudentsBySection(students);
+    }
+
+    const config = {
+        type: 'bar',
+        data: {
+            labels: aggregatedData.labels,
+            datasets: [{
+                label: 'Number of Students',
+                data: aggregatedData.data,
+                backgroundColor: generateCTUColors(aggregatedData.labels.length, 0.8),
+                borderRadius: 8,
+                maxBarThickness: 50
+            }]
+        },
+        options: {
+            ...getCommonChartOptions('bar'),
+            plugins: {
+                ...getCommonChartOptions('bar').plugins,
+                tooltip: {
+                    ...getCommonChartOptions('bar').plugins.tooltip,
+                    callbacks: {
+                        label: function(context) {
+                            return `Students: ${context.parsed.y.toLocaleString()}`;
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    chartManager.createOrUpdate('studentDistributionChart', config);
+}
+
+/**
+ * Render room utilization chart
+ */
+function renderRoomUtilizationChart() {
+    const type = dashboardState.filters.roomChartType;
+    const { rooms } = dashboardState.data;
+    
+    let aggregatedData;
+    let backgroundColor;
+    
+    switch (type) {
+        case 'status':
+            aggregatedData = aggregateRoomsByStatus(rooms);
+            backgroundColor = ['#4BB543', '#FF6835', '#D8000C'];
+            break;
+        case 'building':
+            aggregatedData = aggregateRoomsByBuilding(rooms);
+            backgroundColor = generateCTUColors(aggregatedData.labels.length, 0.8);
+            break;
+        case 'type':
+            aggregatedData = aggregateRoomsByType(rooms);
+            backgroundColor = ['#3E8EDE', '#8B5CF6', '#EC4899'];
+            break;
+        default:
+            aggregatedData = aggregateRoomsByStatus(rooms);
+            backgroundColor = ['#4BB543', '#FF6835', '#D8000C'];
+    }
+
+    const config = {
+        type: 'doughnut',
+        data: {
+            labels: aggregatedData.labels,
+            datasets: [{
+                data: aggregatedData.data,
+                backgroundColor: backgroundColor,
+                borderColor: '#FFFFFF',
+                borderWidth: 3,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            ...getCommonChartOptions('doughnut'),
+            plugins: {
+                ...getCommonChartOptions('doughnut').plugins,
+                tooltip: {
+                    ...getCommonChartOptions('doughnut').plugins.tooltip,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    chartManager.createOrUpdate('roomUtilizationChart', config);
+}
+
+/**
+ * Render schedule density chart
+ */
+function renderScheduleDensityChart() {
+    const type = dashboardState.filters.scheduleDensityType;
+    const { schedules, subjects } = dashboardState.data;
+    
+    let aggregatedData;
+    
+    switch (type) {
+        case 'day':
+            aggregatedData = aggregateSchedulesByDay(schedules);
+            break;
+        case 'type':
+            aggregatedData = aggregateSchedulesByType(schedules, subjects);
+            break;
+        default:
+            aggregatedData = aggregateSchedulesByDay(schedules);
+    }
+
+    const config = {
+        type: 'bar',
+        data: {
+            labels: aggregatedData.labels,
+            datasets: [{
+                label: 'Number of Schedules',
+                data: aggregatedData.data,
+                backgroundColor: generateCTUColors(aggregatedData.labels.length, 0.7),
+                borderRadius: 8,
+                maxBarThickness: 50
+            }]
+        },
+        options: {
+            ...getCommonChartOptions('bar'),
+            plugins: {
+                ...getCommonChartOptions('bar').plugins,
+                tooltip: {
+                    ...getCommonChartOptions('bar').plugins.tooltip,
+                    callbacks: {
+                        label: function(context) {
+                            return `Schedules: ${context.parsed.y.toLocaleString()}`;
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    chartManager.createOrUpdate('scheduleDensityChart', config);
+}
+
+/**
+ * Update recent activity
+ * Improvement #5: XSS prevention with sanitization
+ */
+function updateRecentActivity() {
+    const activityContainer = document.getElementById('recentActivity');
+    if (!activityContainer) return;
+    
+    const { students, teachers, rooms, schedules } = dashboardState.data;
+    const activities = [];
+
+    // Collect activities (limited to prevent performance issues)
+    students.slice(0, 5).forEach(student => {
+        if (student.lastLogin) {
+            activities.push({
+                icon: 'person-check',
+                text: `Student ${sanitizeHTML(student.fullname || 'Unknown')} logged in`,
+                timestamp: new Date(student.lastLogin),
+                type: 'success'
+            });
+        }
+    });
+
+    teachers.slice(0, 3).forEach(teacher => {
+        if (teacher.lastLogin) {
+            activities.push({
+                icon: 'person-check',
+                text: `Teacher ${sanitizeHTML(teacher.fullname || 'Unknown')} logged in`,
+                timestamp: new Date(teacher.lastLogin),
+                type: 'success'
+            });
+        }
+    });
+
+    rooms.slice(0, 3).forEach(room => {
+        if (room.status === 'Under Maintenance') {
+            activities.push({
+                icon: 'tools',
+                text: `Room ${sanitizeHTML(room.roomName || 'Unknown')} under maintenance`,
+                timestamp: room.updatedAt ? new Date(room.updatedAt) : new Date(),
+                type: 'warning'
+            });
+        }
+    });
+
+    schedules.slice(0, 3).forEach(schedule => {
+        if (schedule.createdAt) {
+            const subjectName = schedule.subject?.descriptiveTitle || schedule.subject?.courseCode || 'Unknown';
+            activities.push({
+                icon: 'calendar-plus',
+                text: `Schedule created for ${sanitizeHTML(subjectName)}`,
+                timestamp: new Date(schedule.createdAt),
+                type: 'info'
+            });
+        }
+    });
+
+    // Sort by timestamp
+    activities.sort((a, b) => b.timestamp - a.timestamp);
+
+    // Limit to 6 most recent
+    const recentActivities = activities.slice(0, 6);
+
+    if (recentActivities.length === 0) {
+        recentActivities.push({
+            icon: 'info-circle',
+            text: 'No recent activity recorded',
+            timestamp: new Date(),
+            type: 'info'
+        });
+    }
+
+    // Render with fade animation
+    activityContainer.style.opacity = '0';
+    
+    setTimeout(() => {
+        // Use textContent for safety, not innerHTML
+        activityContainer.innerHTML = '';
+        
+        recentActivities.forEach((activity, index) => {
+            const activityItem = document.createElement('div');
+            activityItem.className = `activity-item ${activity.type}`;
+            activityItem.style.animationDelay = `${index * 0.1}s`;
+            activityItem.setAttribute('tabindex', '0');
+            
+            const icon = document.createElement('i');
+            icon.className = `bi bi-${activity.icon}`;
+            icon.setAttribute('aria-hidden', 'true');
+            
+            const content = document.createElement('div');
+            content.className = 'activity-content';
+            
+            const text = document.createElement('span');
+            text.className = 'activity-text';
+            text.textContent = activity.text; // Safe - already sanitized
+            
+            const time = document.createElement('span');
+            time.className = 'activity-time';
+            time.textContent = formatTimeAgo(activity.timestamp);
+            
+            content.appendChild(text);
+            content.appendChild(time);
+            activityItem.appendChild(icon);
+            activityItem.appendChild(content);
+            activityContainer.appendChild(activityItem);
+        });
+        
+        activityContainer.style.opacity = '1';
+    }, 300);
+}
+
+/**
+ * Setup event listeners
+ * Improvement #2: Debounced filter changes
+ */
+function setupEventListeners() {
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                showNotification('Logging out...', 'info');
+                setTimeout(() => AuthGuard.logout(), 1000);
+            }
+        });
+    }
+
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function(e) {
+            createRipple(e, this);
+            refreshDashboard();
+        });
+    }
+
+    // Chart filters with debouncing
+    const studentDistributionType = document.getElementById('studentDistributionType');
+    if (studentDistributionType) {
+        studentDistributionType.addEventListener('change', debounce(function() {
+            const value = sanitizeChartFilter('studentDistributionType', this.value);
+            dashboardState.updateFilter('studentDistributionType', value);
+            animateChartTransition('studentDistributionChart');
+            setTimeout(() => renderStudentDistributionChart(), 300);
+            trackUserInteraction('filter_change', 'student_distribution', value);
+        }, 300));
+    }
+
+    const roomChartType = document.getElementById('roomChartType');
+    if (roomChartType) {
+        roomChartType.addEventListener('change', debounce(function() {
+            const value = sanitizeChartFilter('roomChartType', this.value);
+            dashboardState.updateFilter('roomChartType', value);
+            animateChartTransition('roomUtilizationChart');
+            setTimeout(() => renderRoomUtilizationChart(), 300);
+            trackUserInteraction('filter_change', 'room_utilization', value);
+        }, 300));
+    }
+
+    const scheduleDensityType = document.getElementById('scheduleDensityType');
+    if (scheduleDensityType) {
+        scheduleDensityType.addEventListener('change', debounce(function() {
+            const value = sanitizeChartFilter('scheduleDensityType', this.value);
+            dashboardState.updateFilter('scheduleDensityType', value);
+            animateChartTransition('scheduleDensityChart');
+            setTimeout(() => renderScheduleDensityChart(), 300);
+            trackUserInteraction('filter_change', 'schedule_density', value);
+        }, 300));
+    }
+
+    // Export buttons (Improvement #9: Data export feature)
+    setupExportButtons();
+}
+
+/**
+ * Setup export buttons
+ * Improvement #9: Missing feature - Data export
+ */
+function setupExportButtons() {
+    // Add export buttons to dashboard header
+    const dashboardControls = document.querySelector('.dashboard-controls');
+    if (dashboardControls && !document.getElementById('exportBtn')) {
+        const exportBtn = document.createElement('button');
+        exportBtn.id = 'exportBtn';
+        exportBtn.className = 'refresh-btn';
+        exportBtn.innerHTML = '<i class="bi bi-download"></i> <span>Export Data</span>';
+        exportBtn.setAttribute('aria-label', 'Export dashboard data');
+        
+        dashboardControls.insertBefore(exportBtn, dashboardControls.firstChild);
+        
+        exportBtn.addEventListener('click', function(e) {
+            createRipple(e, this);
+            showExportMenu();
+        });
+    }
+}
+
+/**
+ * Show export menu
+ */
+function showExportMenu() {
+    const menu = document.createElement('div');
+    menu.className = 'export-menu';
+    menu.innerHTML = `
+        <div class="export-menu-content">
+            <h4>Export Data</h4>
+            <button class="export-option" data-export="students">
+                <i class="bi bi-mortarboard"></i> Students Data
+            </button>
+            <button class="export-option" data-export="teachers">
+                <i class="bi bi-person-badge"></i> Teachers Data
+            </button>
+            <button class="export-option" data-export="rooms">
+                <i class="bi bi-door-open"></i> Rooms Data
+            </button>
+            <button class="export-option" data-export="schedules">
+                <i class="bi bi-calendar-event"></i> Schedules Data
+            </button>
+            <button class="export-close">Cancel</button>
+        </div>
+    `;
+    
+    document.body.appendChild(menu);
+    setTimeout(() => menu.classList.add('show'), 10);
+    
+    // Handle export options
+    menu.querySelectorAll('.export-option').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const type = this.getAttribute('data-export');
+            handleExport(type);
+            menu.remove();
+        });
+    });
+    
+    // Handle close
+    menu.querySelector('.export-close').addEventListener('click', () => {
+        menu.classList.remove('show');
+        setTimeout(() => menu.remove(), 300);
+    });
+}
+
+/**
+ * Handle data export
+ */
+function handleExport(type) {
+    try {
+        const data = dashboardState.data[type];
+        if (!data || data.length === 0) {
+            showNotification(`No ${type} data to export`, 'warning');
+            return;
+        }
+        
+        exportToCSV(data, type);
+        showNotification(`${type} data exported successfully`, 'success');
+        trackUserInteraction('export', 'dashboard', type);
+    } catch (error) {
+        console.error('Export failed:', error);
+        showNotification('Export failed. Please try again.', 'error');
+    }
+}
+
+/**
+ * Update profile info
+ */
+function updateProfileInfo() {
+    const currentUser = AuthGuard.getCurrentUser();
+    if (currentUser) {
+        const firstName = sanitizeHTML(currentUser.fullname.split(' ')[0]);
+        const profileName = document.getElementById('profileName');
+        if (profileName) {
+            profileName.style.opacity = '0';
+            setTimeout(() => {
+                profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down" aria-hidden="true"></i>`;
+                profileName.style.opacity = '1';
+            }, 200);
+        }
+
+        const profileAvatar = document.getElementById('profileAvatar');
+        if (profileAvatar) {
+            profileAvatar.style.opacity = '0';
+            setTimeout(() => {
+                profileAvatar.src = currentUser.profilePicture || '/img/default_admin_avatar.png';
+                profileAvatar.style.opacity = '1';
+            }, 200);
+        }
+    }
+}
+
+/**
+ * Refresh dashboard
+ */
+async function refreshDashboard() {
+    if (dashboardState.isLoading || !dashboardState.isOnline) {
+        showNotification('Cannot refresh while offline or already refreshing', 'warning');
+        return;
+    }
+    
+    dashboardState.setLoading(true);
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.classList.add('loading');
+        refreshBtn.disabled = true;
+    }
+    
+    try {
+        await loadData(true);
+        await renderDashboard();
+        showNotification('Dashboard updated successfully', 'success');
+        trackUserInteraction('manual_refresh', 'dashboard', 'success');
+    } catch (error) {
+        console.error('Error refreshing dashboard:', error);
+        showNotification(error.message || 'Failed to refresh dashboard', 'error');
+        trackUserInteraction('manual_refresh', 'dashboard', 'error');
+    } finally {
+        dashboardState.setLoading(false);
+        if (refreshBtn) {
+            refreshBtn.classList.remove('loading');
+            refreshBtn.disabled = false;
+        }
+    }
+}
+
+/**
+ * Setup connection monitoring
+ */
+function setupConnectionMonitoring() {
+    function handleConnectionChange() {
+        const isOnline = navigator.onLine;
+        dashboardState.setOnline(isOnline);
+        updateConnectionStatus(isOnline);
+        
+        if (isOnline) {
+            refreshDashboard();
+        }
+    }
+
+    window.addEventListener('online', handleConnectionChange);
+    window.addEventListener('offline', handleConnectionChange);
+}
+
+/**
+ * Setup auto-refresh
+ * Improvement #6: Proper cleanup of intervals
+ */
+function setupAutoRefresh() {
+    // Clear existing interval if any
+    if (dashboardState.autoRefreshInterval) {
+        clearInterval(dashboardState.autoRefreshInterval);
+    }
+    
+    // Auto-refresh every 5 minutes
+    dashboardState.autoRefreshInterval = setInterval(() => {
+        if (!document.hidden && dashboardState.isOnline && !dashboardState.isLoading) {
+            console.log('Auto-refreshing dashboard...');
+            refreshDashboard();
+        }
+    }, 5 * 60 * 1000);
+}
+
+/**
+ * Cleanup on page unload
+ * Improvement #6: Prevent memory leaks
+ */
+window.addEventListener('beforeunload', () => {
+    dashboardState.cleanup();
+    chartManager.destroyAll();
+});
+
+// Handle visibility change to pause/resume auto-refresh
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        console.log('Dashboard hidden, pausing auto-refresh');
+    } else {
+        console.log('Dashboard visible, resuming auto-refresh');
+    }
+});
