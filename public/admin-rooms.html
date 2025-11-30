@@ -78,16 +78,10 @@
             <div class="rooms-table-wrapper">
                 <!-- Table Controls -->
                 <div class="table-controls">
-                    <button class="room-create-btn" id="openRoomModal">
-                        <i class="bi bi-plus"></i> Create New Room
-                    </button>
-                    
-                    <div class="table-actions">
-                        <!-- Search -->
-                        <div class="search-box">
-                            <i class="bi bi-search"></i>
-                            <input type="text" id="roomsSearchInput" placeholder="Search rooms...">
-                        </div>
+                    <div class="table-left-actions">
+                        <button class="room-create-btn" id="openRoomModal">
+                            <i class="bi bi-plus"></i> Create New Room
+                        </button>
                         
                         <!-- Filter Dropdown -->
                         <div class="filter-dropdown-container">
@@ -121,6 +115,14 @@
                             </div>
                             
                             <div class="filter-values-dropdown" id="filterValuesDropdown"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-actions">
+                        <!-- Search -->
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="roomsSearchInput" placeholder="Search rooms...">
                         </div>
                         
                         <!-- Export Button -->

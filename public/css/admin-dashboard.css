@@ -1224,7 +1224,7 @@ body::before {
     color: var(--ctu-deep-blue);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .dashboard-header {
         flex-direction: column;
         gap: 16px;

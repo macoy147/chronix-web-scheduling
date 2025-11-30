@@ -592,6 +592,12 @@ body {
     gap: 12px;
 }
 
+.table-left-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .table-actions {
     display: flex;
     align-items: center;
@@ -1626,6 +1632,18 @@ body {
         margin-bottom: 16px;
     }
     
+    .table-left-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .table-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
     .search-box {
         max-width: 100%;
         width: 100%;
@@ -1645,6 +1663,11 @@ body {
         width: 100%;
         padding: 12px 20px;
         font-size: 0.9em;
+        justify-content: center;
+    }
+    
+    .filter-btn {
+        width: 100%;
         justify-content: center;
     }
 }

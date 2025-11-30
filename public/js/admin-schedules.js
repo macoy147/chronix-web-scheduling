@@ -119,9 +119,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (currentSection && currentYearLevel) {
                 renderSubjectAssignments();
                 renderCalendar();
+                updateStatistics();
             } else {
                 clearSubjectAssignments();
                 renderCalendar(); // Clear calendar
+                updateStatistics();
             }
         });
     }
@@ -170,20 +172,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Calendar Navigation
-    const prevMonthBtn = document.getElementById('prevMonthBtn');
-    if (prevMonthBtn) {
-        prevMonthBtn.addEventListener('click', function() {
-            currentDate.setMonth(currentDate.getMonth() - 1);
+    // Calendar Navigation - Week-based
+    const prevWeekBtn = document.getElementById('prevWeekBtn');
+    if (prevWeekBtn) {
+        prevWeekBtn.addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() - 7);
             renderCalendar();
+            updateStatistics();
         });
     }
 
-    const nextMonthBtn = document.getElementById('nextMonthBtn');
-    if (nextMonthBtn) {
-        nextMonthBtn.addEventListener('click', function() {
-            currentDate.setMonth(currentDate.getMonth() + 1);
+    const nextWeekBtn = document.getElementById('nextWeekBtn');
+    if (nextWeekBtn) {
+        nextWeekBtn.addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() + 7);
             renderCalendar();
+            updateStatistics();
+        });
+    }
+
+    // Today button
+    const todayBtn = document.getElementById('todayBtn');
+    if (todayBtn) {
+        todayBtn.addEventListener('click', function() {
+            currentDate = new Date();
+            renderCalendar();
+            updateStatistics();
         });
     }
 
@@ -201,6 +215,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Populate section filter after sections are loaded
             populateSectionFilter();
             
+            // Update statistics dashboard
+            updateStatistics();
+            
             renderCalendar();
             // Initialize with empty subject assignments if no year level or section selected
             if (currentYearLevel && currentSection) {
@@ -212,6 +229,176 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error loading data:', error);
             showBubbleMessage('Error loading schedule data', 'error');
         }
+    }
+
+    // Update Statistics Dashboard
+    function updateStatistics() {
+        // Total Schedules
+        const totalSchedules = schedules.length;
+        document.getElementById('totalSchedulesCount').textContent = totalSchedules;
+
+        // Room Utilization
+        const totalRooms = rooms.length;
+        const usedRooms = new Set(schedules.map(s => s.room._id || s.room)).size;
+        const roomUtilization = totalRooms > 0 ? Math.round((usedRooms / totalRooms) * 100) : 0;
+        document.getElementById('roomUtilization').textContent = `${roomUtilization}%`;
+
+        // Teacher Workload (average hours per teacher)
+        const teacherHours = {};
+        schedules.forEach(schedule => {
+            const teacherId = schedule.teacher._id || schedule.teacher;
+            if (!teacherHours[teacherId]) {
+                teacherHours[teacherId] = 0;
+            }
+            const duration = calculateDuration(schedule.startTime, schedule.endTime);
+            teacherHours[teacherId] += duration;
+        });
+        const avgHours = Object.keys(teacherHours).length > 0 
+            ? Math.round(Object.values(teacherHours).reduce((a, b) => a + b, 0) / Object.keys(teacherHours).length) 
+            : 0;
+        document.getElementById('teacherWorkload').textContent = `${avgHours}h`;
+
+        // Schedule Completion (for current section if selected)
+        let completionPercentage = 0;
+        if (currentSection && currentYearLevel) {
+            const sectionSubjects = subjects.filter(s => s.yearLevel === parseInt(currentYearLevel));
+            const scheduledSubjects = new Set(
+                schedules
+                    .filter(s => (s.section._id || s.section) === currentSection)
+                    .map(s => s.subject._id || s.subject)
+            );
+            completionPercentage = sectionSubjects.length > 0 
+                ? Math.round((scheduledSubjects.size / sectionSubjects.length) * 100) 
+                : 0;
+        }
+        document.getElementById('scheduleCompletion').textContent = `${completionPercentage}%`;
+
+        // Conflicts Detection
+        const conflicts = detectAllConflicts();
+        document.getElementById('conflictsCount').textContent = conflicts.length;
+        
+        // Make conflicts card clickable
+        const conflictsCard = document.querySelector('.stat-conflict');
+        if (conflictsCard) {
+            conflictsCard.onclick = () => {
+                if (conflicts.length > 0) {
+                    showConflictsModal(conflicts);
+                } else {
+                    showBubbleMessage('No conflicts detected!', 'success');
+                }
+            };
+        }
+    }
+
+    // Calculate duration in hours
+    function calculateDuration(startTime, endTime) {
+        const start = timeToMinutes(startTime);
+        const end = timeToMinutes(endTime);
+        return Math.round((end - start) / 60);
+    }
+
+    // Detect all conflicts in the system
+    function detectAllConflicts() {
+        const conflicts = [];
+        
+        schedules.forEach((schedule, index) => {
+            const startMinutes = timeToMinutes(schedule.startTime);
+            const endMinutes = timeToMinutes(schedule.endTime);
+            
+            schedules.forEach((otherSchedule, otherIndex) => {
+                if (index >= otherIndex) return; // Skip self and already checked pairs
+                
+                if (schedule.day !== otherSchedule.day) return; // Different days
+                
+                const otherStartMinutes = timeToMinutes(otherSchedule.startTime);
+                const otherEndMinutes = timeToMinutes(otherSchedule.endTime);
+                
+                const hasTimeOverlap = (startMinutes < otherEndMinutes && endMinutes > otherStartMinutes);
+                
+                if (hasTimeOverlap) {
+                    // Check for teacher conflict
+                    if ((schedule.teacher._id || schedule.teacher) === (otherSchedule.teacher._id || otherSchedule.teacher)) {
+                        conflicts.push({
+                            type: 'teacher',
+                            schedule1: schedule,
+                            schedule2: otherSchedule,
+                            message: `Teacher conflict: ${schedule.teacher.fullname || 'Teacher'} on ${schedule.day}`
+                        });
+                    }
+                    
+                    // Check for room conflict
+                    if ((schedule.room._id || schedule.room) === (otherSchedule.room._id || otherSchedule.room)) {
+                        conflicts.push({
+                            type: 'room',
+                            schedule1: schedule,
+                            schedule2: otherSchedule,
+                            message: `Room conflict: ${schedule.room.roomName || 'Room'} on ${schedule.day}`
+                        });
+                    }
+                    
+                    // Check for section conflict
+                    if ((schedule.section._id || schedule.section) === (otherSchedule.section._id || otherSchedule.section)) {
+                        conflicts.push({
+                            type: 'section',
+                            schedule1: schedule,
+                            schedule2: otherSchedule,
+                            message: `Section conflict: ${schedule.section.sectionName || 'Section'} on ${schedule.day}`
+                        });
+                    }
+                }
+            });
+        });
+        
+        return conflicts;
+    }
+
+    // Show conflicts modal
+    function showConflictsModal(conflicts) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.style.display = 'flex';
+        
+        const conflictsList = conflicts.map((c, i) => `
+            <div class="conflict-item" style="padding: 12px; background: #ffebee; border-left: 4px solid #d32f2f; margin-bottom: 8px; border-radius: 4px;">
+                <strong>${i + 1}. ${c.type.toUpperCase()} CONFLICT</strong>
+                <p style="margin: 4px 0;">${c.message}</p>
+                <small style="color: #666;">
+                    ${c.schedule1.startTime} - ${c.schedule1.endTime} vs 
+                    ${c.schedule2.startTime} - ${c.schedule2.endTime}
+                </small>
+            </div>
+        `).join('');
+        
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                <h3 style="color: #d32f2f; display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Schedule Conflicts Detected (${conflicts.length})
+                </h3>
+                <div style="margin: 20px 0;">
+                    ${conflictsList}
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-cancel" id="closeConflictsModal">Close</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+        
+        const closeBtn = modal.querySelector('#closeConflictsModal');
+        closeBtn.onclick = () => {
+            document.body.removeChild(modal);
+            document.body.style.overflow = 'auto';
+        };
+        
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+                document.body.style.overflow = 'auto';
+            }
+        };
     }
 
     async function loadSchedules() {
@@ -444,17 +631,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
         grid.innerHTML = '';
 
-        // Always update month/year
-        const currentMonthYear = document.getElementById('currentMonthYear');
-        if (currentMonthYear) {
-            currentMonthYear.textContent = currentDate.toLocaleString('default', { month: 'long' }) + ' ' + currentDate.getFullYear();
+        // Update week range display
+        const weekRangeEl = document.getElementById('currentWeekRange');
+        const weekNumberEl = document.getElementById('weekNumber');
+        
+        if (weekRangeEl) {
+            const startOfWeek = getStartOfWeek(currentDate);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(endOfWeek.getDate() + 5); // Saturday
+            
+            const formatDate = (date) => {
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            };
+            
+            weekRangeEl.textContent = `Week of ${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
+        }
+        
+        if (weekNumberEl) {
+            const weekNum = getWeekNumber(currentDate);
+            weekNumberEl.textContent = `Week ${weekNum}`;
         }
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const today = new Date();
+        const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' });
+        
         days.forEach(day => {
             const dayDiv = document.createElement('div');
             dayDiv.className = 'calendar-day';
-            dayDiv.innerHTML = `<h4>${day}</h4>`;
+            
+            // Highlight today
+            if (day === todayDay && isCurrentWeek(currentDate)) {
+                dayDiv.classList.add('is-today');
+            }
+            
+            // Detect conflicts for this day
+            const dayConflicts = detectDayConflicts(day);
+            const conflictCount = dayConflicts.length;
+            
+            if (conflictCount > 0) {
+                dayDiv.classList.add('has-conflict');
+            }
+            
+            const headerHTML = conflictCount > 0 
+                ? `<h4>${day} <span class="conflict-badge"><i class="bi bi-exclamation-triangle"></i> ${conflictCount}</span></h4>`
+                : `<h4>${day}</h4>`;
+            
+            dayDiv.innerHTML = headerHTML;
 
             if (currentYearLevel !== '' && currentSection !== '') {
                 const daySchedules = schedules.filter(s => 
@@ -475,6 +698,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     const item = document.createElement('div');
                     item.className = `schedule-item ${schedule.scheduleType}`;
                     
+                    // Check if this specific schedule has conflicts
+                    const hasConflict = scheduleHasConflict(schedule);
+                    if (hasConflict) {
+                        item.classList.add('has-conflict');
+                    }
+                    
                     // Ensure time is displayed in 12-hour format with AM/PM
                     const startTime = schedule.startTime || '00:00';
                     const endTime = schedule.endTime || '00:00';
@@ -493,6 +722,86 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             grid.appendChild(dayDiv);
+        });
+    }
+
+    // Helper: Get start of week (Monday)
+    function getStartOfWeek(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+        return new Date(d.setDate(diff));
+    }
+
+    // Helper: Get week number
+    function getWeekNumber(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    // Helper: Check if date is in current week
+    function isCurrentWeek(date) {
+        const today = new Date();
+        const startOfWeek = getStartOfWeek(today);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(endOfWeek.getDate() + 6);
+        
+        const checkDate = new Date(date);
+        return checkDate >= startOfWeek && checkDate <= endOfWeek;
+    }
+
+    // Detect conflicts for a specific day
+    function detectDayConflicts(day) {
+        const daySchedules = schedules.filter(s => s.day === day);
+        const conflicts = [];
+        
+        daySchedules.forEach((schedule, index) => {
+            daySchedules.forEach((otherSchedule, otherIndex) => {
+                if (index >= otherIndex) return;
+                
+                const startMinutes = timeToMinutes(schedule.startTime);
+                const endMinutes = timeToMinutes(schedule.endTime);
+                const otherStartMinutes = timeToMinutes(otherSchedule.startTime);
+                const otherEndMinutes = timeToMinutes(otherSchedule.endTime);
+                
+                const hasTimeOverlap = (startMinutes < otherEndMinutes && endMinutes > otherStartMinutes);
+                
+                if (hasTimeOverlap) {
+                    if ((schedule.teacher._id || schedule.teacher) === (otherSchedule.teacher._id || otherSchedule.teacher) ||
+                        (schedule.room._id || schedule.room) === (otherSchedule.room._id || otherSchedule.room) ||
+                        (schedule.section._id || schedule.section) === (otherSchedule.section._id || otherSchedule.section)) {
+                        conflicts.push({ schedule, otherSchedule });
+                    }
+                }
+            });
+        });
+        
+        return conflicts;
+    }
+
+    // Check if a specific schedule has conflicts
+    function scheduleHasConflict(schedule) {
+        return schedules.some(otherSchedule => {
+            if (schedule._id === otherSchedule._id) return false;
+            if (schedule.day !== otherSchedule.day) return false;
+            
+            const startMinutes = timeToMinutes(schedule.startTime);
+            const endMinutes = timeToMinutes(schedule.endTime);
+            const otherStartMinutes = timeToMinutes(otherSchedule.startTime);
+            const otherEndMinutes = timeToMinutes(otherSchedule.endTime);
+            
+            const hasTimeOverlap = (startMinutes < otherEndMinutes && endMinutes > otherStartMinutes);
+            
+            if (hasTimeOverlap) {
+                return (schedule.teacher._id || schedule.teacher) === (otherSchedule.teacher._id || otherSchedule.teacher) ||
+                       (schedule.room._id || schedule.room) === (otherSchedule.room._id || otherSchedule.room) ||
+                       (schedule.section._id || schedule.section) === (otherSchedule.section._id || otherSchedule.section);
+            }
+            
+            return false;
         });
     }
 
@@ -1142,6 +1451,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showBubbleMessage('Schedule deleted successfully!', 'success');
                 // CRITICAL FIX: Reload schedules first, then re-render everything
                 await loadSchedules();
+                updateStatistics();
                 renderCalendar();
                 renderSubjectAssignments();
             } else {

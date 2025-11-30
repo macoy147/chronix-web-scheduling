@@ -580,6 +580,12 @@ html, body {
     gap: 12px;
 }
 
+.table-left-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .table-actions {
     display: flex;
     align-items: center;
@@ -1009,6 +1015,18 @@ html, body {
         flex-direction: column;
         gap: 12px;
         margin-bottom: 16px;
+    }
+    
+    .table-left-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .table-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 12px;
     }
     
     .search-box {

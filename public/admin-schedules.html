@@ -42,6 +42,59 @@
 
     <main class="admin-schedules-main">
         <div class="admin-center-container">
+            <!-- Statistics Dashboard -->
+            <div class="statistics-dashboard" id="statisticsDashboard">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e3f2fd;">
+                        <i class="bi bi-calendar-check" style="color: #1976d2;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalSchedulesCount">0</div>
+                        <div class="stat-label">Total Schedules</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #fff3e0;">
+                        <i class="bi bi-door-open" style="color: #f57c00;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="roomUtilization">0%</div>
+                        <div class="stat-label">Room Utilization</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #f3e5f5;">
+                        <i class="bi bi-person-badge" style="color: #7b1fa2;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="teacherWorkload">0</div>
+                        <div class="stat-label">Avg Teacher Hours</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e8f5e9;">
+                        <i class="bi bi-check-circle" style="color: #388e3c;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="scheduleCompletion">0%</div>
+                        <div class="stat-label">Schedule Complete</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-conflict">
+                    <div class="stat-icon" style="background: #ffebee;">
+                        <i class="bi bi-exclamation-triangle" style="color: #d32f2f;"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="conflictsCount">0</div>
+                        <div class="stat-label">Conflicts Detected</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- View Toggle -->
             <div class="view-toggle-container">
                 <!-- Year and Section Selector -->
@@ -66,16 +119,21 @@
 
             <!-- Calendar Header -->
             <div class="calendar-header">
-                <button class="nav-btn" id="prevMonthBtn">
+                <button class="nav-btn" id="prevWeekBtn">
                     <i class="bi bi-chevron-left"></i>
                 </button>
                 
                 <div class="calendar-title">
-                    <h2 id="currentMonthYear">September 2024</h2>
-                    <span class="current-view" id="currentViewLabel">Teacher Schedules</span>
+                    <div class="week-info">
+                        <h2 id="currentWeekRange">Week of Jan 1 - Jan 7, 2024</h2>
+                        <span class="week-number" id="weekNumber">Week 1</span>
+                    </div>
+                    <button class="today-btn" id="todayBtn">
+                        <i class="bi bi-calendar-today"></i> Today
+                    </button>
                 </div>
                 
-                <button class="nav-btn" id="nextMonthBtn">
+                <button class="nav-btn" id="nextWeekBtn">
                     <i class="bi bi-chevron-right"></i>
                 </button>
             </div>

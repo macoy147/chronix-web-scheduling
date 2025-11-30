@@ -106,16 +106,10 @@
             <div class="subjects-table-wrapper">
                 <!-- Table Controls -->
                 <div class="table-controls">
-                    <button class="subject-create-btn" id="openSubjectModal">
-                        <i class="bi bi-plus"></i> Create New Subject
-                    </button>
-                    
-                    <div class="table-actions">
-                        <!-- Search -->
-                        <div class="search-box">
-                            <i class="bi bi-search"></i>
-                            <input type="text" id="subjectSearch" placeholder="Search subjects...">
-                        </div>
+                    <div class="table-left-actions">
+                        <button class="subject-create-btn" id="openSubjectModal">
+                            <i class="bi bi-plus"></i> Create New Subject
+                        </button>
                         
                         <!-- Filter Dropdown -->
                         <div class="filter-dropdown-container">
@@ -149,6 +143,14 @@
                             </div>
                             
                             <div class="filter-values-dropdown" id="filterValuesDropdown"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-actions">
+                        <!-- Search -->
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="subjectSearch" placeholder="Search subjects...">
                         </div>
                         
                         <!-- Export Button -->

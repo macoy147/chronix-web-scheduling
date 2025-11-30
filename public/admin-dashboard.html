@@ -346,65 +346,53 @@ document.addEventListener('DOMContentLoaded', function() {
 });
     </script>
     
-    <!-- Register Service Worker for PWA -->
-    <script>
-// Mobile detection and redirection
-function isMobileDevice() {
-    return window.innerWidth <= 768 || 
-           /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-
-// Prevent redirect loops and multiple rapid redirects
-let lastRedirectTime = 0;
-const REDIRECT_COOLDOWN = 1000; // 1 second cooldown
-
-function shouldRedirectToMobile() {
-    const now = Date.now();
-    if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
-        return false; // Too soon since last redirect
-    }
+    <!-- Mobile detection and redirection -->
+<script>
+(function() {
+    'use strict';
     
-    return isMobileDevice() && !window.location.pathname.includes('-mobile');
-}
-
-function shouldRedirectToDesktop() {
-    const now = Date.now();
-    if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
-        return false; // Too soon since last redirect
+    // Mobile detection function
+    function isMobileDevice() {
+        return window.innerWidth <= 767 || 
+               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
+
+    // Prevent redirect loops
+    let lastRedirectTime = 0;
+    const REDIRECT_COOLDOWN = 1000;
+
+    function shouldRedirectToMobile() {
+        const now = Date.now();
+        if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+            return false;
+        }
+        
+        return isMobileDevice() && !window.location.pathname.includes('-mobile');
+    }
+
+    // Initial redirect check on page load
+    if (shouldRedirectToMobile()) {
+        lastRedirectTime = Date.now();
+        console.log('[Desktop] Redirecting to mobile version... (width: ' + window.innerWidth + 'px)');
+        window.location.replace('/admin-dashboard-mobile.html');
+        return; // Stop execution after redirect
+    }
+
+    // Handle resize events
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (shouldRedirectToMobile()) {
+                lastRedirectTime = Date.now();
+                console.log('[Desktop] Screen resized - redirecting to mobile version... (width: ' + window.innerWidth + 'px)');
+                window.location.replace('/admin-dashboard-mobile.html');
+            }
+        }, 250);
+    });
     
-    return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
-}
-
-// Initial redirect check
-if (shouldRedirectToMobile()) {
-    lastRedirectTime = Date.now();
-    console.log('Redirecting to mobile version...');
-    window.location.href = '/admin-dashboard-mobile.html';
-}
-
-// Handle resize events with debouncing
-let resizeTimeout;
-window.addEventListener('resize', function() {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(function() {
-        // Redirect to mobile if needed
-        if (shouldRedirectToMobile()) {
-            lastRedirectTime = Date.now();
-            console.log('Screen resized - redirecting to mobile version...');
-            window.location.href = '/admin-dashboard-mobile.html';
-        }
-        // Redirect to desktop if needed
-        else if (shouldRedirectToDesktop()) {
-            lastRedirectTime = Date.now();
-            console.log('Screen resized - redirecting to desktop version...');
-            window.location.href = '/admin-dashboard.html';
-        }
-    }, 250); // Wait 250ms after resize stops
-});
-
-// Also add this to your admin-dashboard-mobile.html for bidirectional redirects
+    console.log('[Desktop] Mobile redirect script loaded (current width: ' + window.innerWidth + 'px)');
+})();
 </script>
 </body>
 </html>
-

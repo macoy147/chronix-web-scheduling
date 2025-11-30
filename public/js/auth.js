@@ -73,7 +73,11 @@
         const loginForm = document.getElementById('loginForm');
 
         // Mobile detection and optimizations
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isMobileDevice = () => {
+            return window.innerWidth <= 767 || 
+                   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        };
+        const isMobile = isMobileDevice();
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         
         if (isMobile) {
@@ -517,15 +521,17 @@
                         
                         // Redirect based on role with a small delay to ensure session is stored
                         setTimeout(() => {
+                            // Check screen width at login time for proper mobile redirect
+                            const mobileSuffix = isMobileDevice() ? '-mobile' : '';
                             switch(result.user.userrole) {
                                 case 'admin':
-                                    window.location.href = "admin-dashboard.html";
+                                    window.location.href = `admin-dashboard${mobileSuffix}.html`;
                                     break;
                                 case 'teacher':
-                                    window.location.href = "teacher-dashboard.html";
+                                    window.location.href = `teacher-dashboard${mobileSuffix}.html`;
                                     break;
                                 case 'student':
-                                    window.location.href = "student-dashboard.html";
+                                    window.location.href = `student-dashboard${mobileSuffix}.html`;
                                     break;
                                 default:
                                     window.location.href = "index.html";
@@ -569,15 +575,17 @@
             // Add fade out effect
             document.body.style.opacity = '0';
             setTimeout(() => {
+                // Check screen width for proper mobile redirect
+                const mobileSuffix = isMobileDevice() ? '-mobile' : '';
                 switch(userRole) {
                     case 'admin':
-                        window.location.href = "admin-dashboard.html";
+                        window.location.href = `admin-dashboard${mobileSuffix}.html`;
                         break;
                     case 'teacher':
-                        window.location.href = "teacher-dashboard.html";
+                        window.location.href = `teacher-dashboard${mobileSuffix}.html`;
                         break;
                     case 'student':
-                        window.location.href = "student-dashboard.html";
+                        window.location.href = `student-dashboard${mobileSuffix}.html`;
                         break;
                     default:
                         window.location.href = "index.html";

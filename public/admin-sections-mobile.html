@@ -757,6 +757,15 @@
                         </select>
                     </div>
                     <div class="form-row">
+                        <select name="adviserTeacher" id="adviserTeacherSelect">
+                            <option value="">No Adviser (Assign Later)</option>
+                            <!-- Teachers populated by JS -->
+                        </select>
+                        <small style="color: #666; font-size: 0.8em; margin-top: 4px; display: block;">
+                            <i class="bi bi-info-circle"></i> Only teachers without advisory shown
+                        </small>
+                    </div>
+                    <div class="form-row">
                         <select name="status" required>
                             <option value="Active">Active</option>
                             <option value="Archived">Archived</option>
@@ -870,6 +879,64 @@
         
         let allMobileSections = [];
         let allTeachers = [];
+        let editMode = false;
+        let editingSectionId = null;
+        
+        // Populate adviser dropdown with available teachers
+        function populateAdviserDropdown() {
+            const select = document.getElementById('adviserTeacherSelect');
+            if (!select) return;
+            
+            // Clear existing options except the first one
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            
+            // Get teachers without advisory (excluding current section if editing)
+            const availableTeachers = allTeachers.filter(teacher => {
+                const hasAdvisory = allMobileSections.some(section => {
+                    // Skip the section being edited
+                    if (editMode && section._id === editingSectionId) return false;
+                    return teacher.section === section.sectionName;
+                });
+                return !hasAdvisory;
+            });
+            
+            availableTeachers.forEach(teacher => {
+                const option = document.createElement('option');
+                option.value = teacher._id;
+                option.textContent = `${teacher.fullname} (${teacher.ctuid || 'No ID'})`;
+                select.appendChild(option);
+            });
+            
+            // Show count of available teachers
+            const helperText = select.nextElementSibling;
+            if (helperText && availableTeachers.length === 0) {
+                helperText.innerHTML = '<i class="bi bi-info-circle"></i> No teachers available (all have advisory sections)';
+                helperText.style.color = '#f57c00';
+            } else if (helperText) {
+                helperText.innerHTML = `<i class="bi bi-info-circle"></i> ${availableTeachers.length} teacher(s) available`;
+                helperText.style.color = '#666';
+            }
+        }
+        
+        // Sync adviser assignment with teacher record
+        async function syncAdviserWithTeacher(teacherId, sectionName) {
+            try {
+                await fetch(`/user/${teacherId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        section: sectionName
+                    })
+                });
+                console.log(`✅ Synced adviser: Teacher ${teacherId} assigned to section ${sectionName}`);
+            } catch (error) {
+                console.error('Error syncing adviser with teacher:', error);
+            }
+        }
         
         function displayMobileSections(sections) {
             const mobileSectionsList = document.getElementById('mobileSectionsList');
@@ -946,6 +1013,10 @@
                     
                     if (!section) return;
                     
+                    // Set edit mode
+                    editMode = true;
+                    editingSectionId = id;
+                    
                     // Populate form
                     if (sectionForm) {
                         sectionForm.sectionName.value = section.sectionName || '';
@@ -957,6 +1028,10 @@
                         sectionForm.semester.value = section.semester || '';
                         sectionForm.status.value = section.status || 'Active';
                         
+                        // Find and set adviser
+                        const adviser = allTeachers.find(t => t.section === section.sectionName);
+                        sectionForm.adviserTeacher.value = adviser ? adviser._id : '';
+                        
                         // Set edit mode
                         sectionForm.dataset.editMode = 'true';
                         sectionForm.dataset.editingId = id;
@@ -965,6 +1040,9 @@
                     if (sectionModalTitle) sectionModalTitle.textContent = 'Edit Section';
                     if (submitSectionBtn) submitSectionBtn.textContent = 'Save Changes';
                     if (sectionModal) sectionModal.style.display = 'flex';
+                    
+                    // Repopulate adviser dropdown for edit mode
+                    populateAdviserDropdown();
                     
                     // Setup auto-detection for edit mode too
                     setTimeout(() => setupMobileYearLevelAutoDetection(), 100);
@@ -1018,6 +1096,7 @@
                 
                 displayMobileSections(allMobileSections);
                 populateAcademicYearDropdown();
+                populateAdviserDropdown();
                 setupMobileSearch();
             } catch (error) {
                 console.error('Error loading sections:', error);
@@ -1173,6 +1252,10 @@
 
         if (mobileOpenSectionModal) {
             mobileOpenSectionModal.addEventListener('click', () => {
+                // Reset edit mode
+                editMode = false;
+                editingSectionId = null;
+                
                 if (sectionForm) {
                     sectionForm.reset();
                     delete sectionForm.dataset.editMode;
@@ -1181,6 +1264,9 @@
                 if (sectionModalTitle) sectionModalTitle.textContent = 'Create New Section';
                 if (submitSectionBtn) submitSectionBtn.textContent = 'Create Section';
                 if (sectionModal) sectionModal.style.display = 'flex';
+                
+                // Populate adviser dropdown
+                populateAdviserDropdown();
                 
                 // Setup auto-detection after modal is shown
                 setTimeout(() => setupMobileYearLevelAutoDetection(), 100);
@@ -1212,6 +1298,7 @@
                     programID: sectionForm.programID.value,
                     yearLevel: parseInt(sectionForm.yearLevel.value),
                     shift: sectionForm.shift.value,
+                    adviserTeacher: sectionForm.adviserTeacher.value || null,
                     totalEnrolled: parseInt(sectionForm.totalEnrolled.value),
                     academicYear: sectionForm.academicYear.value,
                     semester: sectionForm.semester.value,
@@ -1251,10 +1338,20 @@
                     });
                     
                     if (res.ok) {
+                        // If adviser was assigned, sync with teacher
+                        if (formData.adviserTeacher) {
+                            await syncAdviserWithTeacher(formData.adviserTeacher, formData.sectionName);
+                        }
+                        
                         showBubbleMessage(
                             editMode ? 'Section updated successfully!' : 'Section created successfully!', 
                             'success'
                         );
+                        
+                        // Reset edit mode
+                        editMode = false;
+                        editingSectionId = null;
+                        
                         if (sectionModal) sectionModal.style.display = 'none';
                         if (sectionForm) sectionForm.reset();
                         loadMobileSections();

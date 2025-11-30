@@ -633,7 +633,7 @@
         }
         
         /* Responsive adjustments */
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
             .admin-nav, .admin-dashboard-main {
                 display: none;
             }
@@ -1446,15 +1446,34 @@
             showMobileNotification(message, 'error');
         }
 
-        // Desktop redirection for mobile page
+        // Initialize the mobile dashboard
+        initializeMobileDashboard();
+    }); 
+    </script>
+    
+    <!-- Desktop redirection for mobile page -->
+    <script>
+    (function() {
+        'use strict';
+        
+        // Prevent redirect loops
+        let lastRedirectTime = 0;
+        const REDIRECT_COOLDOWN = 1000;
+        
         function shouldRedirectToDesktop() {
-            return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+            const now = Date.now();
+            if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+                return false;
+            }
+            return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
         }
 
         // Initial check on mobile page load
         if (shouldRedirectToDesktop()) {
-            console.log('Large screen detected - redirecting to desktop version...');
-            window.location.href = '/admin-dashboard.html';
+            lastRedirectTime = Date.now();
+            console.log('[Mobile] Large screen detected - redirecting to desktop version... (width: ' + window.innerWidth + 'px)');
+            window.location.replace('/admin-dashboard.html');
+            return; // Stop execution after redirect
         }
 
         // Handle resize on mobile page too
@@ -1463,15 +1482,15 @@
             clearTimeout(mobileResizeTimeout);
             mobileResizeTimeout = setTimeout(function() {
                 if (shouldRedirectToDesktop()) {
-                    console.log('Screen enlarged - redirecting to desktop version...');
-                    window.location.href = '/admin-dashboard.html';
+                    lastRedirectTime = Date.now();
+                    console.log('[Mobile] Screen enlarged - redirecting to desktop version... (width: ' + window.innerWidth + 'px)');
+                    window.location.replace('/admin-dashboard.html');
                 }
             }, 250);
         });
         
-        // Initialize the mobile dashboard
-        initializeMobileDashboard();
-    }); 
+        console.log('[Mobile] Desktop redirect script loaded (current width: ' + window.innerWidth + 'px)');
+    })();
 </script>
 </body>
 </html>

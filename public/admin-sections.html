@@ -81,16 +81,10 @@
             <div class="sections-table-wrapper">
                 <!-- Table Controls -->
                 <div class="table-controls">
-                    <button class="section-create-btn" id="openSectionModal">
-                        <i class="bi bi-plus"></i> Create New Section
-                    </button>
-                    
-                    <div class="table-actions">
-                        <!-- Search -->
-                        <div class="search-box">
-                            <i class="bi bi-search"></i>
-                            <input type="text" id="sectionsSearchInput" placeholder="Search sections...">
-                        </div>
+                    <div class="table-left-actions">
+                        <button class="section-create-btn" id="openSectionModal">
+                            <i class="bi bi-plus"></i> Create New Section
+                        </button>
                         
                         <!-- Filter Dropdown -->
                         <div class="filter-dropdown-container">
@@ -129,6 +123,14 @@
                             </div>
                             
                             <div class="filter-values-dropdown" id="filterValuesDropdown"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-actions">
+                        <!-- Search -->
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="sectionsSearchInput" placeholder="Search sections...">
                         </div>
                         
                         <!-- Export Button -->
