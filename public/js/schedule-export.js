@@ -1,5 +1,5 @@
 /**
- * Schedule Export Utility - UPDATED for Enhanced Subject Display
+ * Schedule Export Utility - UPDATED with Header, Subject Summary, and Footer
  * Provides Excel and PDF export functionality with merged cells showing subjects, instructors, and rooms
  */
 
@@ -281,8 +281,58 @@ class ScheduleExporter {
         // Format room
         const roomText = schedule.room?.roomName || 'TBA';
         
-        // Combine all parts
-        return `${subjectText}\n${instructorText}\n${roomText}`;
+        // Format time in 12-hour format with AM/PM
+        const timeDisplay = this.formatTime12Hour(
+            schedule.startTime, 
+            schedule.startPeriod, 
+            schedule.endTime, 
+            schedule.endPeriod
+        );
+        
+        // Combine all parts - NOW WITH 12-HOUR TIME FORMAT
+        return `${subjectText}\n${timeDisplay}\n${instructorText}\n${roomText}`;
+    }
+
+    /**
+     * Format time in 12-hour format with AM/PM
+     */
+    formatTime12Hour(startTime, startPeriod, endTime, endPeriod) {
+        // If the times already have AM/PM indicators, use them directly
+        if (startPeriod && endPeriod) {
+            return `${startTime} ${startPeriod} - ${endTime} ${endPeriod}`;
+        }
+        
+        // Otherwise, convert from 24-hour format if needed
+        const formatTimePart = (time, period) => {
+            if (!time) return 'TBA';
+            
+            // If time already has AM/PM, return as is
+            if (period) {
+                return `${time} ${period}`;
+            }
+            
+            // Convert 24-hour format to 12-hour format
+            const [hours, minutes] = time.split(':').map(Number);
+            let period12 = 'AM';
+            let hours12 = hours;
+            
+            if (hours >= 12) {
+                period12 = 'PM';
+                if (hours > 12) {
+                    hours12 = hours - 12;
+                }
+            }
+            if (hours === 0) {
+                hours12 = 12;
+            }
+            
+            return `${hours12}:${String(minutes).padStart(2, '0')} ${period12}`;
+        };
+        
+        const startFormatted = formatTimePart(startTime, startPeriod);
+        const endFormatted = formatTimePart(endTime, endPeriod);
+        
+        return `${startFormatted} - ${endFormatted}`;
     }
 
     /**
@@ -372,7 +422,50 @@ class ScheduleExporter {
     }
 
     /**
-     * Export to PDF with enhanced subject display - UPDATED FOR PORTRAIT 8x13
+     * Extract unique subjects from schedules for the summary
+     */
+    extractSubjectsSummary(schedules) {
+        const subjectsMap = new Map();
+        
+        schedules.forEach(schedule => {
+            const subject = schedule.subject;
+            if (subject && !subjectsMap.has(subject._id)) {
+                subjectsMap.set(subject._id, {
+                    units: subject.units || 3, // Default to 3 units if not specified
+                    courseCode: subject.courseCode,
+                    descriptiveTitle: subject.descriptiveTitle
+                });
+            }
+        });
+        
+        return Array.from(subjectsMap.values());
+    }
+
+    /**
+     * Get section details from schedules
+     */
+    getSectionDetails(schedules) {
+        if (!schedules || schedules.length === 0) {
+            return {
+                sectionName: 'N/A',
+                adviser: 'N/A',
+                shift: 'N/A'
+            };
+        }
+        
+        // Get the first schedule's section details
+        const firstSchedule = schedules[0];
+        const section = firstSchedule.section;
+        
+        return {
+            sectionName: section?.sectionName || 'N/A',
+            adviser: section?.adviser || 'N/A',
+            shift: section?.shift || 'N/A'
+        };
+    }
+
+    /**
+     * Export to PDF with enhanced subject display - UPDATED WITH HEADER, SUMMARY, AND FOOTER
      */
     async exportToPDF(schedules, filename = 'timetable', userInfo = {}) {
         try {
@@ -385,6 +478,12 @@ class ScheduleExporter {
             // Convert to timetable format with enhanced display
             const timetable = this.convertToTimetableFormat(schedules);
 
+            // Extract subjects for summary
+            const subjectsSummary = this.extractSubjectsSummary(schedules);
+
+            // Get section details
+            const sectionDetails = this.getSectionDetails(schedules);
+
             // Create PDF - PORTRAIT ORIENTATION 8x13 inches
             // Convert inches to mm: 8in = 203.2mm, 13in = 330.2mm
             const { jsPDF } = window.jspdf;
@@ -393,6 +492,8 @@ class ScheduleExporter {
             // Load logos
             let ctuLogo = null;
             let chronixLogo = null;
+            let bagongPilipinasLogo = null;
+            let wuriFooter = null;
             
             try {
                 ctuLogo = await this.loadImageAsBase64('/img/img/CTU_new_logo-removebg-preview.png');
@@ -406,9 +507,21 @@ class ScheduleExporter {
                 console.warn('Failed to load CHRONIX logo:', error);
             }
 
+            try {
+                bagongPilipinasLogo = await this.loadImageAsBase64('/img/img/BAGONG_PILIPINAS_LOGO.png');
+            } catch (error) {
+                console.warn('Failed to load BAGONG PILIPINAS logo:', error);
+            }
+
+            try {
+                wuriFooter = await this.loadImageAsBase64('/img/img/WURI_FOOTER.png');
+            } catch (error) {
+                console.warn('Failed to load WURI footer:', error);
+            }
+
             let yPos = 15;
 
-            // Add logos and title
+            // Add header with logos and text
             if (ctuLogo) {
                 try {
                     doc.addImage(ctuLogo, 'PNG', 14, yPos, 18, 18);
@@ -425,19 +538,39 @@ class ScheduleExporter {
                 }
             }
 
-            // Add title
-            doc.setFontSize(18);
+            // Add BAGONG PILIPINAS logo
+            if (bagongPilipinasLogo) {
+                try {
+                    doc.addImage(bagongPilipinasLogo, 'PNG', doc.internal.pageSize.getWidth() - 32, yPos, 18, 18);
+                } catch (error) {
+                    console.warn('Failed to add BAGONG PILIPINAS logo to PDF:', error);
+                }
+            }
+
+            // Add header text (centered)
+            doc.setFontSize(12);
             doc.setFont(undefined, 'bold');
             doc.setTextColor(0, 45, 98); // CTU Deep Blue
-            doc.text('CHRONIX - Class Timetable', 60, yPos + 10);
-
-            // Add subtitle
+            
+            // Republic of the Philippines text
+            doc.text('Republic of the Philippines', doc.internal.pageSize.getWidth() / 2, yPos + 5, { align: 'center' });
+            
+            // CEBU TECHNOLOGICAL UNIVERSITY text
+            doc.setFontSize(14);
+            doc.text('CEBU TECHNOLOGICAL UNIVERSITY', doc.internal.pageSize.getWidth() / 2, yPos + 10, { align: 'center' });
+            
+            // Province of Cebu text
             doc.setFontSize(10);
             doc.setFont(undefined, 'normal');
-            doc.setTextColor(85, 85, 85); // Dark gray
-            doc.text('Cebu Technological University', 60, yPos + 16);
+            doc.text('Province of Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 15, { align: 'center' });
+            
+            // Main campus location
+            doc.text('Main Campus: M.J. Cuenco Ave., Cebu City', doc.internal.pageSize.getWidth() / 2, yPos + 20, { align: 'center' });
+            
+            // Daanbantayan Campus
+            doc.text('Daanbantayan Campus: Aguho, Daanbantayan, Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 25, { align: 'center' });
 
-            yPos += 25;
+            yPos += 35;
 
             // Add horizontal line
             doc.setDrawColor(242, 210, 131); // CTU Gold
@@ -446,9 +579,9 @@ class ScheduleExporter {
 
             yPos += 8;
 
-            // Add user information
+            // Add user information - UPDATED LAYOUT
             doc.setFillColor(244, 247, 249); // Light gray background
-            const infoBoxHeight = 25;
+            const infoBoxHeight = 22; // Increased height for additional rows
             doc.rect(14, yPos, doc.internal.pageSize.getWidth() - 28, infoBoxHeight, 'F');
             doc.setDrawColor(224, 224, 224);
             doc.setLineWidth(0.3);
@@ -463,6 +596,7 @@ class ScheduleExporter {
             const col2X = 100;
             const col3X = 180;
 
+            // Row 1: Name and Section
             if (userInfo.name) {
                 doc.text('Name:', col1X, infoYPos);
                 doc.setFont(undefined, 'normal');
@@ -472,55 +606,173 @@ class ScheduleExporter {
                 doc.setTextColor(0, 45, 98);
             }
 
-            if (userInfo.section) {
+            if (sectionDetails.sectionName) {
                 doc.text('Section:', col2X, infoYPos);
                 doc.setFont(undefined, 'normal');
                 doc.setTextColor(85, 85, 85);
-                doc.text(userInfo.section, col2X + 15, infoYPos);
+                doc.text(sectionDetails.sectionName, col2X + 15, infoYPos);
                 doc.setFont(undefined, 'bold');
                 doc.setTextColor(0, 45, 98);
             }
 
             infoYPos += 6;
-            doc.text('Export Date:', col1X, infoYPos);
+
+            // Row 2: Advisor Name and Export Date
+            if (sectionDetails.adviser) {
+                doc.text('Advisor Name:', col1X, infoYPos);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(85, 85, 85);
+                doc.text(sectionDetails.adviser, col1X + 25, infoYPos);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(0, 45, 98);
+            }
+
+            doc.text('Export Date:', col2X, infoYPos);
             doc.setFont(undefined, 'normal');
             doc.setTextColor(85, 85, 85);
             doc.text(new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
-            }), col1X + 22, infoYPos);
+            }), col2X + 22, infoYPos);
+            
+            infoYPos += 6;
+
+            // Row 3: Total Classes and Shift
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(0, 45, 98);
+            doc.text('Total Classes:', col1X, infoYPos);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(85, 85, 85);
+            doc.text(schedules.length.toString(), col1X + 25, infoYPos);
             
             doc.setFont(undefined, 'bold');
             doc.setTextColor(0, 45, 98);
-            doc.text('Total Classes:', col2X, infoYPos);
+            doc.text('Shift:', col2X, infoYPos);
             doc.setFont(undefined, 'normal');
             doc.setTextColor(85, 85, 85);
-            doc.text(schedules.length.toString(), col2X + 25, infoYPos);
+            doc.text(sectionDetails.shift, col2X + 10, infoYPos);
 
             yPos += infoBoxHeight + 12;
 
             // Create timetable table with enhanced display
-            this.createEnhancedTimetableTable(doc, timetable, yPos);
+            const timetableEndY = this.createEnhancedTimetableTable(doc, timetable, yPos);
+            
+            // Add subjects summary after timetable
+            yPos = timetableEndY + 10;
+            
+            // Add summary title
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(0, 45, 98);
+            doc.text('SUMMARY OF COURSES', 14, yPos);
+            
+            yPos += 8;
+            
+            // Add summary table header
+            doc.setFillColor(0, 45, 98);
+            doc.rect(14, yPos, doc.internal.pageSize.getWidth() - 28, 8, 'F');
+            
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(255, 255, 255);
+            doc.text('UNITS', 20, yPos + 5);
+            doc.text('SUBJECT CODE', 50, yPos + 5);
+            doc.text('DESCRIPTIVE TITLE', 120, yPos + 5);
+            
+            yPos += 8;
+            
+            // Add summary rows
+            doc.setFontSize(7);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(0, 0, 0);
+            
+            subjectsSummary.forEach((subject, index) => {
+                // Alternate row colors
+                if (index % 2 === 0) {
+                    doc.setFillColor(245, 247, 249);
+                    doc.rect(14, yPos, doc.internal.pageSize.getWidth() - 28, 6, 'F');
+                }
+                
+                doc.text(subject.units.toString(), 20, yPos + 4);
+                doc.text(subject.courseCode, 50, yPos + 4);
+                
+                // Handle long descriptive titles by wrapping text
+                const maxWidth = doc.internal.pageSize.getWidth() - 140;
+                const wrappedTitle = doc.splitTextToSize(subject.descriptiveTitle, maxWidth);
+                doc.text(wrappedTitle, 120, yPos + 4);
+                
+                // Increase yPos based on number of lines in wrapped title
+                yPos += Math.max(6, (wrappedTitle.length * 3));
+                
+                // Check if we need a new page for the summary
+                if (yPos > doc.internal.pageSize.getHeight() - 40 && index < subjectsSummary.length - 1) {
+                    doc.addPage();
+                    yPos = 20;
+                    
+                    // Redraw summary header on new page
+                    doc.setFillColor(0, 45, 98);
+                    doc.rect(14, yPos, doc.internal.pageSize.getWidth() - 28, 8, 'F');
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'bold');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text('UNITS', 20, yPos + 5);
+                    doc.text('SUBJECT CODE', 50, yPos + 5);
+                    doc.text('DESCRIPTIVE TITLE', 120, yPos + 5);
+                    yPos += 8;
+                }
+            });
 
             // Add footer to all pages
             const pageCount = doc.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
                 
-                // Footer line
-                doc.setDrawColor(242, 210, 131); // CTU Gold
-                doc.setLineWidth(0.3);
-                doc.line(14, doc.internal.pageSize.getHeight() - 12, doc.internal.pageSize.getWidth() - 14, doc.internal.pageSize.getHeight() - 12);
-                
-                // Footer text
-                doc.setFontSize(7);
-                doc.setTextColor(128);
-                doc.text(
-                    'Generated by CHRONIX - CTU Class Scheduling System',
-                    14,
-                    doc.internal.pageSize.getHeight() - 8
-                );
+                // Add WURI footer image if available
+                if (wuriFooter && i === pageCount) {
+                    try {
+                        const footerHeight = 20;
+                        const footerWidth = doc.internal.pageSize.getWidth() - 28;
+                        doc.addImage(
+                            wuriFooter, 
+                            'PNG', 
+                            14, 
+                            doc.internal.pageSize.getHeight() - footerHeight - 10, 
+                            footerWidth, 
+                            footerHeight
+                        );
+                    } catch (error) {
+                        console.warn('Failed to add WURI footer to PDF:', error);
+                        
+                        // Fallback: Add text footer
+                        doc.setDrawColor(242, 210, 131); // CTU Gold
+                        doc.setLineWidth(0.3);
+                        doc.line(14, doc.internal.pageSize.getHeight() - 12, doc.internal.pageSize.getWidth() - 14, doc.internal.pageSize.getHeight() - 12);
+                        
+                        // Footer text
+                        doc.setFontSize(7);
+                        doc.setTextColor(128);
+                        doc.text(
+                            'Generated by CHRONIX - CTU Class Scheduling System',
+                            14,
+                            doc.internal.pageSize.getHeight() - 8
+                        );
+                    }
+                } else {
+                    // Regular footer for other pages
+                    doc.setDrawColor(242, 210, 131); // CTU Gold
+                    doc.setLineWidth(0.3);
+                    doc.line(14, doc.internal.pageSize.getHeight() - 12, doc.internal.pageSize.getWidth() - 14, doc.internal.pageSize.getHeight() - 12);
+                    
+                    // Footer text
+                    doc.setFontSize(7);
+                    doc.setTextColor(128);
+                    doc.text(
+                        'Generated by CHRONIX - CTU Class Scheduling System',
+                        14,
+                        doc.internal.pageSize.getHeight() - 8
+                    );
+                }
             }
 
             // Generate filename
@@ -672,7 +924,7 @@ class ScheduleExporter {
             currentY += rowHeight;
             
             // Check if we need a new page
-            if (currentY > doc.internal.pageSize.getHeight() - 25 && rowIndex < timetable.length - 1) {
+            if (currentY > doc.internal.pageSize.getHeight() - 60 && rowIndex < timetable.length - 1) {
                 doc.addPage();
                 currentY = margin;
                 
@@ -690,6 +942,8 @@ class ScheduleExporter {
                 currentY += rowHeight;
             }
         });
+        
+        return currentY;
     }
 
     /**
@@ -722,11 +976,17 @@ class ScheduleExporter {
             // Convert to timetable format with enhanced display
             const timetable = this.convertToTimetableFormat(schedules);
 
+            // Extract subjects for summary
+            const subjectsSummary = this.extractSubjectsSummary(schedules);
+
+            // Get section details
+            const sectionDetails = this.getSectionDetails(schedules);
+
             // Create workbook
             const wb = window.XLSX.utils.book_new();
 
             // Prepare data for Excel with merged cells
-            const excelData = this.prepareEnhancedExcelData(timetable, userInfo);
+            const excelData = this.prepareEnhancedExcelData(timetable, userInfo, subjectsSummary, sectionDetails);
 
             // Create worksheet
             const ws = window.XLSX.utils.aoa_to_sheet(excelData.data);
@@ -755,33 +1015,52 @@ class ScheduleExporter {
     }
 
     /**
-     * Prepare data for Excel export with merged cells - UPDATED FOR ENHANCED DISPLAY
+     * Prepare data for Excel export with merged cells - UPDATED FOR ENHANCED DISPLAY WITH SUMMARY
      */
-    prepareEnhancedExcelData(timetable, userInfo) {
+    prepareEnhancedExcelData(timetable, userInfo, subjectsSummary, sectionDetails) {
         const data = [];
         const merges = [];
         
         // Title row
-        data.push(['CHRONIX - Class Timetable']);
+        data.push(['Republic of the Philippines']);
         merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: this.days.length } });
         
-        // Subtitle
-        data.push(['Cebu Technological University']);
+        // University name
+        data.push(['CEBU TECHNOLOGICAL UNIVERSITY']);
         merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: this.days.length } });
         
-        // User info
+        // Campus information
+        data.push(['Daanbantayan Campus: Aguho, Daanbantayan, Cebu']);
+        merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: this.days.length } });
+        
+        // Empty row
+        data.push([]);
+        
+        // CHRONIX title
+        data.push(['CHRONIX - Class Timetable']);
+        merges.push({ s: { r: 4, c: 0 }, e: { r: 4, c: this.days.length } });
+        
+        // User info - UPDATED LAYOUT
         if (userInfo.name) {
             data.push([`Name: ${userInfo.name}`]);
-            merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: this.days.length } });
+            merges.push({ s: { r: 5, c: 0 }, e: { r: 5, c: this.days.length } });
         }
         
-        if (userInfo.section) {
-            data.push([`Section: ${userInfo.section}`]);
-            merges.push({ s: { r: 3, c: 0 }, e: { r: 3, c: this.days.length } });
+        if (sectionDetails.sectionName) {
+            data.push([`Section: ${sectionDetails.sectionName}`]);
+            merges.push({ s: { r: 6, c: 0 }, e: { r: 6, c: this.days.length } });
+        }
+        
+        if (sectionDetails.adviser) {
+            data.push([`Advisor Name: ${sectionDetails.adviser}`]);
+            merges.push({ s: { r: 7, c: 0 }, e: { r: 7, c: this.days.length } });
         }
         
         data.push([`Export Date: ${new Date().toLocaleDateString()}`]);
-        merges.push({ s: { r: 4, c: 0 }, e: { r: 4, c: this.days.length } });
+        merges.push({ s: { r: 8, c: 0 }, e: { r: 8, c: this.days.length } });
+        
+        data.push([`Total Classes: ${timetable.flatMap(row => Object.values(row.days)).filter(cell => cell.content).length} | Shift: ${sectionDetails.shift}`]);
+        merges.push({ s: { r: 9, c: 0 }, e: { r: 9, c: this.days.length } });
         
         // Empty row
         data.push([]);
@@ -801,13 +1080,33 @@ class ScheduleExporter {
                 // Add merge information for cells with rowSpan > 1
                 if (cell.rowSpan > 1) {
                     merges.push({
-                        s: { r: 6 + rowIndex, c: 1 + this.days.indexOf(day) },
-                        e: { r: 6 + rowIndex + cell.rowSpan - 1, c: 1 + this.days.indexOf(day) }
+                        s: { r: 11 + rowIndex, c: 1 + this.days.indexOf(day) },
+                        e: { r: 11 + rowIndex + cell.rowSpan - 1, c: 1 + this.days.indexOf(day) }
                     });
                 }
             });
             
             data.push(dataRow);
+        });
+        
+        // Empty rows before summary
+        data.push([]);
+        data.push([]);
+        
+        // Summary title
+        data.push(['SUMMARY OF COURSES']);
+        merges.push({ s: { r: data.length - 1, c: 0 }, e: { r: data.length - 1, c: 2 } });
+        
+        // Summary header
+        data.push(['UNITS', 'SUBJECT CODE', 'DESCRIPTIVE TITLE']);
+        
+        // Summary data
+        subjectsSummary.forEach(subject => {
+            data.push([
+                subject.units,
+                subject.courseCode,
+                subject.descriptiveTitle
+            ]);
         });
         
         return { data, merges };
@@ -819,6 +1118,11 @@ class ScheduleExporter {
     applyEnhancedExcelStyling(ws, data) {
         // Define styles
         const titleStyle = {
+            font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: "002D62" } },
+            alignment: { horizontal: 'center', vertical: 'center' }
+        };
+        
+        const universityStyle = {
             font: { name: 'Calibri', sz: 16, bold: true, color: { rgb: "002D62" } },
             alignment: { horizontal: 'center', vertical: 'center' }
         };
@@ -871,6 +1175,29 @@ class ScheduleExporter {
             }
         };
         
+        const summaryHeaderStyle = {
+            font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "002D62" } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: {
+                top: { style: 'thin', color: { rgb: "000000" } },
+                bottom: { style: 'thin', color: { rgb: "000000" } },
+                left: { style: 'thin', color: { rgb: "000000" } },
+                right: { style: 'thin', color: { rgb: "000000" } }
+            }
+        };
+        
+        const summaryRowStyle = {
+            font: { name: 'Calibri', sz: 10, color: { rgb: "000000" } },
+            alignment: { horizontal: 'left', vertical: 'center' },
+            border: {
+                top: { style: 'thin', color: { rgb: "E0E0E0" } },
+                bottom: { style: 'thin', color: { rgb: "E0E0E0" } },
+                left: { style: 'thin', color: { rgb: "E0E0E0" } },
+                right: { style: 'thin', color: { rgb: "E0E0E0" } }
+            }
+        };
+        
         // Apply styles to cells
         data.forEach((row, rowIndex) => {
             row.forEach((cell, colIndex) => {
@@ -880,15 +1207,17 @@ class ScheduleExporter {
                 
                 if (rowIndex === 0) {
                     ws[cellRef].s = titleStyle;
-                } else if (rowIndex === 6) { // Header row
+                } else if (rowIndex === 1) {
+                    ws[cellRef].s = universityStyle;
+                } else if (rowIndex === 11) { // Header row
                     ws[cellRef].s = headerStyle;
-                } else if (rowIndex > 6 && colIndex === 0) { // Time column
+                } else if (rowIndex > 11 && colIndex === 0) { // Time column
                     ws[cellRef].s = timeCellStyle;
-                } else if (rowIndex > 6 && colIndex > 0 && cell) { // Class cells with content
+                } else if (rowIndex > 11 && colIndex > 0 && cell) { // Class cells with content
                     // Determine if this is a lecture or lab based on the "L" suffix
                     const isLab = cell.toString().includes(' L\n');
                     ws[cellRef].s = isLab ? labCellStyle : lectureCellStyle;
-                } else if (rowIndex > 6 && colIndex > 0) { // Empty class cells
+                } else if (rowIndex > 11 && colIndex > 0) { // Empty class cells
                     ws[cellRef].s = {
                         font: { name: 'Calibri', sz: 9, color: { rgb: "000000" } },
                         alignment: { horizontal: 'center', vertical: 'center' },
@@ -899,6 +1228,21 @@ class ScheduleExporter {
                             right: { style: 'thin', color: { rgb: "E0E0E0" } }
                         }
                     };
+                } else if (rowIndex >= data.length - subjectsSummary.length - 2 && rowIndex < data.length - 1 && colIndex < 3) {
+                    // Summary rows
+                    if (rowIndex === data.length - subjectsSummary.length - 2) {
+                        // Summary title
+                        ws[cellRef].s = {
+                            font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: "002D62" } },
+                            alignment: { horizontal: 'center', vertical: 'center' }
+                        };
+                    } else if (rowIndex === data.length - subjectsSummary.length - 1) {
+                        // Summary header
+                        ws[cellRef].s = summaryHeaderStyle;
+                    } else {
+                        // Summary data rows
+                        ws[cellRef].s = summaryRowStyle;
+                    }
                 }
             });
         });
@@ -906,14 +1250,19 @@ class ScheduleExporter {
         // Set column widths
         ws['!cols'] = [
             { wch: 10 }, // Time column
-            ...this.days.map(() => ({ wch: 18 })) // Day columns (wider for multi-line content)
+            ...this.days.map(() => ({ wch: 18 })), // Day columns (wider for multi-line content)
+            { wch: 8 }, // Units column in summary
+            { wch: 15 }, // Course code column in summary
+            { wch: 40 } // Descriptive title column in summary
         ];
         
         // Set row heights
         ws['!rows'] = data.map((row, index) => {
-            if (index === 0) return { hpt: 25 };
-            if (index === 6) return { hpt: 20 };
-            if (index > 6) return { hpt: 45 }; // Taller rows for multi-line content
+            if (index === 0 || index === 2) return { hpt: 20 };
+            if (index === 1) return { hpt: 25 };
+            if (index === 11) return { hpt: 20 };
+            if (index > 11 && index < data.length - subjectsSummary.length - 2) return { hpt: 45 }; // Taller rows for multi-line content
+            if (index >= data.length - subjectsSummary.length - 2) return { hpt: 20 }; // Summary rows
             return { hpt: 15 };
         });
     }
@@ -958,7 +1307,7 @@ class ScheduleExporter {
                 <h3 style="margin: 0 0 20px 0; color: #002D62; font-size: 1.4em;">Export Timetable</h3>
                 <p style="margin-bottom: 16px; color: #555;">Choose your preferred export format:</p>
                 <p style="margin-bottom: 24px; font-size: 0.9em; color: #666; background: #f8f9fa; padding: 12px; border-radius: 8px;">
-                    <strong>Enhanced Format:</strong> Shows subject, instructor, and room information
+                    <strong>Enhanced Format:</strong> Shows subject, instructor, and room information with official CTU header and footer
                 </p>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <button id="exportExcelBtn" style="
