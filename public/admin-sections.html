@@ -47,107 +47,101 @@
             <div id="sectionBubbleMessage" class="section-bubble-message"></div>
             
             <!-- Statistics Cards -->
-            <div class="stats-container">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #e3f2fd;">
-                        <i class="bi bi-layers" style="color: #1976d2;"></i>
-                    </div>
+            <div class="stats-grid">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon"><i class="bi bi-layers"></i></div>
                     <div class="stat-info">
-                        <span class="stat-value" id="totalSections">0</span>
-                        <span class="stat-label">Total Sections</span>
+                        <div class="stat-value" id="totalSections">0</div>
+                        <div class="stat-label">Total Sections</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #e8f5e9;">
-                        <i class="bi bi-check-circle" style="color: #388e3c;"></i>
-                    </div>
+                <div class="stat-card stat-active">
+                    <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
                     <div class="stat-info">
-                        <span class="stat-value" id="activeSections">0</span>
-                        <span class="stat-label">Active</span>
+                        <div class="stat-value" id="activeSections">0</div>
+                        <div class="stat-label">Active</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #fff3e0;">
-                        <i class="bi bi-archive" style="color: #f57c00;"></i>
-                    </div>
+                <div class="stat-card stat-archived">
+                    <div class="stat-icon"><i class="bi bi-archive"></i></div>
                     <div class="stat-info">
-                        <span class="stat-value" id="archivedSections">0</span>
-                        <span class="stat-label">Archived</span>
+                        <div class="stat-value" id="archivedSections">0</div>
+                        <div class="stat-label">Archived</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #fce4ec;">
-                        <i class="bi bi-exclamation-triangle" style="color: #c2185b;"></i>
-                    </div>
+                <div class="stat-card stat-no-adviser">
+                    <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
                     <div class="stat-info">
-                        <span class="stat-value" id="noAdviserSections">0</span>
-                        <span class="stat-label">No Adviser</span>
+                        <div class="stat-value" id="noAdviserSections">0</div>
+                        <div class="stat-label">No Adviser</div>
                     </div>
                 </div>
             </div>
-
-            <!-- Search and Filter Bar -->
-            <div class="table-controls">
-                <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="sectionsSearchInput" placeholder="Search sections..." />
-                </div>
-                
-                <!-- Cascading Filter Dropdown -->
-                <div class="filter-dropdown-container">
-                    <button class="filter-btn" id="filterBtn">
-                        <i class="bi bi-funnel"></i>
-                        <span id="filterBtnText">Filter By</span>
-                        <i class="bi bi-chevron-down"></i>
+            
+            <div class="sections-table-wrapper">
+                <!-- Table Controls -->
+                <div class="table-controls">
+                    <button class="section-create-btn" id="openSectionModal">
+                        <i class="bi bi-plus"></i> Create New Section
                     </button>
-                    <div class="filter-dropdown" id="filterDropdown">
-                        <div class="filter-option" data-filter="yearLevel">
-                            <i class="bi bi-mortarboard-fill"></i>
-                            <span>Year Level</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </div>
-                        <div class="filter-option" data-filter="shift">
-                            <i class="bi bi-clock"></i>
-                            <span>Shift</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </div>
-                        <div class="filter-option" data-filter="status">
-                            <i class="bi bi-toggle-on"></i>
-                            <span>Status</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </div>
-                        <div class="filter-option" data-filter="program">
-                            <i class="bi bi-book"></i>
-                            <span>Program</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </div>
-                        <div class="filter-option" data-filter="adviser">
-                            <i class="bi bi-person-badge"></i>
-                            <span>Adviser Status</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </div>
-                    </div>
                     
-                    <!-- Sub-dropdown for filter values -->
-                    <div class="filter-values-dropdown" id="filterValuesDropdown"></div>
+                    <div class="table-actions">
+                        <!-- Search -->
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="sectionsSearchInput" placeholder="Search sections...">
+                        </div>
+                        
+                        <!-- Filter Dropdown -->
+                        <div class="filter-dropdown-container">
+                            <button class="filter-btn" id="filterBtn">
+                                <i class="bi bi-funnel"></i>
+                                <span id="filterBtnText">Filter By</span>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            
+                            <div class="filter-dropdown" id="filterDropdown">
+                                <div class="filter-option" data-filter="yearLevel">
+                                    <i class="bi bi-mortarboard-fill"></i>
+                                    <span>Year Level</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                                <div class="filter-option" data-filter="shift">
+                                    <i class="bi bi-clock"></i>
+                                    <span>Shift</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                                <div class="filter-option" data-filter="status">
+                                    <i class="bi bi-toggle-on"></i>
+                                    <span>Status</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                                <div class="filter-option" data-filter="program">
+                                    <i class="bi bi-book"></i>
+                                    <span>Program</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                                <div class="filter-option" data-filter="adviser">
+                                    <i class="bi bi-person-badge"></i>
+                                    <span>Adviser Status</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="filter-values-dropdown" id="filterValuesDropdown"></div>
+                        </div>
+                        
+                        <!-- Export Button -->
+                        <button class="export-btn" id="exportBtn" title="Export to CSV">
+                            <i class="bi bi-download"></i>
+                            <span>Export</span>
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Active Filters Display -->
                 <div class="active-filters" id="activeFilters"></div>
                 
-                <!-- Export Button -->
-                <button class="export-btn" id="exportBtn">
-                    <i class="bi bi-download"></i>
-                    <span>Export CSV</span>
-                </button>
-                
-                <button class="section-create-btn" id="openSectionModal">
-                    <i class="bi bi-plus-circle"></i> 
-                    <span>Create New Section</span>
-                </button>
-            </div>
-            
-            <div class="sections-table-wrapper">
                 <table class="sections-table">
                     <thead>
                         <tr>
@@ -172,13 +166,15 @@
 
     <!-- Modal for Creating/Editing Section -->
     <div id="sectionModal" class="modal-overlay" style="display:none;">
-        <div class="modal-content horizontal-modal compact-modal">
+        <div class="modal-content horizontal-modal">
             <h3 id="sectionModalTitle">Create New Section</h3>
+            
             <!-- Error Alert -->
             <div id="sectionModalError" class="modal-error-alert" style="display:none;">
                 <i class="bi bi-exclamation-triangle"></i>
                 <span id="sectionModalErrorText"></span>
             </div>
+            
             <form id="sectionForm">
                 <div class="horizontal-grid">
                     <div class="form-row">

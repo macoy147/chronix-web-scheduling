@@ -65,111 +65,103 @@
             <div id="subjectBubbleMessage" class="subject-bubble-message"></div>
             
             <!-- Statistics Cards -->
-            <div class="stats-container">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #e3f2fd;">
-                        <i class="bi bi-book" style="color: #1976d2;"></i>
-                    </div>
+            <div class="stats-grid">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon"><i class="bi bi-book"></i></div>
                     <div class="stat-info">
-                        <span class="stat-value" id="totalSubjects">0</span>
-                        <span class="stat-label">Total Subjects</span>
+                        <div class="stat-value" id="totalSubjects">0</div>
+                        <div class="stat-label">Total Subjects</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #e8f5e9;">
-                        <i class="bi bi-1-circle" style="color: #388e3c;"></i>
-                    </div>
+                <div class="stat-card stat-year1">
+                    <div class="stat-icon"><i class="bi bi-1-circle"></i></div>
                     <div class="stat-info">
-                        <span class="stat-value" id="year1Subjects">0</span>
-                        <span class="stat-label">Year 1</span>
+                        <div class="stat-value" id="year1Subjects">0</div>
+                        <div class="stat-label">Year 1</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #fff3e0;">
-                        <i class="bi bi-2-circle" style="color: #f57c00;"></i>
-                    </div>
+                <div class="stat-card stat-year2">
+                    <div class="stat-icon"><i class="bi bi-2-circle"></i></div>
                     <div class="stat-info">
-                        <span class="stat-value" id="year2Subjects">0</span>
-                        <span class="stat-label">Year 2</span>
+                        <div class="stat-value" id="year2Subjects">0</div>
+                        <div class="stat-label">Year 2</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #fce4ec;">
-                        <i class="bi bi-3-circle" style="color: #c2185b;"></i>
-                    </div>
+                <div class="stat-card stat-year3">
+                    <div class="stat-icon"><i class="bi bi-3-circle"></i></div>
                     <div class="stat-info">
-                        <span class="stat-value" id="year3Subjects">0</span>
-                        <span class="stat-label">Year 3</span>
+                        <div class="stat-value" id="year3Subjects">0</div>
+                        <div class="stat-label">Year 3</div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #f3e5f5;">
-                        <i class="bi bi-4-circle" style="color: #7b1fa2;"></i>
-                    </div>
+                <div class="stat-card stat-year4">
+                    <div class="stat-icon"><i class="bi bi-4-circle"></i></div>
                     <div class="stat-info">
-                        <span class="stat-value" id="year4Subjects">0</span>
-                        <span class="stat-label">Year 4</span>
+                        <div class="stat-value" id="year4Subjects">0</div>
+                        <div class="stat-label">Year 4</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Search and Filter Bar -->
-            <div class="table-controls">
-                <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="subjectSearch" placeholder="Search subjects..." />
-                </div>
-                
-                <!-- Cascading Filter Dropdown -->
-                <div class="filter-dropdown-container">
-                    <button class="filter-btn" id="filterBtn">
-                        <i class="bi bi-funnel"></i>
-                        <span id="filterBtnText">Filter By</span>
-                        <i class="bi bi-chevron-down"></i>
+            <div class="subjects-table-wrapper">
+                <!-- Table Controls -->
+                <div class="table-controls">
+                    <button class="subject-create-btn" id="openSubjectModal">
+                        <i class="bi bi-plus"></i> Create New Subject
                     </button>
-                    <div class="filter-dropdown" id="filterDropdown">
-                        <div class="filter-option" data-filter="yearLevel">
-                            <i class="bi bi-mortarboard-fill"></i>
-                            <span>Year Level</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </div>
-                        <div class="filter-option" data-filter="semester">
-                            <i class="bi bi-calendar3"></i>
-                            <span>Semester</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </div>
-                        <div class="filter-option" data-filter="prerequisite">
-                            <i class="bi bi-diagram-3"></i>
-                            <span>Prerequisite Status</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </div>
-                        <div class="filter-option" data-filter="type">
-                            <i class="bi bi-tag"></i>
-                            <span>Subject Type</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </div>
-                    </div>
                     
-                    <!-- Sub-dropdown for filter values -->
-                    <div class="filter-values-dropdown" id="filterValuesDropdown"></div>
+                    <div class="table-actions">
+                        <!-- Search -->
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="subjectSearch" placeholder="Search subjects...">
+                        </div>
+                        
+                        <!-- Filter Dropdown -->
+                        <div class="filter-dropdown-container">
+                            <button class="filter-btn" id="filterBtn">
+                                <i class="bi bi-funnel"></i>
+                                <span id="filterBtnText">Filter By</span>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            
+                            <div class="filter-dropdown" id="filterDropdown">
+                                <div class="filter-option" data-filter="yearLevel">
+                                    <i class="bi bi-mortarboard-fill"></i>
+                                    <span>Year Level</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                                <div class="filter-option" data-filter="semester">
+                                    <i class="bi bi-calendar3"></i>
+                                    <span>Semester</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                                <div class="filter-option" data-filter="prerequisite">
+                                    <i class="bi bi-diagram-3"></i>
+                                    <span>Prerequisite Status</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                                <div class="filter-option" data-filter="type">
+                                    <i class="bi bi-tag"></i>
+                                    <span>Subject Type</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="filter-values-dropdown" id="filterValuesDropdown"></div>
+                        </div>
+                        
+                        <!-- Export Button -->
+                        <button class="export-btn" id="exportBtn" title="Export to CSV">
+                            <i class="bi bi-download"></i>
+                            <span>Export</span>
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Active Filters Display -->
                 <div class="active-filters" id="activeFilters"></div>
                 
-                <!-- Export Button -->
-                <button class="export-btn" id="exportBtn">
-                    <i class="bi bi-download"></i>
-                    <span>Export CSV</span>
-                </button>
-                
-                <button class="subject-create-btn" id="openSubjectModal">
-                    <i class="bi bi-plus-circle"></i> 
-                    <span>Create New Subject</span>
-                </button>
-            </div>
-            
-            <div class="subjects-table-wrapper">
                 <table class="subjects-table">
                     <thead>
                         <tr>
@@ -194,15 +186,17 @@
         </div>
     </main>
 
-    <!-- Modal for Creating/Editing Subject (horizontal layout) -->
+    <!-- Modal for Creating/Editing Subject -->
     <div id="subjectModal" class="modal-overlay" style="display:none;">
-        <div class="modal-content horizontal-modal compact-modal">
+        <div class="modal-content horizontal-modal">
             <h3 id="subjectModalTitle">Create New Subject</h3>
+            
             <!-- Error Alert -->
             <div id="subjectModalError" class="modal-error-alert" style="display:none;">
                 <i class="bi bi-exclamation-triangle"></i>
                 <span id="subjectModalErrorText"></span>
             </div>
+            
             <form id="subjectForm">
                 <div class="horizontal-grid">
                     <div class="form-row">

@@ -1136,20 +1136,91 @@ app.post('/rooms', async (req, res) => {
     try {
         const { roomName, building, roomType, capacity, daySection, nightSection, status } = req.body;
 
-        // Validation
+        // Enhanced Validation
         if (!roomName || !building || !roomType || !capacity) {
             return res.status(400).json({ error: 'Room name, building, room type, and capacity are required' });
         }
-        // Check if room already exists
-        const existingRoom = await Room.findOne({ roomName: roomName.trim() });
-        if (existingRoom) {
-            return res.status(400).json({ error: `Room '${roomName}' already exists` });
+
+        // Validate room name length and characters
+        const trimmedName = roomName.trim();
+        if (trimmedName.length < 2) {
+            return res.status(400).json({ error: 'Room name must be at least 2 characters long' });
         }
+        if (trimmedName.length > 50) {
+            return res.status(400).json({ error: 'Room name must not exceed 50 characters' });
+        }
+        
+        // Check for invalid characters
+        const invalidChars = /[<>{}[\]\\\/]/;
+        if (invalidChars.test(trimmedName)) {
+            return res.status(400).json({ error: 'Room name contains invalid characters' });
+        }
+
+        // Validate capacity
+        const capacityNum = parseInt(capacity);
+        if (isNaN(capacityNum) || capacityNum < 1 || capacityNum > 200) {
+            return res.status(400).json({ error: 'Capacity must be between 1 and 200' });
+        }
+
+        // Validate building
+        const validBuildings = ['College of Technology(CoTe) Building', 'College of Education(CoEd) Building'];
+        if (!validBuildings.includes(building)) {
+            return res.status(400).json({ error: 'Invalid building selected' });
+        }
+
+        // Validate room type
+        const validRoomTypes = ['Lecture', 'Lab', 'Computer Lab'];
+        if (!validRoomTypes.includes(roomType)) {
+            return res.status(400).json({ error: 'Invalid room type selected' });
+        }
+
+        // Validate status
+        const validStatuses = ['Available', 'Under Maintenance', 'Occupied'];
+        if (status && !validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Invalid status selected' });
+        }
+
+        // Validate section assignment
+        if (daySection && nightSection && daySection !== 'None' && nightSection !== 'None') {
+            if (daySection === nightSection) {
+                return res.status(400).json({ error: 'Cannot assign the same section to both day and night shifts' });
+            }
+        }
+
+        // Check if room already exists
+        const existingRoom = await Room.findOne({ roomName: trimmedName });
+        if (existingRoom) {
+            return res.status(400).json({ error: `Room '${trimmedName}' already exists` });
+        }
+
+        // Check if sections are already assigned to other rooms
+        if (daySection && daySection !== 'None') {
+            const dayConflict = await Room.findOne({ 
+                $or: [{ daySection: daySection }, { nightSection: daySection }] 
+            });
+            if (dayConflict) {
+                return res.status(400).json({ 
+                    error: `Section '${daySection}' is already assigned to room '${dayConflict.roomName}'` 
+                });
+            }
+        }
+
+        if (nightSection && nightSection !== 'None') {
+            const nightConflict = await Room.findOne({ 
+                $or: [{ daySection: nightSection }, { nightSection: nightSection }] 
+            });
+            if (nightConflict) {
+                return res.status(400).json({ 
+                    error: `Section '${nightSection}' is already assigned to room '${nightConflict.roomName}'` 
+                });
+            }
+        }
+
         const room = new Room({
-            roomName: roomName.trim(),
+            roomName: trimmedName,
             building,
             roomType,
-            capacity: parseInt(capacity),
+            capacity: capacityNum,
             daySection: daySection || 'None',
             nightSection: nightSection || 'None',
             status: status || 'Available'
@@ -1168,25 +1239,98 @@ app.put('/rooms/:id', async (req, res) => {
     try {
         const { roomName, building, roomType, capacity, daySection, nightSection, status } = req.body;
 
-        // Validation
+        // Enhanced Validation
         if (!roomName || !building || !roomType || !capacity) {
             return res.status(400).json({ error: 'Room name, building, room type, and capacity are required' });
         }
+
+        // Validate room name length and characters
+        const trimmedName = roomName.trim();
+        if (trimmedName.length < 2) {
+            return res.status(400).json({ error: 'Room name must be at least 2 characters long' });
+        }
+        if (trimmedName.length > 50) {
+            return res.status(400).json({ error: 'Room name must not exceed 50 characters' });
+        }
+        
+        // Check for invalid characters
+        const invalidChars = /[<>{}[\]\\\/]/;
+        if (invalidChars.test(trimmedName)) {
+            return res.status(400).json({ error: 'Room name contains invalid characters' });
+        }
+
+        // Validate capacity
+        const capacityNum = parseInt(capacity);
+        if (isNaN(capacityNum) || capacityNum < 1 || capacityNum > 200) {
+            return res.status(400).json({ error: 'Capacity must be between 1 and 200' });
+        }
+
+        // Validate building
+        const validBuildings = ['College of Technology(CoTe) Building', 'College of Education(CoEd) Building'];
+        if (!validBuildings.includes(building)) {
+            return res.status(400).json({ error: 'Invalid building selected' });
+        }
+
+        // Validate room type
+        const validRoomTypes = ['Lecture', 'Lab', 'Computer Lab'];
+        if (!validRoomTypes.includes(roomType)) {
+            return res.status(400).json({ error: 'Invalid room type selected' });
+        }
+
+        // Validate status
+        const validStatuses = ['Available', 'Under Maintenance', 'Occupied'];
+        if (status && !validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Invalid status selected' });
+        }
+
+        // Validate section assignment
+        if (daySection && nightSection && daySection !== 'None' && nightSection !== 'None') {
+            if (daySection === nightSection) {
+                return res.status(400).json({ error: 'Cannot assign the same section to both day and night shifts' });
+            }
+        }
+
         // Check if room name already exists (excluding current room)
         const existingRoom = await Room.findOne({
-            roomName: roomName.trim(),
+            roomName: trimmedName,
             _id: { $ne: req.params.id }
         });
         if (existingRoom) {
-            return res.status(400).json({ error: `Room '${roomName}' already exists` });
+            return res.status(400).json({ error: `Room '${trimmedName}' already exists` });
         }
+
+        // Check if sections are already assigned to other rooms (excluding current room)
+        if (daySection && daySection !== 'None') {
+            const dayConflict = await Room.findOne({ 
+                $or: [{ daySection: daySection }, { nightSection: daySection }],
+                _id: { $ne: req.params.id }
+            });
+            if (dayConflict) {
+                return res.status(400).json({ 
+                    error: `Section '${daySection}' is already assigned to room '${dayConflict.roomName}'` 
+                });
+            }
+        }
+
+        if (nightSection && nightSection !== 'None') {
+            const nightConflict = await Room.findOne({ 
+                $or: [{ daySection: nightSection }, { nightSection: nightSection }],
+                _id: { $ne: req.params.id }
+            });
+            if (nightConflict) {
+                return res.status(400).json({ 
+                    error: `Section '${nightSection}' is already assigned to room '${nightConflict.roomName}'` 
+                });
+            }
+        }
+
         const updatedRoom = await Room.findByIdAndUpdate(
             req.params.id,
             {
-                roomName: roomName.trim(),
+                roomName: trimmedName,
                 building,
                 roomType,
-                capacity: parseInt(capacity),
+                capacity: capacityNum,
                 daySection: daySection || 'None',
                 nightSection: nightSection || 'None',
                 status: status || 'Available'
