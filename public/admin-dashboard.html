@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 // Mobile detection and redirection
 function isMobileDevice() {
-    return window.innerWidth <= 767 ||
+    return window.innerWidth <= 767 || 
            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
@@ -363,7 +363,7 @@ function shouldRedirectToMobile() {
     if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
         return false;
     }
-
+    
     return isMobileDevice() && !window.location.pathname.includes('-mobile');
 }
 

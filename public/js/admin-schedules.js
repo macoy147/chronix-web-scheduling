@@ -271,7 +271,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? Math.round((scheduledSubjects.size / sectionSubjects.length) * 100) 
                 : 0;
         }
-        document.getElementById('scheduleCompletion').textContent = `${completionPercentage}%`;
 
         // Conflicts Detection
         const conflicts = detectAllConflicts();

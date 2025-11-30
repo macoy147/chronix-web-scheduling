@@ -1653,41 +1653,33 @@
     }); 
 </script>
 
-<!-- Desktop redirection for mobile page -->
+<!-- Mobile detection and redirection -->
 <script>
-// Desktop detection and redirection
-function shouldRedirectToDesktop() {
-    return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
-}
+    let lastRedirectTime = 0;
+    const REDIRECT_COOLDOWN = 1000;
 
-// Prevent redirect loops
-let lastRedirectTime = 0;
-const REDIRECT_COOLDOWN = 1000;
+    function shouldRedirectToDesktop() {
+        const now = Date.now();
+        if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+            return false;
+        }
+        return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
+    }
 
-// Initial redirect check
-if (shouldRedirectToDesktop()) {
-    const now = Date.now();
-    if (now - lastRedirectTime >= REDIRECT_COOLDOWN) {
-        lastRedirectTime = now;
-        console.log('Redirecting to desktop version...');
+    if (shouldRedirectToDesktop()) {
+        lastRedirectTime = Date.now();
         window.location.href = '/admin-dashboard.html';
     }
-}
 
-// Handle resize events
-let resizeTimeout;
-window.addEventListener('resize', function() {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(function() {
-        if (shouldRedirectToDesktop()) {
-            const now = Date.now();
-            if (now - lastRedirectTime >= REDIRECT_COOLDOWN) {
-                lastRedirectTime = now;
-                console.log('Screen resized - redirecting to desktop version...');
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (shouldRedirectToDesktop()) {
+                lastRedirectTime = Date.now();
                 window.location.href = '/admin-dashboard.html';
             }
-        }
-    }, 250);
+        }, 250);
 });
 </script>
 </body>

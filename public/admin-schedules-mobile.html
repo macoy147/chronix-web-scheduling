@@ -729,16 +729,6 @@
                     </div>
                 </div>
                 
-                <div class="mobile-stat-card">
-                    <div class="mobile-stat-icon" style="background: #e8f5e9;">
-                        <i class="bi bi-check-circle" style="color: #388e3c;"></i>
-                    </div>
-                    <div class="mobile-stat-info">
-                        <div class="mobile-stat-value" id="mobileScheduleCompletion">0%</div>
-                        <div class="mobile-stat-label">Complete</div>
-                    </div>
-                </div>
-                
                 <div class="mobile-stat-card mobile-stat-conflict">
                     <div class="mobile-stat-icon" style="background: #ffebee;">
                         <i class="bi bi-exclamation-triangle" style="color: #d32f2f;"></i>
@@ -830,7 +820,6 @@
         <div id="totalSchedulesCount">0</div>
         <div id="roomUtilization">0%</div>
         <div id="teacherWorkload">0</div>
-        <div id="scheduleCompletion">0%</div>
         <div id="conflictsCount">0</div>
         <button id="prevWeekBtn"></button>
         <button id="nextWeekBtn"></button>
@@ -1362,10 +1351,6 @@
                     completionPercentage = sectionSubjects.length > 0 
                         ? Math.round((scheduledSubjects.size / sectionSubjects.length) * 100) 
                         : 0;
-                }
-                const completionEl = document.getElementById('mobileScheduleCompletion');
-                if (completionEl) {
-                    completionEl.textContent = `${completionPercentage}%`;
                 }
                 
                 // Conflicts Detection

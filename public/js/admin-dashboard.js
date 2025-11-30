@@ -49,6 +49,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Skip desktop initialization if on mobile page
+    if (window.location.pathname.includes('-mobile')) {
+        console.log('Mobile page detected, skipping desktop dashboard.js initialization');
+        return;
+    }
+
     // Global state management
     const dashboardState = {
         data: {
