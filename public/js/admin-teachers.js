@@ -350,6 +350,67 @@ document.addEventListener('DOMContentLoaded', function() {
             editRoom.value = safeDisplay(teacher.room, '');
         }
 
+        // Show and populate the teacher info display
+        const infoDisplay = document.getElementById('teacherInfoDisplay');
+        if (infoDisplay) {
+            const advisorySection = teacher.advisorySection || teacher.section;
+            
+            if (advisorySection) {
+                infoDisplay.style.display = 'block';
+                
+                // Find the section object to get year level and shift
+                const sectionObj = sections.find(s => s.sectionName === advisorySection);
+                
+                // Populate Year Level
+                const yearLevelEl = document.getElementById('displayTeacherYearLevel');
+                if (yearLevelEl) {
+                    const yearLevel = sectionObj?.yearLevel || 'N/A';
+                    yearLevelEl.textContent = yearLevel !== 'N/A' ? `Year ${yearLevel}` : 'N/A';
+                }
+                
+                // Populate Advisory Section
+                const sectionEl = document.getElementById('displayTeacherSection');
+                if (sectionEl) {
+                    const shift = sectionObj?.shift || '';
+                    sectionEl.textContent = shift ? `${advisorySection} (${shift} Shift)` : advisorySection;
+                }
+                
+                // Populate Room
+                const roomEl = document.getElementById('displayTeacherRoom');
+                if (roomEl) {
+                    if (teacher.room) {
+                        const roomObj = rooms.find(r => r.roomName === teacher.room);
+                        const roomType = roomObj?.roomType || '';
+                        roomEl.textContent = roomType ? `${teacher.room} (${roomType})` : teacher.room;
+                    } else {
+                        roomEl.textContent = 'No Room Assigned';
+                    }
+                }
+                
+                // Populate Building
+                const buildingEl = document.getElementById('displayTeacherBuilding');
+                if (buildingEl) {
+                    if (teacher.room) {
+                        const roomObj = rooms.find(r => r.roomName === teacher.room);
+                        const building = roomObj?.building || 'N/A';
+                        buildingEl.textContent = building;
+                    } else {
+                        buildingEl.textContent = 'N/A';
+                    }
+                }
+                
+                console.log('✅ Teacher info display populated:', {
+                    yearLevel: sectionObj?.yearLevel,
+                    section: advisorySection,
+                    room: teacher.room,
+                    building: rooms.find(r => r.roomName === teacher.room)?.building
+                });
+            } else {
+                // Hide info display if teacher has no advisory section
+                infoDisplay.style.display = 'none';
+            }
+        }
+
         // Add event listeners for auto-sync between Section and Room
         if (editSection && editRoom) {
             // When section changes, auto-fill corresponding room
@@ -552,6 +613,9 @@ document.addEventListener('DOMContentLoaded', function() {
         closeEditTeacherModal.addEventListener('click', function() {
             const modal = document.getElementById('editTeacherModal');
             if (modal) modal.style.display = 'none';
+            // Hide teacher info display
+            const infoDisplay = document.getElementById('teacherInfoDisplay');
+            if (infoDisplay) infoDisplay.style.display = 'none';
             document.body.style.overflow = 'auto';
         });
     }
@@ -561,6 +625,9 @@ document.addEventListener('DOMContentLoaded', function() {
         cancelEditTeacher.addEventListener('click', function() {
             const modal = document.getElementById('editTeacherModal');
             if (modal) modal.style.display = 'none';
+            // Hide teacher info display
+            const infoDisplay = document.getElementById('teacherInfoDisplay');
+            if (infoDisplay) infoDisplay.style.display = 'none';
             document.body.style.overflow = 'auto';
         });
     }

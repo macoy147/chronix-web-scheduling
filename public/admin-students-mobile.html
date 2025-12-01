@@ -7,487 +7,40 @@
     <link rel="icon" type="image/png" href="/img/img/CHRONIX_LOGO.png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <style>
-        :root {
-            --ctu-soft-gold: #F2D283;
-            --ctu-light-blue: #3E8EDE;
-            --ctu-deep-blue: #002D62;
-            --ctu-red-accent: #A3000C;
-            --ctu-white: #FFFFFF;
-            --ctu-lightest-gray: #F4F7F9;
-            --ctu-text-primary: #333333;
-            --ctu-text-secondary: #555555;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--ctu-lightest-gray);
-            color: var(--ctu-text-primary);
-            overflow-x: hidden;
-        }
-        
-        /* Mobile Header */
-        .mobile-header {
-            position: sticky;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: var(--ctu-deep-blue);
-            height: 60px;
-            z-index: 1000;
-            padding: 0 16px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .mobile-logo-container {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .mobile-logo {
-            width: 28px;
-            height: 28px;
-            object-fit: contain;
-            border-radius: 50%;
-            background: #fff;
-            border: 2px solid var(--ctu-soft-gold);
-        }
-        
-        .mobile-app-title {
-            color: var(--ctu-soft-gold);
-            font-weight: 700;
-            font-size: 1rem;
-            margin-left: 4px;
-        }
-        
-        .mobile-menu-btn {
-            background: none;
-            border: none;
-            color: var(--ctu-white);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 8px;
-        }
-        
-        /* Mobile Main Content */
-        .mobile-main-content {
-            padding: 16px;
-            padding-bottom: 90px;
-            min-height: 100vh;
-        }
-        
-        .mobile-page-title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--ctu-deep-blue);
-            margin-bottom: 16px;
-        }
-        
-        /* Mobile Search */
-        .mobile-search-box {
-            position: relative;
-            margin-bottom: 16px;
-        }
-        
-        .mobile-search-box i {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--ctu-text-secondary);
-        }
-        
-        .mobile-search-box input {
-            width: 100%;
-            padding: 12px 16px 12px 45px;
-            border: 2px solid #e5e8eb;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            background: #fff;
-        }
-        
-        /* Mobile Filters */
-        .mobile-filter-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-            overflow-x: auto;
-        }
-        
-        .mobile-filter-dropdown {
-            flex: 1;
-            min-width: 120px;
-            padding: 10px 32px 10px 12px;
-            border: 2px solid #e5e8eb;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            background: #fff;
-            font-family: inherit;
-            appearance: none;
-            cursor: pointer;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23002D62' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            transition: all 0.3s ease;
-        }
-        
-        .mobile-filter-dropdown:focus {
-            outline: none;
-            border-color: var(--ctu-light-blue);
-            box-shadow: 0 0 0 3px rgba(62, 142, 222, 0.12);
-        }
-        
-        .mobile-filter-dropdown option {
-            padding: 10px;
-        }
-        
-        /* Student Cards */
-        .mobile-students-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .mobile-student-card {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            border-left: 4px solid var(--ctu-light-blue);
-        }
-        
-        .mobile-student-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-        
-        .mobile-student-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--ctu-soft-gold);
-        }
-        
-        .mobile-student-info {
-            flex: 1;
-        }
-        
-        .mobile-student-name {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--ctu-deep-blue);
-            margin-bottom: 2px;
-        }
-        
-        .mobile-student-id {
-            font-size: 0.85rem;
-            color: var(--ctu-text-secondary);
-        }
-        
-        .mobile-student-details {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding-top: 12px;
-            border-top: 1px solid #e5e8eb;
-        }
-        
-        .mobile-student-detail {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-        
-        .mobile-student-detail i {
-            color: var(--ctu-light-blue);
-            width: 20px;
-        }
-        
-        .mobile-student-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #e5e8eb;
-        }
-        
-        .mobile-student-action-btn {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-        
-        .mobile-student-action-btn.schedule {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-        
-        /* Mobile Side Menu */
-        .mobile-side-menu {
-            position: fixed;
-            top: 0;
-            left: -100%;
-            width: 85%;
-            max-width: 320px;
-            height: 100%;
-            background: var(--ctu-deep-blue);
-            z-index: 2000;
-            transition: left 0.3s ease;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 20px 0;
-        }
-        
-        .mobile-side-menu.open {
-            left: 0;
-        }
-        
-        .mobile-side-menu-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
-        }
-        
-        .mobile-side-menu-close {
-            background: none;
-            border: none;
-            color: var(--ctu-white);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-        
-        .mobile-side-menu-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0 20px 20px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .mobile-profile-img {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--ctu-soft-gold);
-        }
-        
-        .mobile-profile-info {
-            flex: 1;
-        }
-        
-        .mobile-profile-name {
-            color: var(--ctu-white);
-            font-weight: 600;
-            font-size: 1rem;
-            margin-bottom: 4px;
-        }
-        
-        .mobile-profile-role {
-            color: var(--ctu-soft-gold);
-            font-size: 0.85rem;
-        }
-        
-        .mobile-side-menu-links {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .mobile-side-menu-links li {
-            margin: 0;
-        }
-        
-        .mobile-side-menu-links a {
-            display: flex;
-            align-items: center;
-            color: var(--ctu-white);
-            text-decoration: none;
-            padding: 16px 20px;
-            transition: all 0.2s ease;
-            font-weight: 500;
-        }
-        
-        .mobile-side-menu-links a i {
-            margin-right: 12px;
-            font-size: 1.2rem;
-            width: 24px;
-            text-align: center;
-        }
-        
-        .mobile-side-menu-links a.active,
-        .mobile-side-menu-links a:active {
-            background: var(--ctu-soft-gold);
-            color: var(--ctu-deep-blue);
-        }
-        
-        .mobile-side-menu-footer {
-            padding: 20px;
-            margin-top: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .mobile-logout-btn {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            background: none;
-            border: none;
-            color: var(--ctu-white);
-            padding: 12px 0;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        
-        .mobile-logout-btn i {
-            margin-right: 12px;
-            font-size: 1.2rem;
-        }
-        
-        /* Mobile Overlay */
-        .mobile-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1500;
-            display: none;
-        }
-        
-        .mobile-overlay.open {
-            display: block;
-        }
-        
-        /* Mobile Bottom Nav */
-        .mobile-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--ctu-deep-blue);
-            height: 70px;
-            z-index: 1000;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        
-        .mobile-nav-items {
-            display: flex;
-            align-items: center;
-            height: 100%;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            padding: 0 12px;
-            gap: 8px;
-        }
-        
-        .mobile-nav-items::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .mobile-nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            min-width: 70px;
-            padding: 8px 12px;
-            color: var(--ctu-white);
-            text-decoration: none;
-            font-size: 0.7rem;
-            font-weight: 500;
-            border-radius: 8px;
-        }
-        
-        .mobile-nav-item.active {
-            background: var(--ctu-soft-gold);
-            color: var(--ctu-deep-blue);
-        }
-        
-        .mobile-nav-item i {
-            font-size: 1.2rem;
-            margin-bottom: 4px;
-        }
-        
-        /* Loading State */
-        .loading-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
-        
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--ctu-light-blue);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/admin-students-mobile.css">
 </head>
 <body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Loading Overlay -->
+    <div id="mobileLoader" class="mobile-loader" style="display: none;" role="status" aria-label="Loading">
+        <div class="loader-spinner"></div>
+        <span>Loading...</span>
+    </div>
+
     <!-- Mobile Header -->
-    <header class="mobile-header">
+    <header class="mobile-header" role="banner">
         <div class="mobile-logo-container">
             <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
             <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
             <span class="mobile-app-title">CHRONIX</span>
         </div>
-        <button class="mobile-menu-btn" id="mobileMenuBtn">
-            <i class="bi bi-list"></i>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu" aria-expanded="false">
+            <i class="bi bi-list" aria-hidden="true"></i>
         </button>
     </header>
 
     <!-- Mobile Side Menu -->
-    <div class="mobile-side-menu" id="mobileSideMenu">
+    <nav class="mobile-side-menu" id="mobileSideMenu" role="navigation" aria-label="Main navigation" aria-hidden="true">
         <div class="mobile-side-menu-header">
             <div class="mobile-logo-container">
                 <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
                 <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
                 <span class="mobile-app-title">CHRONIX</span>
             </div>
-            <button class="mobile-side-menu-close" id="mobileSideMenuClose">
-                <i class="bi bi-x-lg"></i>
+            <button class="mobile-side-menu-close" id="mobileSideMenuClose" aria-label="Close menu">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
             </button>
         </div>
         
@@ -498,360 +51,349 @@
                 <div class="mobile-profile-role">Administrator</div>
             </div>
         </div>
-        
+
         <ul class="mobile-side-menu-links">
-            <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a></li>
-            <li><a href="admin-subjects.html"><i class="bi bi-book"></i> <span>Subjects</span></a></li>
-            <li><a href="admin-sections.html"><i class="bi bi-layers"></i> <span>Sections</span></a></li>
-            <li><a href="admin-rooms.html"><i class="bi bi-door-open"></i> <span>Rooms</span></a></li>
-            <li><a href="admin-schedules.html"><i class="bi bi-calendar-event"></i> <span>Schedules</span></a></li>
-            <li><a href="admin-students.html" class="active"><i class="bi bi-mortarboard"></i> <span>Students</span></a></li>
-            <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i> <span>Teachers</span></a></li>
-            <li><a href="admin-profile.html"><i class="bi bi-person"></i> <span>Profile</span></a></li>
+            <li><a href="admin-dashboard-mobile.html"><i class="bi bi-speedometer2" aria-hidden="true"></i> <span>Dashboard</span></a></li>
+            <li><a href="admin-subjects-mobile.html"><i class="bi bi-book" aria-hidden="true"></i> <span>Subjects</span></a></li>
+            <li><a href="admin-sections-mobile.html"><i class="bi bi-layers" aria-hidden="true"></i> <span>Sections</span></a></li>
+            <li><a href="admin-rooms-mobile.html"><i class="bi bi-door-open" aria-hidden="true"></i> <span>Rooms</span></a></li>
+            <li><a href="admin-schedules-mobile.html"><i class="bi bi-calendar-event" aria-hidden="true"></i> <span>Schedules</span></a></li>
+            <li><a href="admin-students-mobile.html" class="active" aria-current="page"><i class="bi bi-mortarboard" aria-hidden="true"></i> <span>Students</span></a></li>
+            <li><a href="admin-teachers-mobile.html"><i class="bi bi-person-badge" aria-hidden="true"></i> <span>Teachers</span></a></li>
+            <li><a href="admin-profile-mobile.html"><i class="bi bi-person" aria-hidden="true"></i> <span>Profile</span></a></li>
         </ul>
         
         <div class="mobile-side-menu-footer">
             <button class="mobile-logout-btn" id="mobileLogoutBtn">
-                <i class="bi bi-box-arrow-right"></i> 
+                <i class="bi bi-box-arrow-right" aria-hidden="true"></i> 
                 <span>Logout</span>
             </button>
         </div>
-    </div>
+    </nav>
 
     <!-- Mobile Overlay -->
-    <div class="mobile-overlay" id="mobileOverlay"></div>
+    <div class="mobile-overlay" id="mobileOverlay" aria-hidden="true"></div>
 
     <!-- Mobile Main Content -->
-    <main class="mobile-main-content">
-        <h1 class="mobile-page-title">Students</h1>
+    <main class="mobile-main-content" id="main-content" role="main">
+        <div class="mobile-page-header">
+            <h1 class="mobile-page-title">Students</h1>
+            <button class="mobile-add-btn" id="mobileAddStudentBtn" aria-label="Add new student">
+                <i class="bi bi-plus-lg" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="mobile-stats-row" role="region" aria-label="Student statistics">
+            <div class="mobile-stat-card">
+                <div class="stat-icon blue"><i class="bi bi-people" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="totalStudentsCount">0</span>
+                    <span class="stat-label">Total</span>
+                </div>
+            </div>
+            <div class="mobile-stat-card">
+                <div class="stat-icon green"><i class="bi bi-check-circle" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="activeStudentsCount">0</span>
+                    <span class="stat-label">Active</span>
+                </div>
+            </div>
+            <div class="mobile-stat-card">
+                <div class="stat-icon red"><i class="bi bi-x-circle" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" id="inactiveStudentsCount">0</span>
+                    <span class="stat-label">Inactive</span>
+                </div>
+            </div>
+        </div>
         
         <!-- Search Box -->
         <div class="mobile-search-box">
-            <i class="bi bi-search"></i>
-            <input type="text" id="mobileStudentSearch" placeholder="Search students...">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" id="mobileStudentSearch" placeholder="Search students..." 
+                   aria-label="Search students by name, email, or ID">
         </div>
         
         <!-- Filter Controls -->
-        <div class="mobile-filter-controls">
-            <select id="mobileYearLevelFilter" class="mobile-filter-dropdown">
+        <div class="mobile-filter-controls" role="group" aria-label="Filter options">
+            <select id="mobileYearLevelFilter" class="mobile-filter-dropdown" aria-label="Filter by year level">
                 <option value="">All Years</option>
                 <option value="1">Year 1</option>
                 <option value="2">Year 2</option>
                 <option value="3">Year 3</option>
                 <option value="4">Year 4</option>
             </select>
-            <select id="mobileSectionFilter" class="mobile-filter-dropdown">
+            <select id="mobileSectionFilter" class="mobile-filter-dropdown" aria-label="Filter by section">
                 <option value="">All Sections</option>
+            </select>
+            <select id="mobileStatusFilter" class="mobile-filter-dropdown" aria-label="Filter by status">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
             </select>
         </div>
 
         <!-- Students List -->
-        <div class="mobile-students-list" id="mobileStudentsList">
-            <div class="loading-state">
+        <div class="mobile-students-list" id="mobileStudentsList" role="list" aria-label="Students list">
+            <div class="loading-state" role="status">
                 <div class="loading-spinner"></div>
                 <span>Loading students...</span>
             </div>
         </div>
+
+        <!-- Load More Button -->
+        <button class="load-more-btn" id="loadMoreBtn" style="display: none;">
+            Load More Students
+        </button>
     </main>
 
     <!-- Mobile Navigation -->
-    <nav class="mobile-nav" role="navigation" aria-label="Mobile navigation">
+    <nav class="mobile-nav" role="navigation" aria-label="Quick navigation">
         <div class="mobile-nav-items">
             <a href="admin-dashboard-mobile.html" class="mobile-nav-item">
-                <i class="bi bi-speedometer2"></i>
+                <i class="bi bi-speedometer2" aria-hidden="true"></i>
                 <span>Dashboard</span>
             </a>
             <a href="admin-subjects-mobile.html" class="mobile-nav-item">
-                <i class="bi bi-book"></i>
+                <i class="bi bi-book" aria-hidden="true"></i>
                 <span>Subjects</span>
             </a>
             <a href="admin-sections-mobile.html" class="mobile-nav-item">
-                <i class="bi bi-layers"></i>
+                <i class="bi bi-layers" aria-hidden="true"></i>
                 <span>Sections</span>
             </a>
             <a href="admin-rooms-mobile.html" class="mobile-nav-item">
-                <i class="bi bi-door-open"></i>
+                <i class="bi bi-door-open" aria-hidden="true"></i>
                 <span>Rooms</span>
             </a>
             <a href="admin-schedules-mobile.html" class="mobile-nav-item">
-                <i class="bi bi-calendar-event"></i>
+                <i class="bi bi-calendar-event" aria-hidden="true"></i>
                 <span>Schedules</span>
             </a>
             <a href="admin-students-mobile.html" class="mobile-nav-item active" aria-current="page">
-                <i class="bi bi-mortarboard"></i>
+                <i class="bi bi-mortarboard" aria-hidden="true"></i>
                 <span>Students</span>
             </a>
             <a href="admin-teachers-mobile.html" class="mobile-nav-item">
-                <i class="bi bi-person-badge"></i>
+                <i class="bi bi-person-badge" aria-hidden="true"></i>
                 <span>Teachers</span>
             </a>
         </div>
     </nav>
 
-    <script type="module" src="/js/auth-guard.js"></script>
-    <script type="module">
-        import AuthGuard from '/js/auth-guard.js';
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Check authentication
-            if (!AuthGuard.checkAuthentication('admin')) {
-                return;
-            }
-
-            // Mobile menu functionality
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const mobileSideMenu = document.getElementById('mobileSideMenu');
-            const mobileSideMenuClose = document.getElementById('mobileSideMenuClose');
-            const mobileOverlay = document.getElementById('mobileOverlay');
-            
-            function openMobileMenu() {
-                mobileSideMenu.classList.add('open');
-                mobileOverlay.classList.add('open');
-                document.body.style.overflow = 'hidden';
-            }
-            
-            function closeMobileMenu() {
-                mobileSideMenu.classList.remove('open');
-                mobileOverlay.classList.remove('open');
-                document.body.style.overflow = '';
-            }
-            
-            mobileMenuBtn.addEventListener('click', openMobileMenu);
-            mobileSideMenuClose.addEventListener('click', closeMobileMenu);
-            mobileOverlay.addEventListener('click', closeMobileMenu);
-            
-            // Close menu when clicking on links
-            document.querySelectorAll('.mobile-side-menu-links a').forEach(link => {
-                link.addEventListener('click', closeMobileMenu);
-            });
-            
-            // Mobile logout functionality
-            const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
-            if (mobileLogoutBtn) {
-                mobileLogoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (confirm('Are you sure you want to logout?')) {
-                        AuthGuard.logout();
-                    }
-                });
-            }
-            
-            // Update mobile profile info
-            function updateMobileProfileInfo() {
-                const currentUser = AuthGuard.getCurrentUser();
-                if (currentUser) {
-                    const mobileProfileName = document.getElementById('mobileProfileName');
-                    if (mobileProfileName) {
-                        mobileProfileName.textContent = currentUser.fullname;
-                    }
-                    const mobileProfileAvatar = document.getElementById('mobileProfileAvatar');
-                    if (mobileProfileAvatar && currentUser.profilePicture) {
-                        mobileProfileAvatar.src = currentUser.profilePicture;
-                    }
-                }
-            }
-            
-            updateMobileProfileInfo();
-
-            let allStudents = [];
-            let allSections = [];
-
-            // Load students
-            async function loadStudents() {
-                try {
-                    const res = await fetch('/users/students');
-                    if (res.ok) {
-                        allStudents = await res.json();
-                        displayStudents(allStudents);
-                    }
-                } catch (error) {
-                    console.error('Error loading students:', error);
-                    document.getElementById('mobileStudentsList').innerHTML = `
-                        <div class="loading-state">
-                            <i class="bi bi-exclamation-triangle" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                            <span>Error loading students</span>
-                        </div>
-                    `;
-                }
-            }
-
-            // Load sections for filter
-            async function loadSections() {
-                try {
-                    const res = await fetch('/sections');
-                    if (res.ok) {
-                        allSections = await res.json();
-                        populateSectionFilter();
-                    }
-                } catch (error) {
-                    console.error('Error loading sections:', error);
-                }
-            }
-
-            function populateSectionFilter() {
-                const select = document.getElementById('mobileSectionFilter');
-                select.innerHTML = '<option value="">All Sections</option>';
-                allSections.forEach(section => {
-                    const option = document.createElement('option');
-                    option.value = section.sectionName;
-                    option.textContent = section.sectionName;
-                    select.appendChild(option);
-                });
-            }
-
-            function displayStudents(students) {
-                const list = document.getElementById('mobileStudentsList');
-                if (!students || students.length === 0) {
-                    list.innerHTML = `
-                        <div class="loading-state">
-                            <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                            <span>No students found</span>
-                        </div>
-                    `;
-                    return;
-                }
-
-                list.innerHTML = '';
-                students.forEach(student => {
-                    const card = document.createElement('div');
-                    card.className = 'mobile-student-card';
-                    card.innerHTML = `
-                        <div class="mobile-student-header">
-                            <img src="${student.profilePicture || '/img/default_admin_avatar.png'}" 
-                                 alt="${student.fullname}" 
-                                 class="mobile-student-avatar">
-                            <div class="mobile-student-info">
-                                <div class="mobile-student-name">${student.fullname}</div>
-                                <div class="mobile-student-id">${student.ctuid}</div>
-                            </div>
-                        </div>
-                        <div class="mobile-student-details">
-                            <div class="mobile-student-detail">
-                                <i class="bi bi-envelope"></i>
-                                <span>${student.email}</span>
-                            </div>
-                            <div class="mobile-student-detail">
-                                <i class="bi bi-layers"></i>
-                                <span>${student.section || 'No section'}</span>
-                            </div>
-                            <div class="mobile-student-detail">
-                                <i class="bi bi-door-open"></i>
-                                <span>${student.room || 'No room'}</span>
-                            </div>
-                        </div>
-                        <div class="mobile-student-actions">
-                            <button class="mobile-student-action-btn schedule" onclick="viewStudentSchedule('${student._id}', '${student.section}')">
-                                <i class="bi bi-calendar"></i> View Schedule
-                            </button>
-                        </div>
-                    `;
-                    list.appendChild(card);
-                });
-            }
-
-            // Search and filter
-            const searchInput = document.getElementById('mobileStudentSearch');
-            const yearFilter = document.getElementById('mobileYearLevelFilter');
-            const sectionFilter = document.getElementById('mobileSectionFilter');
-
-            function applyFilters() {
-                const searchTerm = searchInput.value.toLowerCase();
-                const selectedYear = yearFilter.value;
-                const selectedSection = sectionFilter.value;
-
-                let filtered = allStudents;
-
-                if (selectedSection) {
-                    filtered = filtered.filter(s => s.section === selectedSection);
-                }
-
-                if (searchTerm) {
-                    filtered = filtered.filter(s => 
-                        s.fullname.toLowerCase().includes(searchTerm) ||
-                        s.email.toLowerCase().includes(searchTerm) ||
-                        s.ctuid.toLowerCase().includes(searchTerm)
-                    );
-                }
-
-                displayStudents(filtered);
-            }
-
-            searchInput.addEventListener('input', applyFilters);
-            yearFilter.addEventListener('change', applyFilters);
-            sectionFilter.addEventListener('change', applyFilters);
-
-            // Global function for viewing student schedule
-            window.viewStudentSchedule = async function(studentId, sectionName) {
-                if (!sectionName || sectionName === 'No section') {
-                    alert('This student is not assigned to any section');
-                    return;
-                }
+    <!-- Add Student Modal -->
+    <div id="addStudentModal" class="mobile-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="addStudentTitle" aria-hidden="true">
+        <div class="mobile-modal-content">
+            <div class="mobile-modal-header">
+                <h2 id="addStudentTitle">Add New Student</h2>
+                <button class="mobile-modal-close" id="closeAddStudentModal" aria-label="Close modal">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+            <form id="addStudentForm" class="mobile-form" novalidate>
+                <div class="form-profile-upload">
+                    <img id="addProfilePreview" src="/img/default_admin_avatar.png" alt="Profile preview" class="profile-preview">
+                    <label for="addProfilePicture" class="upload-btn">
+                        <i class="bi bi-camera" aria-hidden="true"></i> Upload Photo
+                    </label>
+                    <input type="file" id="addProfilePicture" accept="image/*" class="hidden-input">
+                </div>
                 
-                try {
-                    const res = await fetch('/schedules');
-                    if (res.ok) {
-                        const allSchedules = await res.json();
-                        const sectionSchedules = allSchedules.filter(s => 
-                            s.section?.sectionName === sectionName
-                        );
-                        
-                        if (sectionSchedules.length === 0) {
-                            alert('No schedules found for this section');
-                            return;
-                        }
-                        
-                        // Group by day
-                        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                        let scheduleText = `Schedule for ${sectionName}:\n\n`;
-                        
-                        days.forEach(day => {
-                            const daySchedules = sectionSchedules.filter(s => s.day === day);
-                            if (daySchedules.length > 0) {
-                                scheduleText += `${day}:\n`;
-                                daySchedules.forEach(s => {
-                                    const subject = s.subject?.courseCode || 'N/A';
-                                    const teacher = s.teacher?.fullname || 'N/A';
-                                    const time = `${s.startTime} ${s.startPeriod} - ${s.endTime} ${s.endPeriod}`;
-                                    scheduleText += `  ${time}: ${subject} (${teacher})\n`;
-                                });
-                                scheduleText += '\n';
-                            }
-                        });
-                        
-                        alert(scheduleText);
-                    }
-                } catch (error) {
-                    console.error('Error loading schedule:', error);
-                    alert('Error loading schedule');
-                }
-            };
+                <div class="form-group">
+                    <label for="addFullName">Full Name <span class="required">*</span></label>
+                    <input type="text" id="addFullName" required aria-required="true" placeholder="Enter full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="addEmail">Email <span class="required">*</span></label>
+                    <input type="email" id="addEmail" required aria-required="true" placeholder="Enter email address">
+                </div>
+                
+                <div class="form-group">
+                    <label for="addCtuid">CTU ID <span class="required">*</span></label>
+                    <input type="text" id="addCtuid" required aria-required="true" placeholder="Enter CTU ID (6-15 characters)">
+                </div>
+                
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="addBirthdate">Birthdate</label>
+                        <input type="date" id="addBirthdate">
+                    </div>
+                    <div class="form-group">
+                        <label for="addGender">Gender</label>
+                        <select id="addGender">
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="addSection">Section</label>
+                        <select id="addSection">
+                            <option value="">Select Section</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="addYearLevel">Year Level</label>
+                        <select id="addYearLevel">
+                            <option value="">Select</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="cancelAddStudent">Cancel</button>
+                    <button type="submit" class="btn-submit">Add Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-            // Initialize
-            await loadSections();
-            await loadStudents();
-        });
-    </script>
+    <!-- Edit Student Modal -->
+    <div id="editStudentModal" class="mobile-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="editStudentTitle" aria-hidden="true">
+        <div class="mobile-modal-content">
+            <div class="mobile-modal-header">
+                <h2 id="editStudentTitle">Edit Student</h2>
+                <button class="mobile-modal-close" id="closeEditStudentModal" aria-label="Close modal">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+            <form id="editStudentForm" class="mobile-form" novalidate>
+                <div class="form-profile-upload">
+                    <img id="editProfilePreview" src="/img/default_admin_avatar.png" alt="Profile preview" class="profile-preview">
+                    <label for="editProfilePicture" class="upload-btn">
+                        <i class="bi bi-camera" aria-hidden="true"></i> Change Photo
+                    </label>
+                    <input type="file" id="editProfilePicture" accept="image/*" class="hidden-input">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editFullName">Full Name <span class="required">*</span></label>
+                    <input type="text" id="editFullName" required aria-required="true">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editEmail">Email <span class="required">*</span></label>
+                    <input type="email" id="editEmail" required aria-required="true">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editCtuid">CTU ID <span class="required">*</span></label>
+                    <input type="text" id="editCtuid" required aria-required="true">
+                </div>
+                
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="editBirthdate">Birthdate</label>
+                        <input type="date" id="editBirthdate">
+                    </div>
+                    <div class="form-group">
+                        <label for="editGender">Gender</label>
+                        <select id="editGender">
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="editSection">Section</label>
+                        <select id="editSection">
+                            <option value="">Select Section</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editYearLevel">Year Level</label>
+                        <select id="editYearLevel">
+                            <option value="">Select</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="cancelEditStudent">Cancel</button>
+                    <button type="submit" class="btn-submit">Update Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="scheduleModal" class="mobile-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="scheduleTitle" aria-hidden="true">
+        <div class="mobile-modal-content schedule-modal-content">
+            <div class="mobile-modal-header">
+                <h2 id="scheduleTitle">Class Schedule</h2>
+                <button class="mobile-modal-close" id="closeScheduleModal" aria-label="Close modal">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+            
+            <div class="schedule-student-info">
+                <img id="scheduleStudentAvatar" src="/img/default_admin_avatar.png" alt="Student avatar" class="schedule-avatar">
+                <div class="schedule-student-details">
+                    <h3 id="scheduleStudentName">Student Name</h3>
+                    <p id="scheduleStudentSection">Section</p>
+                </div>
+            </div>
+
+            <div class="schedule-stats-row">
+                <div class="schedule-stat">
+                    <i class="bi bi-book" aria-hidden="true"></i>
+                    <span id="scheduleLectureHours">0</span>
+                    <small>Lecture hrs</small>
+                </div>
+                <div class="schedule-stat">
+                    <i class="bi bi-laptop" aria-hidden="true"></i>
+                    <span id="scheduleLabHours">0</span>
+                    <small>Lab hrs</small>
+                </div>
+                <div class="schedule-stat">
+                    <i class="bi bi-clock" aria-hidden="true"></i>
+                    <span id="scheduleTotalHours">0</span>
+                    <small>Total hrs</small>
+                </div>
+            </div>
+
+            <div class="schedule-view-toggle" role="tablist">
+                <button class="schedule-view-btn active" data-view="weekly" role="tab" aria-selected="true">
+                    <i class="bi bi-calendar-week" aria-hidden="true"></i> Weekly
+                </button>
+                <button class="schedule-view-btn" data-view="daily" role="tab" aria-selected="false">
+                    <i class="bi bi-calendar-day" aria-hidden="true"></i> Daily
+                </button>
+            </div>
+
+            <div id="scheduleContent" class="schedule-content" role="tabpanel">
+                <!-- Schedule content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/js/admin-students-mobile.js"></script>
 
     <!-- Mobile detection and redirection -->
     <script>
-        function isMobileDevice() {
-            return window.innerWidth <= 768 || 
-                   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
-
-        let lastRedirectTime = 0;
-        const REDIRECT_COOLDOWN = 1000;
-
         function shouldRedirectToDesktop() {
-            const now = Date.now();
-            if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
-                return false;
-            }
-            return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
+            return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
         }
 
         if (shouldRedirectToDesktop()) {
-            lastRedirectTime = Date.now();
             window.location.href = '/admin-students.html';
         }
 
@@ -860,7 +402,6 @@
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function() {
                 if (shouldRedirectToDesktop()) {
-                    lastRedirectTime = Date.now();
                     window.location.href = '/admin-students.html';
                 }
             }, 250);

@@ -524,6 +524,63 @@ body {
     background: #f0f0f0;
 }
 
+/* Teacher Info Display */
+.teacher-info-display {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.teacher-info-display .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.teacher-info-display .info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px 12px;
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+}
+
+.teacher-info-display .info-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.teacher-info-display .info-item i {
+    font-size: 1.4em;
+    color: #667eea;
+    min-width: 24px;
+}
+
+.teacher-info-display .info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.teacher-info-display .info-label {
+    font-size: 0.75em;
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.teacher-info-display .info-value {
+    font-size: 0.95em;
+    color: #333;
+    font-weight: 600;
+}
+
 /* Teacher Info in Modal */
 .teacher-info {
     display: flex;
@@ -1063,6 +1120,32 @@ body {
 }
 
 @media (max-width: 480px) {
+    .teacher-info-display {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .teacher-info-display .info-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .teacher-info-display .info-item {
+        padding: 8px 10px;
+    }
+    
+    .teacher-info-display .info-item i {
+        font-size: 1.2em;
+    }
+    
+    .teacher-info-display .info-label {
+        font-size: 0.7em;
+    }
+    
+    .teacher-info-display .info-value {
+        font-size: 0.85em;
+    }
+    
     .teachers-header {
         padding: 16px;
     }

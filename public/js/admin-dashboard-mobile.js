@@ -248,12 +248,78 @@ function renderMobileRoomUtilizationChart() {
 
     const config = getDonutChartConfig(aggregatedData.labels, aggregatedData.data, colors);
     
-    // Mobile-specific adjustments
-    config.chart.height = 250;
+    // Mobile-specific adjustments for compact display that fits in container
+    config.chart.height = 310; // Increased to fit properly with legend in 320px wrapper
     config.chart.toolbar = { show: false };
-    config.plotOptions.pie.donut.size = '60%';
+    
+    // Smaller donut with compact center labels
+    config.plotOptions.pie.donut.size = '50%';
+    config.plotOptions.pie.donut.labels.show = true;
+    config.plotOptions.pie.donut.labels.total.show = true;
+    config.plotOptions.pie.donut.labels.total.fontSize = '12px';
+    config.plotOptions.pie.donut.labels.total.label = 'Total';
+    config.plotOptions.pie.donut.labels.name.fontSize = '13px';
+    config.plotOptions.pie.donut.labels.value.fontSize = '18px';
+    
+    // Compact legend configuration with more space
     config.legend.position = 'bottom';
+    config.legend.horizontalAlign = 'center';
     config.legend.fontSize = '11px';
+    config.legend.fontWeight = 500;
+    config.legend.offsetY = 5;
+    config.legend.itemMargin = {
+        horizontal: 10,
+        vertical: 5
+    };
+    config.legend.markers = {
+        width: 10,
+        height: 10,
+        radius: 10,
+        offsetX: -3
+    };
+    
+    // Use full labels with values
+    config.legend.formatter = function(seriesName, opts) {
+        const value = opts.w.globals.series[opts.seriesIndex];
+        const total = opts.w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+        const percentage = ((value / total) * 100).toFixed(0);
+        return `${seriesName}: ${value} (${percentage}%)`;
+    };
+    
+    // Disable data labels on slices for cleaner look
+    config.dataLabels.enabled = false;
+    
+    // Add responsive configuration to ensure it fits
+    config.responsive = [{
+        breakpoint: 480,
+        options: {
+            chart: {
+                height: 260
+            },
+            legend: {
+                fontSize: '8px',
+                itemMargin: {
+                    horizontal: 4,
+                    vertical: 1
+                }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '45%',
+                        labels: {
+                            total: {
+                                fontSize: '11px'
+                            },
+                            value: {
+                                fontSize: '16px'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }];
     
     chartManager.createOrUpdate('mobileRoomUtilizationChart', config);
     console.log('Mobile room chart updated successfully');

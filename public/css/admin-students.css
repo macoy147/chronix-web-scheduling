@@ -1090,3 +1090,290 @@ body {
         width: 100%;
     }
 }
+
+
+/* ==================== NEW STYLES FOR IMPROVEMENTS ==================== */
+
+/* Add Student Button */
+.btn-add-student {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: var(--ctu-light-blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-add-student:hover {
+    background: var(--ctu-deep-blue);
+    transform: translateY(-1px);
+}
+
+.btn-add-student:focus {
+    outline: 2px solid var(--ctu-soft-gold);
+    outline-offset: 2px;
+}
+
+/* Status Toggle Button */
+.btn-status {
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8em;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-activate {
+    background: var(--schedule-lecture);
+}
+
+.btn-activate:hover {
+    background: #3a9c36;
+}
+
+.btn-deactivate {
+    background: #ff9800;
+}
+
+.btn-deactivate:hover {
+    background: #f57c00;
+}
+
+/* Pagination */
+.pagination-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 0 4px;
+    color: var(--ctu-text-secondary);
+    font-size: 0.9em;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--ctu-lightest-gray);
+    border: 2px solid #e5e8eb;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--ctu-text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: var(--ctu-light-blue);
+    color: white;
+    border-color: var(--ctu-light-blue);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-btn:focus {
+    outline: 2px solid var(--ctu-light-blue);
+    outline-offset: 2px;
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pagination-page {
+    min-width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 2px solid #e5e8eb;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--ctu-text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pagination-page:hover {
+    background: var(--tint-blue-bg);
+    border-color: var(--ctu-light-blue);
+}
+
+.pagination-page.active {
+    background: var(--ctu-light-blue);
+    color: white;
+    border-color: var(--ctu-light-blue);
+}
+
+.pagination-page:focus {
+    outline: 2px solid var(--ctu-light-blue);
+    outline-offset: 2px;
+}
+
+.pagination-ellipsis {
+    padding: 0 8px;
+    color: var(--ctu-text-secondary);
+}
+
+/* Profile Upload Section */
+.form-profile-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e8eb;
+}
+
+.profile-upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-preview-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--ctu-soft-gold);
+}
+
+.profile-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--ctu-lightest-gray);
+    border-radius: 8px;
+    font-size: 0.85em;
+    color: var(--ctu-text-primary);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.profile-upload-btn:hover {
+    background: #e5e8eb;
+}
+
+.hidden-file-input {
+    display: none;
+}
+
+.profile-upload-area small {
+    color: var(--ctu-text-secondary);
+    font-size: 0.75em;
+}
+
+/* Form Validation Styles */
+.form-row input.error,
+.form-row select.error {
+    border-color: var(--schedule-conflict);
+}
+
+.field-error {
+    display: block;
+    font-size: 0.75em;
+    color: var(--schedule-conflict);
+    margin-top: 4px;
+}
+
+.required {
+    color: var(--schedule-conflict);
+}
+
+/* Accessibility Focus Styles */
+.students-table tr:focus {
+    outline: 2px solid var(--ctu-light-blue);
+    outline-offset: -2px;
+}
+
+.btn-view:focus,
+.btn-edit:focus,
+.btn-delete:focus,
+.btn-status:focus {
+    outline: 2px solid var(--ctu-deep-blue);
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .status-badge {
+        border: 2px solid currentColor;
+    }
+    
+    .btn-view, .btn-edit, .btn-delete, .btn-status {
+        border: 2px solid currentColor;
+    }
+    
+    .pagination-page {
+        border-width: 3px;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .admin-nav,
+    .students-controls,
+    .pagination-controls,
+    .pagination-info,
+    .action-buttons,
+    .modal-overlay {
+        display: none !important;
+    }
+    
+    .admin-students-main {
+        padding: 0;
+    }
+    
+    .students-table-container {
+        box-shadow: none;
+    }
+    
+    .students-table {
+        font-size: 10pt;
+    }
+}

@@ -209,6 +209,7 @@ const UserSchema = new mongoose.Schema({
     birthdate: { type: String, default: '' },
     gender: { type: String, default: '' },
     profilePicture: { type: String, default: '' },
+    yearLevel: { type: Number, default: null }, // Explicit year level for students (1-4)
     lastLogin: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', UserSchema);
@@ -398,7 +399,7 @@ app.put('/notifications/user/:userId/read-all', async (req, res) => {
 // --------------------- ROUTES ---------------------
 // Register
 app.post('/register', async (req, res) => {
-    const { fullname, email, userrole, ctuid, password, section, birthdate, gender } = req.body;
+    const { fullname, email, userrole, ctuid, password, section, birthdate, gender, yearLevel, status } = req.body;
     try {
         // Prevent registering as admin through the API
         if (userrole === 'admin') {
@@ -467,7 +468,8 @@ app.post('/register', async (req, res) => {
             section, 
             room: assignedRoom, 
             birthdate, 
-            gender 
+            gender,
+            yearLevel: yearLevel || null
         });
         await user.save();
         
@@ -478,7 +480,21 @@ app.post('/register', async (req, res) => {
             section: user.section,
             room: user.room
         });
-        res.json({ message: 'User registered successfully!' });
+        res.json({ 
+            message: 'User registered successfully!',
+            user: {
+                _id: user._id,
+                fullname: user.fullname,
+                email: user.email,
+                userrole: user.userrole,
+                ctuid: user.ctuid,
+                section: user.section,
+                room: user.room,
+                birthdate: user.birthdate,
+                gender: user.gender,
+                yearLevel: user.yearLevel
+            }
+        });
     } catch (error) {
         logger.error('Error registering user:', error);
         res.status(500).json({ error: 'Error registering user. Please try again.' });
@@ -581,7 +597,7 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
             return res.status(400).json({ error: req.fileValidationError });
         }
 
-        const { fullname, email, ctuid, birthdate, gender, section, room } = req.body;
+        const { fullname, email, ctuid, birthdate, gender, section, yearLevel, room } = req.body;
 
         // Get the current user data to compare changes
         const currentUser = await User.findById(req.params.id);
@@ -609,6 +625,10 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
         if (gender && gender !== currentUser.gender) {
             updateFields.gender = gender;
             changes.push(`gender changed from "${currentUser.gender}" to "${gender}"`);
+        }
+        if (yearLevel !== undefined && yearLevel !== currentUser.yearLevel) {
+            updateFields.yearLevel = yearLevel;
+            changes.push(`year level changed from "${currentUser.yearLevel}" to "${yearLevel}"`);
         }
         if (section !== undefined && section !== currentUser.section) {
             // Check for duplicate advisory section (teachers only)
@@ -800,7 +820,7 @@ app.post('/upload-profile-picture/:id', upload.single('profilePicture'), async (
 app.get('/users/students', async (req, res) => {
     try {
         const students = await User.find({ userrole: 'student' })
-            .select('_id fullname email ctuid userrole section room birthdate gender profilePicture lastLogin')
+            .select('_id fullname email ctuid userrole section room birthdate gender profilePicture yearLevel lastLogin')
             .sort({ fullname: 1 });
         
         logger.info(`✅ Fetched ${students.length} students`);

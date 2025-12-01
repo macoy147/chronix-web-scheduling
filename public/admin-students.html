@@ -50,26 +50,34 @@
             <!-- Search and Filters -->
             <div class="students-controls">
                 <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="studentSearch" placeholder="Search students by name, email, or ID...">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" id="studentSearch" placeholder="Search students by name, email, or ID..." aria-label="Search students">
                 </div>
                 <div class="filter-controls">
-                    <select id="yearLevelFilter">
+                    <select id="yearLevelFilter" aria-label="Filter by year level">
                         <option value="">All Year Levels</option>
                         <option value="1">1st Year</option>
                         <option value="2">2nd Year</option>
                         <option value="3">3rd Year</option>
                         <option value="4">4th Year</option>
                     </select>
-                    <select id="sectionFilter">
+                    <select id="sectionFilter" aria-label="Filter by section">
                         <option value="">All Sections</option>
                     </select>
-                    <select id="statusFilter">
+                    <select id="statusFilter" aria-label="Filter by status">
                         <option value="">All Status</option>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                     </select>
+                    <button class="btn-add-student" id="addStudentBtn" aria-label="Add new student">
+                        <i class="bi bi-plus-lg" aria-hidden="true"></i> Add Student
+                    </button>
                 </div>
+            </div>
+
+            <!-- Pagination Info -->
+            <div class="pagination-info" role="status" aria-live="polite">
+                <span id="paginationText">Showing 0 of 0 students</span>
             </div>
 
             <!-- Student Statistics Cards -->
@@ -131,10 +139,23 @@
             </div>
 
             <!-- Empty State -->
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <i class="bi bi-person-x"></i>
+            <div id="emptyState" class="empty-state" style="display: none;" role="status">
+                <i class="bi bi-person-x" aria-hidden="true"></i>
                 <h3>No Students Found</h3>
                 <p>There are no students in the system yet.</p>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-controls" id="paginationControls" style="display: none;">
+                <button class="pagination-btn" id="prevPageBtn" aria-label="Previous page">
+                    <i class="bi bi-chevron-left" aria-hidden="true"></i> Previous
+                </button>
+                <div class="pagination-pages" id="paginationPages" role="navigation" aria-label="Pagination">
+                    <!-- Page numbers will be generated here -->
+                </div>
+                <button class="pagination-btn" id="nextPageBtn" aria-label="Next page">
+                    Next <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </button>
             </div>
         </div>
     </main>
@@ -253,6 +274,40 @@
                 </button>
             </div>
             
+            <!-- Student Info Display (shown when editing) -->
+            <div id="studentInfoDisplay" class="student-info-display" style="display:none;">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <i class="bi bi-mortarboard"></i>
+                        <div class="info-content">
+                            <span class="info-label">Year Level</span>
+                            <span class="info-value" id="displayStudentYearLevel">-</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-layers"></i>
+                        <div class="info-content">
+                            <span class="info-label">Class Section</span>
+                            <span class="info-value" id="displayStudentSection">-</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-door-open"></i>
+                        <div class="info-content">
+                            <span class="info-label">Assigned Room</span>
+                            <span class="info-value" id="displayStudentRoom">-</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-building"></i>
+                        <div class="info-content">
+                            <span class="info-label">Building</span>
+                            <span class="info-value" id="displayStudentBuilding">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <form id="editStudentForm">
                 <div class="form-grid">
                     <div class="form-row">
@@ -294,6 +349,17 @@
                     </div>
                     
                     <div class="form-row">
+                        <label for="editYearLevel">Year Level</label>
+                        <select id="editYearLevel" name="yearLevel">
+                            <option value="">Select Year Level</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
                         <label for="editRoom">Assigned Room</label>
                         <select id="editRoom" name="room">
                             <option value="">No Room Assigned</option>
@@ -310,19 +376,99 @@
         </div>
     </div>
 
+    <!-- Add Student Modal -->
+    <div id="addStudentModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="addStudentModalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="addStudentModalTitle">Add New Student</h3>
+                <button class="modal-close" id="closeAddStudentModal" aria-label="Close modal">
+                    <i class="bi bi-x" aria-hidden="true"></i>
+                </button>
+            </div>
+            
+            <form id="addStudentForm" novalidate>
+                <div class="form-profile-section">
+                    <div class="profile-upload-area">
+                        <img id="addProfilePreview" src="./img/default_student_avatar.png" alt="Profile preview" class="profile-preview-img">
+                        <label for="addProfilePicture" class="profile-upload-btn">
+                            <i class="bi bi-camera" aria-hidden="true"></i> Upload Photo
+                        </label>
+                        <input type="file" id="addProfilePicture" accept="image/*" class="hidden-file-input">
+                        <small>Max 5MB, JPG/PNG</small>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="addFullName">Full Name <span class="required">*</span></label>
+                        <input type="text" id="addFullName" name="fullname" required aria-required="true" placeholder="Enter full name">
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="addEmail">Email <span class="required">*</span></label>
+                        <input type="email" id="addEmail" name="email" required aria-required="true" placeholder="Enter email address">
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="addCtuid">CTU ID <span class="required">*</span></label>
+                        <input type="text" id="addCtuid" name="ctuid" required aria-required="true" placeholder="6-15 alphanumeric characters">
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="addBirthdate">Birthdate</label>
+                        <input type="date" id="addBirthdate" name="birthdate">
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="addGender">Gender</label>
+                        <select id="addGender" name="gender">
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="addYearLevel">Year Level</label>
+                        <select id="addYearLevel" name="yearLevel">
+                            <option value="">Select Year Level</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="addSection">Class Section</label>
+                        <select id="addSection" name="section">
+                            <option value="">Select Section</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="modal-cancel" id="cancelAddStudent">Cancel</button>
+                    <button type="submit" class="modal-submit" id="submitAddStudent">Add Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Delete Confirmation Modal -->
-    <div id="deleteStudentModal" class="modal-overlay" style="display:none;">
+    <div id="deleteStudentModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="deleteStudentModalTitle">
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
-                <h3>Delete Student</h3>
-                <button class="modal-close" id="closeDeleteStudentModal">
-                    <i class="bi bi-x"></i>
+                <h3 id="deleteStudentModalTitle">Delete Student</h3>
+                <button class="modal-close" id="closeDeleteStudentModal" aria-label="Close modal">
+                    <i class="bi bi-x" aria-hidden="true"></i>
                 </button>
             </div>
             
             <div class="delete-confirmation">
                 <div class="warning-icon">
-                    <i class="bi bi-exclamation-triangle"></i>
+                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                 </div>
                 <p id="deleteConfirmationText">Are you sure you want to delete this student? This action cannot be undone.</p>
                 

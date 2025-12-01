@@ -481,6 +481,365 @@
             font-size: 0.85rem;
             color: var(--ctu-text-secondary);
         }
+        
+        /* Schedule Modal Styles */
+        .mobile-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 3000;
+            padding: 0;
+        }
+        
+        .mobile-modal-content {
+            background: white;
+            width: 100%;
+            max-height: 90vh;
+            border-radius: 20px 20px 0 0;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .mobile-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e5e8eb;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        
+        .mobile-modal-header h2 {
+            font-size: 1.2rem;
+            color: var(--ctu-deep-blue);
+            margin: 0;
+        }
+        
+        .mobile-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--ctu-text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+        }
+        
+        .schedule-modal-content {
+            max-height: 95vh;
+        }
+        
+        .schedule-teacher-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--ctu-lightest-gray);
+        }
+        
+        .schedule-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .schedule-teacher-details h3 {
+            font-size: 1rem;
+            color: var(--ctu-deep-blue);
+            margin: 0 0 4px 0;
+        }
+        
+        .schedule-teacher-details p {
+            font-size: 0.85rem;
+            color: var(--ctu-text-secondary);
+            margin: 0;
+        }
+        
+        .schedule-stats-row {
+            display: flex;
+            justify-content: space-around;
+            padding: 16px 20px;
+            background: white;
+            border-bottom: 1px solid #e5e8eb;
+        }
+        
+        .schedule-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .schedule-stat i {
+            font-size: 1.2rem;
+            color: var(--ctu-light-blue);
+        }
+        
+        .schedule-stat span {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+        }
+        
+        .schedule-stat small {
+            font-size: 0.7rem;
+            color: var(--ctu-text-secondary);
+        }
+        
+        .schedule-view-toggle {
+            display: flex;
+            padding: 12px 20px;
+            gap: 8px;
+            background: white;
+            border-bottom: 1px solid #e5e8eb;
+        }
+        
+        .schedule-view-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e5e8eb;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ctu-text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .schedule-view-btn.active {
+            background: var(--ctu-light-blue);
+            border-color: var(--ctu-light-blue);
+            color: white;
+        }
+        
+        .schedule-content {
+            padding: 16px;
+            min-height: 300px;
+        }
+        
+        /* Weekly Schedule Grid */
+        .weekly-schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            overflow-x: auto;
+        }
+        
+        .schedule-day-column {
+            min-width: 80px;
+        }
+        
+        .schedule-day-header {
+            background: var(--ctu-deep-blue);
+            color: white;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px 6px 0 0;
+        }
+        
+        .schedule-day-content {
+            background: var(--ctu-lightest-gray);
+            padding: 6px;
+            min-height: 150px;
+            border-radius: 0 0 6px 6px;
+        }
+        
+        .schedule-card {
+            background: #4BB543;
+            color: white;
+            padding: 6px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .schedule-card.lab {
+            background: #FF6B35;
+        }
+        
+        .schedule-time {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        
+        .schedule-subject {
+            font-weight: 700;
+        }
+        
+        .schedule-room {
+            opacity: 0.9;
+        }
+        
+        .no-class {
+            text-align: center;
+            padding: 20px 4px;
+            color: var(--ctu-text-secondary);
+            font-size: 0.7rem;
+        }
+        
+        /* Daily Schedule View */
+        .daily-schedule-view {
+            padding: 0;
+        }
+        
+        .daily-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: var(--ctu-lightest-gray);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .daily-nav-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+        
+        .daily-current-day {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            margin: 0;
+        }
+        
+        .daily-schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .daily-schedule-card {
+            background: white;
+            border-radius: 10px;
+            padding: 14px;
+            border-left: 4px solid #4BB543;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+        
+        .daily-schedule-card.lab {
+            border-left-color: #FF6B35;
+        }
+        
+        .daily-schedule-time {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--ctu-text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .daily-schedule-subject {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 2px;
+        }
+        
+        .daily-schedule-title {
+            font-size: 0.85rem;
+            color: var(--ctu-text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .daily-schedule-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.75rem;
+            color: var(--ctu-text-secondary);
+        }
+        
+        .daily-schedule-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .schedule-type-badge {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+        }
+        
+        .schedule-type-badge.lecture {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .schedule-type-badge.lab {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .no-class-daily {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--ctu-text-secondary);
+        }
+        
+        .no-class-daily i {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 360px) {
+            .weekly-schedule-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (min-width: 600px) {
+            .mobile-modal-content {
+                max-width: 500px;
+                margin: auto;
+                border-radius: 20px;
+            }
+            
+            .mobile-modal {
+                align-items: center;
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -615,250 +974,58 @@
         </div>
     </nav>
 
-    <script type="module" src="/js/auth-guard.js"></script>
-    <script type="module">
-        import AuthGuard from '/js/auth-guard.js';
+    <script type="module" src="/js/admin-teachers-mobile.js"></script>
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Check authentication
-            if (!AuthGuard.checkAuthentication('admin')) {
-                return;
-            }
-
-            // Mobile menu functionality
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const mobileSideMenu = document.getElementById('mobileSideMenu');
-            const mobileSideMenuClose = document.getElementById('mobileSideMenuClose');
-            const mobileOverlay = document.getElementById('mobileOverlay');
+    <!-- Schedule Modal -->
+    <div id="scheduleModal" class="mobile-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="scheduleTitle" aria-hidden="true">
+        <div class="mobile-modal-content schedule-modal-content">
+            <div class="mobile-modal-header">
+                <h2 id="scheduleTitle">Teaching Schedule</h2>
+                <button class="mobile-modal-close" id="closeScheduleModal" aria-label="Close modal">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
             
-            function openMobileMenu() {
-                mobileSideMenu.classList.add('open');
-                mobileOverlay.classList.add('open');
-                document.body.style.overflow = 'hidden';
-            }
-            
-            function closeMobileMenu() {
-                mobileSideMenu.classList.remove('open');
-                mobileOverlay.classList.remove('open');
-                document.body.style.overflow = '';
-            }
-            
-            mobileMenuBtn.addEventListener('click', openMobileMenu);
-            mobileSideMenuClose.addEventListener('click', closeMobileMenu);
-            mobileOverlay.addEventListener('click', closeMobileMenu);
-            
-            // Close menu when clicking on links
-            document.querySelectorAll('.mobile-side-menu-links a').forEach(link => {
-                link.addEventListener('click', closeMobileMenu);
-            });
-            
-            // Mobile logout functionality
-            const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
-            if (mobileLogoutBtn) {
-                mobileLogoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (confirm('Are you sure you want to logout?')) {
-                        AuthGuard.logout();
-                    }
-                });
-            }
-            
-            // Update mobile profile info
-            function updateMobileProfileInfo() {
-                const currentUser = AuthGuard.getCurrentUser();
-                if (currentUser) {
-                    const mobileProfileName = document.getElementById('mobileProfileName');
-                    if (mobileProfileName) {
-                        mobileProfileName.textContent = currentUser.fullname;
-                    }
-                    const mobileProfileAvatar = document.getElementById('mobileProfileAvatar');
-                    if (mobileProfileAvatar && currentUser.profilePicture) {
-                        mobileProfileAvatar.src = currentUser.profilePicture;
-                    }
-                }
-            }
-            
-            updateMobileProfileInfo();
+            <div class="schedule-teacher-info">
+                <img id="scheduleTeacherAvatar" src="/img/default_admin_avatar.png" alt="Teacher avatar" class="schedule-avatar">
+                <div class="schedule-teacher-details">
+                    <h3 id="scheduleTeacherName">Teacher Name</h3>
+                    <p id="scheduleTeacherSection">Advisory Section</p>
+                </div>
+            </div>
 
-            let allTeachers = [];
-            let allSchedules = [];
+            <div class="schedule-stats-row">
+                <div class="schedule-stat">
+                    <i class="bi bi-book" aria-hidden="true"></i>
+                    <span id="scheduleLectureHours">0</span>
+                    <small>Lecture hrs</small>
+                </div>
+                <div class="schedule-stat">
+                    <i class="bi bi-laptop" aria-hidden="true"></i>
+                    <span id="scheduleLabHours">0</span>
+                    <small>Lab hrs</small>
+                </div>
+                <div class="schedule-stat">
+                    <i class="bi bi-clock" aria-hidden="true"></i>
+                    <span id="scheduleTotalHours">0</span>
+                    <small>Total hrs</small>
+                </div>
+            </div>
 
-            // Load teachers and schedules
-            async function loadTeachers() {
-                try {
-                    // Load teachers
-                    const teachersRes = await fetch('/teachers');
-                    if (teachersRes.ok) {
-                        allTeachers = await teachersRes.json();
-                    }
-                    
-                    // Load schedules for stats
-                    try {
-                        const schedulesRes = await fetch('/schedules');
-                        if (schedulesRes.ok) {
-                            allSchedules = await schedulesRes.json();
-                        }
-                    } catch (err) {
-                        console.log('Could not load schedules for stats');
-                    }
-                    
-                    updateStats();
-                    displayTeachers(allTeachers);
-                } catch (error) {
-                    console.error('Error loading teachers:', error);
-                    document.getElementById('mobileTeachersList').innerHTML = `
-                        <div class="loading-state">
-                            <i class="bi bi-exclamation-triangle" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                            <span>Error loading teachers</span>
-                        </div>
-                    `;
-                }
-            }
+            <div class="schedule-view-toggle" role="tablist">
+                <button class="schedule-view-btn active" data-view="weekly" role="tab" aria-selected="true">
+                    <i class="bi bi-calendar-week" aria-hidden="true"></i> Weekly
+                </button>
+                <button class="schedule-view-btn" data-view="daily" role="tab" aria-selected="false">
+                    <i class="bi bi-calendar-day" aria-hidden="true"></i> Daily
+                </button>
+            </div>
 
-            function updateStats() {
-                document.getElementById('totalTeachers').textContent = allTeachers.length;
-                // Count active teachers (those with schedules)
-                const activeCount = allTeachers.filter(teacher => {
-                    return allSchedules.some(schedule => 
-                        (schedule.teacher._id || schedule.teacher) === teacher._id
-                    );
-                }).length;
-                document.getElementById('activeTeachers').textContent = activeCount;
-            }
-
-            function displayTeachers(teachers) {
-                const list = document.getElementById('mobileTeachersList');
-                if (!teachers || teachers.length === 0) {
-                    list.innerHTML = `
-                        <div class="loading-state">
-                            <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                            <span>No teachers found</span>
-                        </div>
-                    `;
-                    return;
-                }
-
-                list.innerHTML = '';
-                teachers.forEach(teacher => {
-                    const card = document.createElement('div');
-                    card.className = 'mobile-teacher-card';
-                    card.innerHTML = `
-                        <div class="mobile-teacher-header">
-                            <img src="${teacher.profilePicture || '/img/default_admin_avatar.png'}" 
-                                 alt="${teacher.fullname}" 
-                                 class="mobile-teacher-avatar">
-                            <div class="mobile-teacher-info">
-                                <div class="mobile-teacher-name">${teacher.fullname}</div>
-                                <div class="mobile-teacher-id">${teacher.ctuid}</div>
-                            </div>
-                        </div>
-                        <div class="mobile-teacher-details">
-                            <div class="mobile-teacher-detail">
-                                <i class="bi bi-envelope"></i>
-                                <span>${teacher.email}</span>
-                            </div>
-                            <div class="mobile-teacher-detail">
-                                <i class="bi bi-telephone"></i>
-                                <span>${teacher.phone || 'No phone'}</span>
-                            </div>
-                            <div class="mobile-teacher-detail">
-                                <i class="bi bi-building"></i>
-                                <span>${teacher.department || 'No department'}</span>
-                            </div>
-                        </div>
-                        <div class="mobile-teacher-actions">
-                            <button class="mobile-teacher-action-btn view" onclick="viewTeacher('${teacher._id}')">
-                                <i class="bi bi-eye"></i> View
-                            </button>
-                            <button class="mobile-teacher-action-btn schedule" onclick="viewSchedule('${teacher._id}')">
-                                <i class="bi bi-calendar"></i> Schedule
-                            </button>
-                        </div>
-                    `;
-                    list.appendChild(card);
-                });
-            }
-
-            // Search and filter
-            const searchInput = document.getElementById('mobileTeacherSearch');
-            const departmentFilter = document.getElementById('mobileDepartmentFilter');
-
-            function applyFilters() {
-                const searchTerm = searchInput.value.toLowerCase();
-                const selectedDepartment = departmentFilter.value;
-
-                let filtered = allTeachers;
-
-                if (selectedDepartment) {
-                    filtered = filtered.filter(t => t.department === selectedDepartment);
-                }
-
-                if (searchTerm) {
-                    filtered = filtered.filter(t => 
-                        t.fullname.toLowerCase().includes(searchTerm) ||
-                        t.email.toLowerCase().includes(searchTerm) ||
-                        t.ctuid.toLowerCase().includes(searchTerm)
-                    );
-                }
-
-                displayTeachers(filtered);
-            }
-
-            searchInput.addEventListener('input', applyFilters);
-            departmentFilter.addEventListener('change', applyFilters);
-
-            // Global functions for buttons
-            window.viewTeacher = async function(id) {
-                const teacher = allTeachers.find(t => t._id === id);
-                if (teacher) {
-                    alert(`Teacher: ${teacher.fullname}\nEmail: ${teacher.email}\nID: ${teacher.ctuid}\nDepartment: ${teacher.department || 'N/A'}`);
-                }
-            };
-
-            window.viewSchedule = async function(teacherId) {
-                try {
-                    const res = await fetch('/schedules');
-                    if (res.ok) {
-                        const allSchedules = await res.json();
-                        const teacherSchedules = allSchedules.filter(s => 
-                            (s.teacher._id || s.teacher) === teacherId
-                        );
-                        
-                        if (teacherSchedules.length === 0) {
-                            alert('No schedules found for this teacher');
-                            return;
-                        }
-                        
-                        // Group by day
-                        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                        let scheduleText = 'Teacher Schedule:\n\n';
-                        
-                        days.forEach(day => {
-                            const daySchedules = teacherSchedules.filter(s => s.day === day);
-                            if (daySchedules.length > 0) {
-                                scheduleText += `${day}:\n`;
-                                daySchedules.forEach(s => {
-                                    const subject = s.subject?.courseCode || 'N/A';
-                                    const section = s.section?.sectionName || 'N/A';
-                                    const time = `${s.startTime} ${s.startPeriod} - ${s.endTime} ${s.endPeriod}`;
-                                    scheduleText += `  ${time}: ${subject} - ${section}\n`;
-                                });
-                                scheduleText += '\n';
-                            }
-                        });
-                        
-                        alert(scheduleText);
-                    }
-                } catch (error) {
-                    console.error('Error loading schedule:', error);
-                    alert('Error loading schedule');
-                }
-            };
-
-            // Initialize
-            await loadTeachers();
-        });
-    </script>
+            <div id="scheduleContent" class="schedule-content" role="tabpanel">
+                <!-- Schedule content will be rendered here -->
+            </div>
+        </div>
+    </div>
 
     <!-- Mobile detection and redirection -->
     <script>

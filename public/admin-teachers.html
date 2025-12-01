@@ -212,6 +212,40 @@
                 </button>
             </div>
             
+            <!-- Teacher Info Display (shown when editing) -->
+            <div id="teacherInfoDisplay" class="teacher-info-display" style="display:none;">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <i class="bi bi-mortarboard"></i>
+                        <div class="info-content">
+                            <span class="info-label">Year Level</span>
+                            <span class="info-value" id="displayTeacherYearLevel">-</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-layers"></i>
+                        <div class="info-content">
+                            <span class="info-label">Advisory Section</span>
+                            <span class="info-value" id="displayTeacherSection">-</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-door-open"></i>
+                        <div class="info-content">
+                            <span class="info-label">Assigned Room</span>
+                            <span class="info-value" id="displayTeacherRoom">-</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="bi bi-building"></i>
+                        <div class="info-content">
+                            <span class="info-label">Building</span>
+                            <span class="info-value" id="displayTeacherBuilding">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <form id="editTeacherForm">
                 <div class="form-grid">
                     <div class="form-row">

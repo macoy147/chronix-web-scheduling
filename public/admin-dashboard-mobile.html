@@ -514,6 +514,17 @@
             height: 200px;
         }
         
+        /* Taller wrapper for Room Utilization chart (donut chart needs more space for legend) */
+        #mobileRoomUtilizationChart {
+            height: 320px !important;
+        }
+        
+        #mobileRoomUtilizationChart + .mobile-chart-wrapper,
+        .mobile-chart-container:has(#mobileRoomUtilizationChart) .mobile-chart-wrapper {
+            height: 320px;
+            min-height: 320px;
+        }
+        
         /* Mobile Actions & Activity */
         .mobile-actions-activity-section {
             display: flex;

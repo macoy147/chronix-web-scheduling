@@ -625,7 +625,7 @@ class ScheduleExporter {
             doc.text('Province of Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 15, { align: 'center' });
             
             // Main campus location
-            doc.text('Daanbantayan Campus: M.J. Cuenco Ave., Cebu City', doc.internal.pageSize.getWidth() / 2, yPos + 20, { align: 'center' });
+            doc.text('Agujo, Daanbantayan, Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 20, { align: 'center' });
             
             // Daanbantayan Campus
             doc.setFont(undefined, 'bold');
@@ -1294,16 +1294,22 @@ class ScheduleExporter {
         doc.setFont(undefined, 'bold');
         doc.setTextColor(0, 45, 98);
         
-        doc.text('Republic of the Philippines', doc.internal.pageSize.getWidth() / 2, yPos + 5, { align: 'center' });
+        doc.text('Republic of the Philippines', doc.internal.pageSize.getWidth() / 2, yPos + 0, { align: 'center' });
         doc.setFontSize(14);
-        doc.text('CEBU TECHNOLOGICAL UNIVERSITY', doc.internal.pageSize.getWidth() / 2, yPos + 10, { align: 'center' });
+        doc.text('CEBU TECHNOLOGICAL UNIVERSITY', doc.internal.pageSize.getWidth() / 2, yPos + 6, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        doc.text('Province of Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 15, { align: 'center' });
-        doc.text('Daanbantayan Campus: M.J. Cuenco Ave., Cebu City', doc.internal.pageSize.getWidth() / 2, yPos + 20, { align: 'center' });
+        doc.text('Province of Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 10, { align: 'center' });
+        doc.text('Agujo, Daanbantayan, Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 13, { align: 'center' });
+
+        doc.setFontSize(6);
+        doc.text('Website: http://www.ctu.edu.ph E-mail: info-daanbantayan@ctu.edu.ph', doc.internal.pageSize.getWidth() / 2, yPos + 17, { align: 'center' });
+        doc.text('Phone: +6332 437 8526 loc. 102/316 1905 ', doc.internal.pageSize.getWidth() / 2, yPos + 21, { align: 'center' });
+
+        doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
-        doc.text('COLLEGE OF TECHNOLOGY AND ENGINEERING', doc.internal.pageSize.getWidth() / 2, yPos + 25, { align: 'center' });
-        doc.text('BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY', doc.internal.pageSize.getWidth() / 2, yPos + 30, { align: 'center' });
+        doc.text('COLLEGE OF TECHNOLOGY AND ENGINEERING', doc.internal.pageSize.getWidth() / 2, yPos + 26, { align: 'center' });
+        doc.text('BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY', doc.internal.pageSize.getWidth() / 2, yPos + 31, { align: 'center' });
 
         yPos += 35;
 

@@ -1,13 +1,14 @@
+/**
+ * Admin Students Management - Desktop Version
+ * Features: CRUD operations, pagination, validation, profile upload
+ * Status is automatically determined by whether student has schedules
+ */
+
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
 
-
-// Simple auth helper
- 
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Check authentication first
     if (!AuthGuard.checkAuthentication('admin')) {
         return;
     }
@@ -23,6 +24,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentDayIndex = 0;
     let studentToDelete = null;
 
+    // Pagination state
+    let currentPage = 1;
+    const STUDENTS_PER_PAGE = 15;
+    let filteredStudents = [];
+
     // Profile dropdown
     const profileDropdown = document.querySelector('.admin-profile-dropdown');
     if (profileDropdown) {
@@ -30,39 +36,26 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             profileDropdown.classList.toggle('open');
         });
-        document.addEventListener('click', function() {
-            profileDropdown.classList.remove('open');
-        });
+        document.addEventListener('click', () => profileDropdown.classList.remove('open'));
     }
 
-    // Logout functionality
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            AuthGuard.logout();
-        });
-    }
+    // Logout
+    document.getElementById('logoutBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        AuthGuard.logout();
+    });
 
-    // Update profile info
     function updateProfileInfo() {
         const currentUser = AuthGuard.getCurrentUser();
         if (currentUser) {
             const firstName = currentUser.fullname.split(' ')[0];
             const profileName = document.getElementById('profileName');
-            if (profileName) {
-                profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down"></i>`;
-            }
+            if (profileName) profileName.innerHTML = `${firstName} <i class="bi bi-chevron-down"></i>`;
             const profileAvatar = document.getElementById('profileAvatar');
-            if (profileAvatar && currentUser.profilePicture) {
-                profileAvatar.src = currentUser.profilePicture.startsWith('http') 
-                    ? currentUser.profilePicture 
-                    : currentUser.profilePicture;
-            }
+            if (profileAvatar && currentUser.profilePicture) profileAvatar.src = currentUser.profilePicture;
         }
     }
 
-    // Fetch user data
     async function fetchUserData() {
         try {
             const userId = AuthGuard.getUserId();
@@ -79,23 +72,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize
     updateProfileInfo();
     fetchUserData();
 
-    // Load all data
+    // ==================== DATA LOADING ====================
+
     async function loadAllData() {
         try {
             showLoadingState(true);
-            await Promise.all([
-                loadStudents(),
-                loadSchedules(),
-                loadSections(),
-                loadRooms()
-            ]);
+            await Promise.all([loadStudents(), loadSchedules(), loadSections(), loadRooms()]);
             updateStatistics();
             populateSectionFilter();
-            renderStudentsTable();
+            populateAddStudentSections();
+            applyFiltersAndRender();
             showLoadingState(false);
         } catch (error) {
             console.error('Error loading data:', error);
@@ -104,55 +93,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // FIXED: Better student loading with fallback
     async function loadStudents() {
         try {
-            console.log('🔄 Attempting to load students from /users/students...');
-            let res = await fetch('/users/students');
-            
-            // If the new endpoint fails, fall back to test-users
-            if (!res.ok) {
-                console.log('❌ New endpoint failed, falling back to /test-users');
-                res = await fetch('/test-users');
-                if (res.ok) {
-                    const data = await res.json();
-                    // Extract students from test-users response
-                    students = data.users ? data.users.filter(user => user.userrole === 'student') : [];
-                    console.log(`✅ Loaded ${students.length} students from test-users fallback`);
-                } else {
-                    throw new Error('Both endpoints failed');
+            // Add cache-busting parameter to ensure fresh data
+            const res = await fetch(`/users/students?_t=${Date.now()}`, {
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
                 }
+            });
+            if (res.ok) {
+                const fetchedStudents = await res.json();
+                // Filter out any null or invalid entries
+                students = fetchedStudents.filter(s => s && s._id);
+                console.log(`✅ Loaded ${students.length} students from server`);
             } else {
-                students = await res.json();
-                console.log(`✅ Loaded ${students.length} students from dedicated endpoint`);
+                console.error('Failed to load students:', res.status);
+                students = [];
             }
-            
-            console.log('Students data:', students);
-            
-            if (students.length === 0) {
-                console.warn('⚠️ No students found in the system');
-                showBubbleMessage('No students found in the system', 'error');
-            }
-            
         } catch (error) {
-            console.error('❌ Error loading students:', error);
+            console.error('Error loading students:', error);
             students = [];
-            showBubbleMessage('Failed to load students. Please check the server.', 'error');
         }
     }
 
     async function loadSchedules() {
         try {
             const res = await fetch('/schedules');
-            if (res.ok) {
-                schedules = await res.json();
-                console.log('Loaded schedules:', schedules);
-            } else {
-                console.error('Failed to load schedules');
-                schedules = [];
-            }
+            if (res.ok) schedules = await res.json();
         } catch (error) {
-            console.error('Error loading schedules:', error);
             schedules = [];
         }
     }
@@ -160,15 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadSections() {
         try {
             const res = await fetch('/sections');
-            if (res.ok) {
-                sections = await res.json();
-                console.log(`✅ Loaded ${sections.length} sections:`, sections.map(s => s.sectionName));
-            } else {
-                console.error('Failed to load sections');
-                sections = [];
-            }
+            if (res.ok) sections = await res.json();
         } catch (error) {
-            console.error('Error loading sections:', error);
             sections = [];
         }
     }
@@ -176,259 +139,847 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadRooms() {
         try {
             const res = await fetch('/rooms');
-            if (res.ok) {
-                rooms = await res.json();
-                console.log(`✅ Loaded ${rooms.length} rooms`);
-            } else {
-                console.error('Failed to load rooms');
-                rooms = [];
-            }
+            if (res.ok) rooms = await res.json();
         } catch (error) {
-            console.error('Error loading rooms:', error);
             rooms = [];
         }
     }
 
-    // Update statistics - FIXED: Now correctly counts total sections from sections data
+    // ==================== STATISTICS ====================
+
     function updateStatistics() {
         const totalStudents = students.length;
-        const activeStudents = students.filter(s => getStudentStatus(s._id) === 'active').length;
-        
-        // FIXED: Count total sections from sections data, not from student enrollments
+        const activeStudents = students.filter(s => getStudentStatus(s) === 'active').length;
         const totalSections = sections.length;
-        
-        // Count students actually enrolled in sections (for debugging)
-        const studentsWithSections = students.filter(s => s.section && s.section.trim() !== '').length;
-        const uniqueStudentSections = new Set(students.map(s => s.section).filter(s => s && s.trim() !== '')).size;
 
-        const totalStudentsEl = document.getElementById('totalStudents');
-        const activeStudentsEl = document.getElementById('activeStudents');
-        const enrolledSectionsEl = document.getElementById('enrolledSections');
+        const totalEl = document.getElementById('totalStudents');
+        const activeEl = document.getElementById('activeStudents');
+        const sectionsEl = document.getElementById('enrolledSections');
         
-        if (totalStudentsEl) totalStudentsEl.textContent = totalStudents;
-        if (activeStudentsEl) activeStudentsEl.textContent = activeStudents;
-        if (enrolledSectionsEl) enrolledSectionsEl.textContent = totalSections;
-        
-        console.log(`📊 Statistics:`, {
-            totalStudents,
-            activeStudents, 
-            totalSections,
-            studentsWithSections,
-            uniqueStudentSections,
-            sectionsList: sections.map(s => s.sectionName)
-        });
+        if (totalEl) totalEl.textContent = totalStudents;
+        if (activeEl) activeEl.textContent = activeStudents;
+        if (sectionsEl) sectionsEl.textContent = totalSections;
     }
 
-    // Populate section filter - FIXED: Use all sections from sections data
+    // ==================== FILTERS & DROPDOWNS ====================
+
     function populateSectionFilter() {
         const select = document.getElementById('sectionFilter');
         if (!select) return;
-        
-        // FIXED: Use all sections from sections data, not just those with students
-        const allSectionNames = sections.map(s => s.sectionName).sort();
-        
         select.innerHTML = '<option value="">All Sections</option>';
-        
-        allSectionNames.forEach(sectionName => {
+        sections.forEach(section => {
             const option = document.createElement('option');
-            option.value = sectionName;
-            option.textContent = sectionName;
+            option.value = section.sectionName;
+            option.textContent = section.sectionName;
             select.appendChild(option);
         });
-        
-        console.log(`📋 Populated section filter with ${allSectionNames.length} sections from sections data`);
     }
 
-    // Get student schedules based on their section
-    function getStudentSchedules(student) {
-        if (!student || !student.section) {
-            console.log(`No section for student: ${student?.fullname}`);
-            return [];
-        }
+    function populateAddStudentSections(filterYearLevel = null) {
+        const addSelect = document.getElementById('addSection');
+        const editSelect = document.getElementById('editSection');
         
-        try {
-            // Find the section object that matches the student's section
-            const studentSection = sections.find(s => s.sectionName === student.section);
-            if (!studentSection) {
-                console.log(`No section found for: ${student.section}`);
-                return [];
-            }
+        [addSelect, editSelect].forEach(select => {
+            if (!select) return;
+            const currentValue = select.value; // Preserve current selection if possible
+            select.innerHTML = '<option value="">Select Section</option>';
             
-            // Return schedules that match the student's section
-            const studentSchedules = schedules.filter(schedule => {
-                try {
-                    const scheduleSectionId = schedule.section._id || schedule.section;
-                    const studentSectionId = studentSection._id;
-                    const match = scheduleSectionId.toString() === studentSectionId.toString();
-                    return match;
-                } catch (error) {
-                    console.error('Error comparing section IDs:', error);
-                    return false;
-                }
+            // Filter sections by year level if specified
+            const filteredSections = filterYearLevel 
+                ? sections.filter(s => s.yearLevel === parseInt(filterYearLevel))
+                : sections;
+            
+            filteredSections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section.sectionName;
+                option.textContent = `${section.sectionName} (Year ${section.yearLevel})`;
+                option.setAttribute('data-year-level', section.yearLevel);
+                select.appendChild(option);
             });
             
-            console.log(`Found ${studentSchedules.length} schedules for student ${student.fullname}`);
-            return studentSchedules;
-        } catch (error) {
-            console.error('Error getting student schedules:', error);
-            return [];
-        }
-    }
-
-    // Get student status (active if enrolled in section with schedules)
-    function getStudentStatus(studentId) {
-        try {
-            const student = students.find(s => s._id === studentId);
-            if (!student || !student.section) return 'inactive';
-            
-            const studentSchedules = getStudentSchedules(student);
-            const status = studentSchedules.length > 0 ? 'active' : 'inactive';
-            console.log(`Student ${student.fullname} status: ${status}`);
-            return status;
-        } catch (error) {
-            console.error('Error getting student status:', error);
-            return 'inactive';
-        }
-    }
-
-    // Get year level from section
-    function getYearLevelFromSection(sectionName) {
-        if (!sectionName) return 'N/A';
-        
-        try {
-            const section = sections.find(s => s.sectionName === sectionName);
-            if (section && section.yearLevel) {
-                return `Year ${section.yearLevel}`;
+            // Restore selection if it still exists in filtered list
+            if (currentValue && filteredSections.some(s => s.sectionName === currentValue)) {
+                select.value = currentValue;
             }
-            
-            // Fallback: try to extract from section name
-            const yearMatch = sectionName.match(/\b(\d+)/);
-            if (yearMatch) {
-                return `Year ${yearMatch[1]}`;
+        });
+    }
+    
+    // Helper function to extract year level from section name (e.g., "1A" -> 1, "2B" -> 2)
+    function extractYearLevelFromSection(sectionName) {
+        if (!sectionName) return null;
+        const match = sectionName.match(/^(\d+)/);
+        return match ? parseInt(match[1]) : null;
+    }
+    
+    // Helper function to auto-fill year level based on section
+    function autoFillYearLevelFromSection(sectionValue, yearLevelSelectId) {
+        const yearLevel = extractYearLevelFromSection(sectionValue);
+        if (yearLevel) {
+            const yearLevelSelect = document.getElementById(yearLevelSelectId);
+            if (yearLevelSelect) {
+                yearLevelSelect.value = yearLevel.toString();
+                console.log(`✅ Auto-filled Year Level: ${yearLevel} from Section: ${sectionValue}`);
             }
-            
-            return 'N/A';
-        } catch (error) {
-            console.error('Error getting year level:', error);
-            return 'N/A';
+        }
+    }
+    
+    // Helper function to filter sections based on year level
+    function filterSectionsByYearLevel(yearLevel, sectionSelectId) {
+        if (yearLevel) {
+            populateAddStudentSections(yearLevel);
+            console.log(`✅ Filtered sections for Year Level: ${yearLevel}`);
+        } else {
+            populateAddStudentSections(); // Show all sections
         }
     }
 
-    // IMPROVED: Safe data display function with better handling
+    // ==================== HELPER FUNCTIONS ====================
+
+    // Status is automatically determined - active if student has section with schedules
+    function getStudentStatus(student) {
+        if (!student.section) return 'inactive';
+        const hasSchedules = schedules.some(s => s.section?.sectionName === student.section);
+        return hasSchedules ? 'active' : 'inactive';
+    }
+
+    function getYearLevel(student) {
+        if (student.yearLevel) return `Year ${student.yearLevel}`;
+        if (student.section) {
+            const section = sections.find(s => s.sectionName === student.section);
+            if (section?.yearLevel) return `Year ${section.yearLevel}`;
+            const match = student.section.match(/\b(\d+)/);
+            if (match) return `Year ${match[1]}`;
+        }
+        return 'N/A';
+    }
+
     function safeDisplay(data, fallback = 'N/A') {
         if (data === null || data === undefined || data === '') return fallback;
         if (typeof data === 'string' && data.trim() === '') return fallback;
         return data;
     }
 
-    // Render students table
-    function renderStudentsTable() {
-        const tbody = document.getElementById('studentsTableBody');
-        if (!tbody) {
-            console.error('Students table body not found');
-            return;
-        }
-
-        tbody.innerHTML = '';
-
-        if (students.length === 0) {
-            showEmptyState(true);
-            console.log('No students to render - showing empty state');
-            return;
-        }
-
-        showEmptyState(false);
-        console.log(`Rendering ${students.length} students to table`);
-
-        students.forEach((student, index) => {
-            try {
-                const status = getStudentStatus(student._id);
-                const yearLevel = getYearLevelFromSection(student.section);
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${safeDisplay(student.fullname)}</td>
-                    <td>${safeDisplay(student.email)}</td>
-                    <td>${safeDisplay(student.ctuid, 'No ID')}</td>
-                    <td>${safeDisplay(student.section, 'Not Assigned')}</td>
-                    <td>${yearLevel}</td>
-                    <td>${safeDisplay(student.gender, 'Not Specified')}</td>
-                    <td><span class="status-badge status-${status}">${status}</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-view" onclick="openStudentSchedule('${student._id}')">
-                                <i class="bi bi-calendar"></i> Schedule
-                            </button>
-                            <button class="btn-edit" onclick="openEditStudent('${student._id}')">
-                                <i class="bi bi-pencil"></i> 
-                            </button>
-                            <button class="btn-delete" onclick="openDeleteStudent('${student._id}')">
-                                <i class="bi bi-trash"></i> 
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-                
-                // Log first few students for debugging
-                if (index < 3) {
-                    console.log(`Rendered student: ${student.fullname}`, {
-                        ctuid: student.ctuid,
-                        gender: student.gender,
-                        section: student.section,
-                        room: student.room
-                    });
-                }
-            } catch (error) {
-                console.error('Error rendering student row:', error, student);
-            }
-        });
-
-        applyFilters();
-        console.log('✅ Students table rendered successfully');
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
-    // Combined filter function for search and filters
-    function applyFilters() {
+    function capitalizeFirst(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    // ==================== VALIDATION ====================
+
+    function validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function validateCtuid(ctuid) {
+        return /^[A-Za-z0-9-]{6,15}$/.test(ctuid);
+    }
+
+    function validateFullName(name) {
+        return name && name.trim().length >= 2;
+    }
+
+    function validateBirthdate(date) {
+        if (!date) return true;
+        const birthDate = new Date(date);
+        const today = new Date();
+        const age = today.getFullYear() - birthDate.getFullYear();
+        return age >= 15 && age <= 100;
+    }
+
+    function checkDuplicateCtuid(ctuid, excludeId = null) {
+        return students.some(s => s.ctuid?.toLowerCase() === ctuid.toLowerCase() && s._id !== excludeId);
+    }
+
+    function checkDuplicateEmail(email, excludeId = null) {
+        return students.some(s => s.email?.toLowerCase() === email.toLowerCase() && s._id !== excludeId);
+    }
+
+    function showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        field.classList.add('error');
+        field.setAttribute('aria-invalid', 'true');
+        let errorEl = field.parentElement.querySelector('.field-error');
+        if (!errorEl) {
+            errorEl = document.createElement('span');
+            errorEl.className = 'field-error';
+            errorEl.setAttribute('role', 'alert');
+            field.parentElement.appendChild(errorEl);
+        }
+        errorEl.textContent = message;
+    }
+
+    function clearAllErrors(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+        form.querySelectorAll('.field-error').forEach(el => el.remove());
+        form.querySelectorAll('[aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
+    }
+
+    // ==================== FILTERING & PAGINATION ====================
+
+    function getFilteredStudents() {
         const searchTerm = document.getElementById('studentSearch')?.value.toLowerCase() || '';
         const yearLevelFilter = document.getElementById('yearLevelFilter')?.value || '';
         const sectionFilter = document.getElementById('sectionFilter')?.value || '';
         const statusFilter = document.getElementById('statusFilter')?.value || '';
-        
-        const rows = document.querySelectorAll('#studentsTableBody tr');
-        let hasVisibleRows = false;
 
-        rows.forEach(row => {
-            try {
-                const studentName = row.cells[0]?.textContent.toLowerCase() || '';
-                const email = row.cells[1]?.textContent.toLowerCase() || '';
-                const ctuid = row.cells[2]?.textContent.toLowerCase() || '';
-                const section = row.cells[3]?.textContent || '';
-                const yearLevel = row.cells[4]?.textContent || '';
-                const statusBadge = row.cells[6]?.querySelector('.status-badge');
-                const studentStatus = statusBadge ? statusBadge.textContent.toLowerCase() : '';
+        return students.filter(student => {
+            const matchesSearch = !searchTerm || 
+                student.fullname?.toLowerCase().includes(searchTerm) ||
+                student.email?.toLowerCase().includes(searchTerm) ||
+                student.ctuid?.toLowerCase().includes(searchTerm);
 
-                const matchesSearch = studentName.includes(searchTerm) || 
-                                    email.includes(searchTerm) || 
-                                    ctuid.includes(searchTerm);
-                const matchesYearLevel = !yearLevelFilter || yearLevel.includes(yearLevelFilter);
-                const matchesSection = !sectionFilter || section === sectionFilter;
-                const matchesStatus = !statusFilter || studentStatus === statusFilter;
+            const yearLevel = student.yearLevel || 
+                (student.section ? sections.find(s => s.sectionName === student.section)?.yearLevel : null);
+            const matchesYear = !yearLevelFilter || String(yearLevel) === yearLevelFilter;
+            const matchesSection = !sectionFilter || student.section === sectionFilter;
+            const status = getStudentStatus(student);
+            const matchesStatus = !statusFilter || status === statusFilter;
 
-                const matchesAll = matchesSearch && matchesYearLevel && matchesSection && matchesStatus;
-
-                row.style.display = matchesAll ? '' : 'none';
-                if (matchesAll) hasVisibleRows = true;
-            } catch (error) {
-                console.error('Error applying filters to row:', error);
-                row.style.display = 'none';
-            }
+            return matchesSearch && matchesYear && matchesSection && matchesStatus;
         });
-
-        showEmptyState(!hasVisibleRows && students.length > 0);
     }
 
-    // Open student schedule modal
+    function applyFiltersAndRender() {
+        filteredStudents = getFilteredStudents();
+        currentPage = 1;
+        renderStudentsTable();
+        renderPagination();
+    }
+
+    function renderStudentsTable() {
+        const tbody = document.getElementById('studentsTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        if (filteredStudents.length === 0) {
+            showEmptyState(true);
+            updatePaginationInfo(0, 0, 0);
+            return;
+        }
+
+        showEmptyState(false);
+
+        const startIndex = (currentPage - 1) * STUDENTS_PER_PAGE;
+        const endIndex = Math.min(startIndex + STUDENTS_PER_PAGE, filteredStudents.length);
+        const studentsToShow = filteredStudents.slice(startIndex, endIndex);
+
+        studentsToShow.forEach(student => {
+            // Validate student data before rendering
+            if (!student || !student._id) {
+                console.warn('⚠️ Skipping invalid student data:', student);
+                return;
+            }
+            
+            const status = getStudentStatus(student);
+            const yearLevel = getYearLevel(student);
+
+            const row = document.createElement('tr');
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'row');
+            row.setAttribute('data-student-id', student._id);
+            row.innerHTML = `
+                <td>${escapeHtml(safeDisplay(student.fullname))}</td>
+                <td>${escapeHtml(safeDisplay(student.email))}</td>
+                <td>${escapeHtml(safeDisplay(student.ctuid, 'No ID'))}</td>
+                <td>${escapeHtml(safeDisplay(student.section, 'Not Assigned'))}</td>
+                <td>${yearLevel}</td>
+                <td>${capitalizeFirst(safeDisplay(student.gender, 'Not Specified'))}</td>
+                <td><span class="status-badge status-${status}" role="status">${status}</span></td>
+                <td>
+                    <div class="action-buttons" role="group" aria-label="Student actions">
+                        <button class="btn-view" onclick="openStudentSchedule('${student._id}')" aria-label="View schedule">
+                            <i class="bi bi-calendar" aria-hidden="true"></i> Schedule
+                        </button>
+                        <button class="btn-edit" onclick="openEditStudent('${student._id}')" aria-label="Edit student">
+                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                        </button>
+                        <button class="btn-delete" onclick="openDeleteStudent('${student._id}')" aria-label="Delete student">
+                            <i class="bi bi-trash" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        updatePaginationInfo(startIndex + 1, endIndex, filteredStudents.length);
+    }
+
+    // ==================== PAGINATION ====================
+
+    function renderPagination() {
+        const totalPages = Math.ceil(filteredStudents.length / STUDENTS_PER_PAGE);
+        const paginationControls = document.getElementById('paginationControls');
+        const paginationPages = document.getElementById('paginationPages');
+        
+        if (!paginationControls || !paginationPages) return;
+
+        if (totalPages <= 1) {
+            paginationControls.style.display = 'none';
+            return;
+        }
+
+        paginationControls.style.display = 'flex';
+        paginationPages.innerHTML = '';
+
+        document.getElementById('prevPageBtn').disabled = currentPage === 1;
+
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        if (startPage > 1) {
+            paginationPages.appendChild(createPageButton(1));
+            if (startPage > 2) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'pagination-ellipsis';
+                ellipsis.textContent = '...';
+                paginationPages.appendChild(ellipsis);
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationPages.appendChild(createPageButton(i));
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'pagination-ellipsis';
+                ellipsis.textContent = '...';
+                paginationPages.appendChild(ellipsis);
+            }
+            paginationPages.appendChild(createPageButton(totalPages));
+        }
+
+        document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+    }
+
+    function createPageButton(pageNum) {
+        const btn = document.createElement('button');
+        btn.className = `pagination-page ${pageNum === currentPage ? 'active' : ''}`;
+        btn.textContent = pageNum;
+        btn.onclick = () => goToPage(pageNum);
+        return btn;
+    }
+
+    function goToPage(page) {
+        const totalPages = Math.ceil(filteredStudents.length / STUDENTS_PER_PAGE);
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        renderStudentsTable();
+        renderPagination();
+        document.querySelector('.students-table-container')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updatePaginationInfo(start, end, total) {
+        const paginationText = document.getElementById('paginationText');
+        if (paginationText) {
+            paginationText.textContent = total > 0 ? `Showing ${start} to ${end} of ${total} students` : 'No students found';
+        }
+    }
+
+    document.getElementById('prevPageBtn')?.addEventListener('click', () => goToPage(currentPage - 1));
+    document.getElementById('nextPageBtn')?.addEventListener('click', () => goToPage(currentPage + 1));
+
+    // ==================== ADD STUDENT ====================
+
+    document.getElementById('addStudentBtn')?.addEventListener('click', openAddStudentModal);
+
+    function openAddStudentModal() {
+        const modal = document.getElementById('addStudentModal');
+        if (!modal) return;
+
+        document.getElementById('addStudentForm')?.reset();
+        document.getElementById('addProfilePreview')?.setAttribute('src', './img/default_student_avatar.png');
+        clearAllErrors('addStudentForm');
+        populateAddStudentSections();
+        
+        // Setup smart auto-fill listeners for Add Student form (no room field in add form)
+        setupSectionYearLevelSync('addSection', 'addYearLevel', null);
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => document.getElementById('addFullName')?.focus(), 100);
+    }
+    
+    // Setup bidirectional sync between Section, Year Level, and Room dropdowns
+    function setupSectionYearLevelSync(sectionSelectId, yearLevelSelectId, roomSelectId) {
+        const sectionSelect = document.getElementById(sectionSelectId);
+        const yearLevelSelect = document.getElementById(yearLevelSelectId);
+        const roomSelect = roomSelectId ? document.getElementById(roomSelectId) : null;
+        
+        if (!sectionSelect || !yearLevelSelect) return;
+        
+        // Remove existing listeners to avoid duplicates
+        const newSectionSelect = sectionSelect.cloneNode(true);
+        const newYearLevelSelect = yearLevelSelect.cloneNode(true);
+        const newRoomSelect = roomSelect ? roomSelect.cloneNode(true) : null;
+        
+        sectionSelect.parentNode.replaceChild(newSectionSelect, sectionSelect);
+        yearLevelSelect.parentNode.replaceChild(newYearLevelSelect, yearLevelSelect);
+        if (roomSelect && newRoomSelect) {
+            roomSelect.parentNode.replaceChild(newRoomSelect, roomSelect);
+        }
+        
+        // When section changes, auto-fill year level AND room
+        newSectionSelect.addEventListener('change', function() {
+            const selectedSection = this.value;
+            
+            if (selectedSection) {
+                // Auto-fill year level
+                autoFillYearLevelFromSection(selectedSection, yearLevelSelectId);
+                
+                // Auto-fill room based on section
+                if (newRoomSelect) {
+                    const sectionObj = sections.find(s => s.sectionName === selectedSection);
+                    if (sectionObj) {
+                        // Find room where this section is assigned (day or night shift)
+                        const assignedRoom = rooms.find(room => 
+                            room.daySection === selectedSection || 
+                            room.nightSection === selectedSection
+                        );
+                        
+                        if (assignedRoom) {
+                            newRoomSelect.value = assignedRoom.roomName;
+                            console.log(`✅ Auto-filled Room: ${assignedRoom.roomName} for Section: ${selectedSection}`);
+                        } else {
+                            console.log(`⚠️ No room found for Section: ${selectedSection}`);
+                            newRoomSelect.value = '';
+                        }
+                    }
+                }
+            }
+        });
+        
+        // When year level changes, filter sections
+        newYearLevelSelect.addEventListener('change', function() {
+            filterSectionsByYearLevel(this.value, sectionSelectId);
+        });
+    }
+
+    function closeAddStudentModal() {
+        const modal = document.getElementById('addStudentModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    document.getElementById('closeAddStudentModal')?.addEventListener('click', closeAddStudentModal);
+    document.getElementById('cancelAddStudent')?.addEventListener('click', closeAddStudentModal);
+
+    // Profile picture preview
+    document.getElementById('addProfilePicture')?.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            showBubbleMessage('Please select an image file', 'error');
+            e.target.value = '';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            showBubbleMessage('Image must be less than 5MB', 'error');
+            e.target.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (event) => document.getElementById('addProfilePreview').src = event.target.result;
+        reader.readAsDataURL(file);
+    });
+
+    // Add student form submission
+    document.getElementById('addStudentForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        clearAllErrors('addStudentForm');
+        
+        const fullname = document.getElementById('addFullName')?.value.trim();
+        const email = document.getElementById('addEmail')?.value.trim();
+        const ctuid = document.getElementById('addCtuid')?.value.trim();
+        const birthdate = document.getElementById('addBirthdate')?.value;
+        const gender = document.getElementById('addGender')?.value;
+        const section = document.getElementById('addSection')?.value;
+        const yearLevel = document.getElementById('addYearLevel')?.value;
+        const profilePictureInput = document.getElementById('addProfilePicture');
+
+        let hasErrors = false;
+
+        if (!validateFullName(fullname)) {
+            showFieldError('addFullName', 'Full name must be at least 2 characters');
+            hasErrors = true;
+        }
+        if (!validateEmail(email)) {
+            showFieldError('addEmail', 'Please enter a valid email address');
+            hasErrors = true;
+        } else if (checkDuplicateEmail(email)) {
+            showFieldError('addEmail', 'This email is already registered');
+            hasErrors = true;
+        }
+        if (!validateCtuid(ctuid)) {
+            showFieldError('addCtuid', 'CTU ID must be 6-15 alphanumeric characters');
+            hasErrors = true;
+        } else if (checkDuplicateCtuid(ctuid)) {
+            showFieldError('addCtuid', 'This CTU ID is already registered');
+            hasErrors = true;
+        }
+        if (!validateBirthdate(birthdate)) {
+            showFieldError('addBirthdate', 'Student must be between 15 and 100 years old');
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            showBubbleMessage('Please fix the errors in the form', 'error');
+            return;
+        }
+
+        const registerData = {
+            fullname, email, ctuid,
+            userrole: 'student',
+            password: ctuid,
+            birthdate: birthdate || '',
+            gender: gender || '',
+            section: section || '',
+            yearLevel: yearLevel || ''
+        };
+
+        try {
+            showLoadingState(true);
+            
+            const res = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(registerData)
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+                // Upload profile picture if selected
+                if (profilePictureInput?.files[0] && result.user?._id) {
+                    const formData = new FormData();
+                    formData.append('profilePicture', profilePictureInput.files[0]);
+                    try {
+                        await fetch(`/upload-profile-picture/${result.user._id}`, { method: 'POST', body: formData });
+                    } catch (uploadError) {
+                        console.warn('Profile picture upload failed:', uploadError);
+                    }
+                }
+                
+                showBubbleMessage('Student added successfully!', 'success');
+                closeAddStudentModal();
+                
+                // Reload data and refresh table immediately
+                await loadStudents();
+                await loadSchedules();
+                updateStatistics();
+                applyFiltersAndRender();
+            } else {
+                showBubbleMessage(result.error || 'Failed to add student', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding student:', error);
+            showBubbleMessage('Failed to add student. Please try again.', 'error');
+        } finally {
+            showLoadingState(false);
+        }
+    });
+
+    // ==================== EDIT STUDENT ====================
+
+    window.openEditStudent = function(studentId) {
+        const student = students.find(s => s && s._id === studentId);
+        if (!student || !student._id) {
+            console.error('❌ Student not found or invalid:', studentId);
+            showBubbleMessage('Student not found. The data may be outdated. Refreshing...', 'error');
+            // Reload data to ensure consistency
+            loadAllData();
+            return;
+        }
+
+        currentStudentId = studentId;
+        clearAllErrors('editStudentForm');
+
+        document.getElementById('editFullName').value = student.fullname || '';
+        document.getElementById('editEmail').value = student.email || '';
+        document.getElementById('editCtuid').value = student.ctuid || '';
+        document.getElementById('editBirthdate').value = student.birthdate || '';
+        document.getElementById('editGender').value = student.gender || '';
+        
+        // Set year level first
+        const editYearLevel = document.getElementById('editYearLevel');
+        if (editYearLevel) {
+            editYearLevel.value = student.yearLevel || '';
+        }
+
+        // Populate Section dropdown (filter by year level if available)
+        const studentYearLevel = student.yearLevel || extractYearLevelFromSection(student.section);
+        populateAddStudentSections(studentYearLevel);
+        
+        // Set section value after populating
+        const editSection = document.getElementById('editSection');
+        if (editSection && student.section) {
+            editSection.value = student.section;
+        }
+
+        // Populate Room dropdown
+        const editRoom = document.getElementById('editRoom');
+        if (editRoom) {
+            editRoom.innerHTML = '<option value="">No Room Assigned</option>';
+            rooms.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room.roomName;
+                option.textContent = `${room.roomName} (${room.building})`;
+                editRoom.appendChild(option);
+            });
+            editRoom.value = student.room || '';
+        }
+
+        document.getElementById('editStudentModalTitle').textContent = `Edit ${safeDisplay(student.fullname)}`;
+        
+        // Show and populate the student info display
+        const infoDisplay = document.getElementById('studentInfoDisplay');
+        if (infoDisplay && student.section) {
+            infoDisplay.style.display = 'block';
+            
+            // Find the section object to get details
+            const sectionObj = sections.find(s => s.sectionName === student.section);
+            
+            // Populate Year Level
+            const yearLevelEl = document.getElementById('displayStudentYearLevel');
+            if (yearLevelEl) {
+                const yearLevel = student.yearLevel || sectionObj?.yearLevel || extractYearLevelFromSection(student.section);
+                yearLevelEl.textContent = yearLevel ? `Year ${yearLevel}` : 'N/A';
+            }
+            
+            // Populate Class Section
+            const sectionEl = document.getElementById('displayStudentSection');
+            if (sectionEl) {
+                const shift = sectionObj?.shift || '';
+                sectionEl.textContent = shift ? `${student.section} (${shift} Shift)` : student.section;
+            }
+            
+            // Populate Assigned Room
+            const roomEl = document.getElementById('displayStudentRoom');
+            if (roomEl) {
+                if (student.room) {
+                    const roomObj = rooms.find(r => r.roomName === student.room);
+                    const roomType = roomObj?.roomType || '';
+                    roomEl.textContent = roomType ? `${student.room} (${roomType})` : student.room;
+                } else {
+                    roomEl.textContent = 'No Room Assigned';
+                }
+            }
+            
+            // Populate Building
+            const buildingEl = document.getElementById('displayStudentBuilding');
+            if (buildingEl) {
+                if (student.room) {
+                    const roomObj = rooms.find(r => r.roomName === student.room);
+                    const building = roomObj?.building || 'N/A';
+                    buildingEl.textContent = building;
+                } else {
+                    buildingEl.textContent = 'N/A';
+                }
+            }
+            
+            console.log('✅ Student info display populated:', {
+                yearLevel: student.yearLevel,
+                section: student.section,
+                room: student.room
+            });
+        } else if (infoDisplay) {
+            // Hide if student has no section
+            infoDisplay.style.display = 'none';
+        }
+        
+        // Setup smart auto-fill listeners for Edit Student form (includes room auto-fill)
+        setupSectionYearLevelSync('editSection', 'editYearLevel', 'editRoom');
+
+        const modal = document.getElementById('editStudentModal');
+        if (modal) modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Log the dropdown values to verify they're set
+        console.log('✅ Edit Student Modal Opened:', {
+            studentId: studentId,
+            name: student.fullname,
+            yearLevel: editYearLevel?.value,
+            section: editSection?.value,
+            room: editRoom?.value
+        });
+    };
+
+    // Edit student form submission
+    document.getElementById('editStudentForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!currentStudentId) return;
+        
+        clearAllErrors('editStudentForm');
+        
+        const fullname = document.getElementById('editFullName')?.value.trim();
+        const email = document.getElementById('editEmail')?.value.trim();
+        const ctuid = document.getElementById('editCtuid')?.value.trim();
+        const birthdate = document.getElementById('editBirthdate')?.value;
+        const gender = document.getElementById('editGender')?.value;
+        const section = document.getElementById('editSection')?.value;
+        const yearLevel = document.getElementById('editYearLevel')?.value;
+        const room = document.getElementById('editRoom')?.value;
+
+        let hasErrors = false;
+
+        if (!validateFullName(fullname)) {
+            showFieldError('editFullName', 'Full name must be at least 2 characters');
+            hasErrors = true;
+        }
+        if (!validateEmail(email)) {
+            showFieldError('editEmail', 'Please enter a valid email address');
+            hasErrors = true;
+        } else if (checkDuplicateEmail(email, currentStudentId)) {
+            showFieldError('editEmail', 'This email is already registered');
+            hasErrors = true;
+        }
+        if (!validateCtuid(ctuid)) {
+            showFieldError('editCtuid', 'CTU ID must be 6-15 alphanumeric characters');
+            hasErrors = true;
+        } else if (checkDuplicateCtuid(ctuid, currentStudentId)) {
+            showFieldError('editCtuid', 'This CTU ID is already registered');
+            hasErrors = true;
+        }
+        if (!validateBirthdate(birthdate)) {
+            showFieldError('editBirthdate', 'Student must be between 15 and 100 years old');
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            showBubbleMessage('Please fix the errors in the form', 'error');
+            return;
+        }
+
+        const formData = { fullname, email, ctuid, birthdate, gender, section, yearLevel, room };
+
+        try {
+            showLoadingState(true);
+            
+            const res = await fetch(`/user/${currentStudentId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (res.ok) {
+                const updatedData = await res.json();
+                showBubbleMessage('Student updated successfully!', 'success');
+                document.getElementById('editStudentModal').style.display = 'none';
+                document.body.style.overflow = 'auto';
+                
+                // Update the student in the local array immediately
+                const studentIndex = students.findIndex(s => s._id === currentStudentId);
+                if (studentIndex !== -1) {
+                    students[studentIndex] = { ...students[studentIndex], ...updatedData.user };
+                }
+                
+                // Reload schedules and refresh table immediately
+                await loadSchedules();
+                updateStatistics();
+                applyFiltersAndRender();
+            } else {
+                const error = await res.json();
+                showBubbleMessage(error.error || 'Failed to update student', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating student:', error);
+            showBubbleMessage('Failed to update student', 'error');
+        } finally {
+            showLoadingState(false);
+        }
+    });
+
+    // ==================== DELETE STUDENT ====================
+
+    window.openDeleteStudent = function(studentId) {
+        const student = students.find(s => s && s._id === studentId);
+        if (!student || !student._id) {
+            console.error('❌ Student not found or invalid:', studentId);
+            showBubbleMessage('Student not found. The data may be outdated. Refreshing...', 'error');
+            // Reload data to ensure consistency
+            loadAllData();
+            return;
+        }
+
+        studentToDelete = student;
+        document.getElementById('deleteConfirmationText').textContent = 
+            `Are you sure you want to delete ${safeDisplay(student.fullname)}? This action cannot be undone.`;
+
+        document.getElementById('deleteStudentModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    };
+
+    document.getElementById('confirmDeleteStudent')?.addEventListener('click', async function() {
+        if (!studentToDelete) return;
+
+        try {
+            showLoadingState(true);
+            
+            const deletedId = studentToDelete._id;
+            const deletedName = studentToDelete.fullname;
+            
+            console.log(`🗑️ Attempting to delete student: ${deletedName} (ID: ${deletedId})`);
+            
+            const res = await fetch(`/user/${deletedId}`, { 
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (res.ok) {
+                console.log(`✅ Student deleted successfully: ${deletedName}`);
+                showBubbleMessage('Student deleted successfully!', 'success');
+                
+                // Close modal first
+                document.getElementById('deleteStudentModal').style.display = 'none';
+                document.body.style.overflow = 'auto';
+                
+                // Clear the studentToDelete reference
+                studentToDelete = null;
+                
+                // Force reload fresh data from server to ensure consistency
+                await loadStudents();
+                await loadSchedules();
+                
+                // Update statistics and refresh table
+                updateStatistics();
+                applyFiltersAndRender();
+            } else {
+                const error = await res.json();
+                console.error(`❌ Failed to delete student: ${error.error}`);
+                showBubbleMessage(error.error || 'Failed to delete student', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting student:', error);
+            showBubbleMessage('Failed to delete student. Please try again.', 'error');
+        } finally {
+            showLoadingState(false);
+        }
+    });
+
+    // ==================== SCHEDULE VIEWING ====================
+
     window.openStudentSchedule = function(studentId) {
         currentStudentId = studentId;
         const student = students.find(s => s._id === studentId);
@@ -438,332 +989,34 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Update modal student info with safe display
-        const modalStudentName = document.getElementById('modalStudentName');
-        const modalStudentEmail = document.getElementById('modalStudentEmail');
-        const modalStudentId = document.getElementById('modalStudentId');
-        const modalStudentSection = document.getElementById('modalStudentSection');
-        const studentScheduleTitle = document.getElementById('studentScheduleTitle');
-        
-        if (modalStudentName) modalStudentName.textContent = safeDisplay(student.fullname);
-        if (modalStudentEmail) modalStudentEmail.textContent = safeDisplay(student.email);
-        if (modalStudentId) modalStudentId.textContent = `CTU ID: ${safeDisplay(student.ctuid, 'No ID')}`;
-        if (modalStudentSection) modalStudentSection.textContent = `Section: ${safeDisplay(student.section, 'Not Assigned')}`;
-        if (studentScheduleTitle) studentScheduleTitle.textContent = `${safeDisplay(student.fullname)}'s Class Schedule`;
+        document.getElementById('modalStudentName').textContent = safeDisplay(student.fullname);
+        document.getElementById('modalStudentEmail').textContent = safeDisplay(student.email);
+        document.getElementById('modalStudentId').textContent = `CTU ID: ${safeDisplay(student.ctuid, 'No ID')}`;
+        document.getElementById('modalStudentSection').textContent = `Section: ${safeDisplay(student.section, 'Not Assigned')}`;
+        document.getElementById('studentScheduleTitle').textContent = `${safeDisplay(student.fullname)}'s Class Schedule`;
 
-        // Load student avatar if available
         const avatar = document.getElementById('modalStudentAvatar');
-        if (avatar && student.profilePicture && student.profilePicture !== '') {
-            avatar.src = student.profilePicture.startsWith('http') 
-                ? student.profilePicture 
-                : student.profilePicture;
-        } else if (avatar) {
-            avatar.src = '/img/default_student_avatar.png';
-        }
+        if (avatar) avatar.src = student.profilePicture || '/img/default_student_avatar.png';
 
-        // Render schedule
         renderStudentSchedule(student);
         
-        // Show modal
-        const scheduleModal = document.getElementById('studentScheduleModal');
-        if (scheduleModal) scheduleModal.style.display = 'flex';
+        document.getElementById('studentScheduleModal').style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
-    // Open edit student modal
-    window.openEditStudent = function(studentId) {
-        const student = students.find(s => s._id === studentId);
-        
-        if (!student) {
-            showBubbleMessage('Student not found', 'error');
-            return;
-        }
-
-        // Populate form with student data - using safeDisplay with empty string fallback for form fields
-        const editFullName = document.getElementById('editFullName');
-        const editEmail = document.getElementById('editEmail');
-        const editCtuid = document.getElementById('editCtuid');
-        const editBirthdate = document.getElementById('editBirthdate');
-        const editGender = document.getElementById('editGender');
-        const editSection = document.getElementById('editSection');
-        const editRoom = document.getElementById('editRoom');
-        const editStudentModalTitle = document.getElementById('editStudentModalTitle');
-        
-        if (editFullName) editFullName.value = safeDisplay(student.fullname, '');
-        if (editEmail) editEmail.value = safeDisplay(student.email, '');
-        if (editCtuid) editCtuid.value = safeDisplay(student.ctuid, '');
-        if (editBirthdate) editBirthdate.value = safeDisplay(student.birthdate, '');
-        if (editGender) editGender.value = safeDisplay(student.gender, '');
-
-        // Populate Section dropdown
-        if (editSection) {
-            editSection.innerHTML = '<option value="">Select Section</option>';
-            sections.forEach(section => {
-                const option = document.createElement('option');
-                option.value = section.sectionName;
-                option.textContent = `${section.sectionName} (Year ${section.yearLevel} - ${section.shift})`;
-                editSection.appendChild(option);
-            });
-            // Set the value after populating options
-            editSection.value = safeDisplay(student.section, '');
-            console.log('📋 Section dropdown populated, selected value:', editSection.value);
-        }
-
-        // Populate Room dropdown
-        if (editRoom) {
-            editRoom.innerHTML = '<option value="">No Room Assigned</option>';
-            rooms.forEach(room => {
-                const option = document.createElement('option');
-                option.value = room.roomName;
-                option.textContent = `${room.roomName} (${room.building})`;
-                editRoom.appendChild(option);
-            });
-            // Set the value after populating options
-            editRoom.value = safeDisplay(student.room, '');
-            console.log('📋 Room dropdown populated, selected value:', editRoom.value);
-        }
-
-        // Add event listener for auto-sync: when section changes, auto-fill room
-        // Use a named function to avoid duplicates
-        const handleSectionChange = function() {
-            const selectedSection = this.value;
-            if (selectedSection) {
-                // Find room where this section is assigned
-                const assignedRoom = rooms.find(room => 
-                    room.daySection === selectedSection || room.nightSection === selectedSection
-                );
-                if (assignedRoom) {
-                    const editRoomEl = document.getElementById('editRoom');
-                    if (editRoomEl) {
-                        editRoomEl.value = assignedRoom.roomName;
-                        console.log(`✅ Auto-filled room: ${assignedRoom.roomName} for section: ${selectedSection}`);
-                    }
-                } else {
-                    console.log(`⚠️ No room found for section: ${selectedSection}`);
-                }
-            }
-        };
-
-        if (editSection) {
-            // Remove old listener if exists and add new one
-            editSection.removeEventListener('change', handleSectionChange);
-            editSection.addEventListener('change', handleSectionChange);
-        }
-
-        // Set current student ID for form submission
-        currentStudentId = studentId;
-        if (editStudentModalTitle) editStudentModalTitle.textContent = `Edit ${safeDisplay(student.fullname)}`;
-
-        // Show modal
-        const editModal = document.getElementById('editStudentModal');
-        if (editModal) editModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    };
-
-    // Open delete student modal
-    window.openDeleteStudent = function(studentId) {
-        const student = students.find(s => s._id === studentId);
-        
-        if (!student) {
-            showBubbleMessage('Student not found', 'error');
-            return;
-        }
-
-        studentToDelete = student;
-
-        // Update confirmation text
-        const deleteConfirmationText = document.getElementById('deleteConfirmationText');
-        if (deleteConfirmationText) {
-            deleteConfirmationText.textContent = 
-                `Are you sure you want to delete ${safeDisplay(student.fullname)}? This action cannot be undone.`;
-        }
-
-        // Show modal
-        const deleteModal = document.getElementById('deleteStudentModal');
-        if (deleteModal) deleteModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    };
-
-    // Edit student form submission
-    const editStudentForm = document.getElementById('editStudentForm');
-    if (editStudentForm) {
-        editStudentForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = {
-                fullname: document.getElementById('editFullName').value,
-                email: document.getElementById('editEmail').value,
-                ctuid: document.getElementById('editCtuid').value,
-                birthdate: document.getElementById('editBirthdate').value,
-                gender: document.getElementById('editGender').value,
-                section: document.getElementById('editSection').value,
-                room: document.getElementById('editRoom').value
-            };
-
-            console.log('Submitting student update:', formData);
-
-            // Basic validation
-            if (!formData.fullname || !formData.email || !formData.ctuid) {
-                showBubbleMessage('Please fill in all required fields', 'error');
-                return;
-            }
-
-            try {
-                const res = await fetch(`/user/${currentStudentId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                if (res.ok) {
-                    const result = await res.json();
-                    const updatedStudent = result.user || result; // Handle both response formats
-                    
-                    console.log('✅ Student updated:', updatedStudent);
-                    
-                    showBubbleMessage('Student updated successfully!', 'success');
-                    const editModal = document.getElementById('editStudentModal');
-                    if (editModal) editModal.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                    
-                    // Update local students array with the full updated user object
-                    const studentIndex = students.findIndex(s => s._id === currentStudentId);
-                    if (studentIndex !== -1) {
-                        students[studentIndex] = updatedStudent;
-                        console.log('✅ Updated student in local array:', students[studentIndex]);
-                    }
-                    
-                    // Re-render the table to show updated data
-                    renderStudentsTable();
-                    updateStatistics();
-                } else {
-                    const error = await res.json();
-                    showBubbleMessage(error.error || 'Failed to update student', 'error');
-                }
-            } catch (error) {
-                console.error('Error updating student:', error);
-                showBubbleMessage('Failed to update student', 'error');
-            }
+    function getStudentSchedules(student) {
+        if (!student?.section) return [];
+        const studentSection = sections.find(s => s.sectionName === student.section);
+        if (!studentSection) return [];
+        return schedules.filter(schedule => {
+            const scheduleSectionId = schedule.section?._id || schedule.section;
+            return scheduleSectionId?.toString() === studentSection._id?.toString();
         });
     }
 
-    // Delete student confirmation
-    const confirmDeleteStudent = document.getElementById('confirmDeleteStudent');
-    if (confirmDeleteStudent) {
-        confirmDeleteStudent.addEventListener('click', async function() {
-            if (!studentToDelete) return;
-
-            try {
-                const res = await fetch(`/user/${studentToDelete._id}`, {
-                    method: 'DELETE'
-                });
-
-                if (res.ok) {
-                    showBubbleMessage('Student deleted successfully!', 'success');
-                    const deleteModal = document.getElementById('deleteStudentModal');
-                    if (deleteModal) deleteModal.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                    
-                    // Reload data to reflect changes
-                    await loadAllData();
-                } else {
-                    const error = await res.json();
-                    showBubbleMessage(error.error || 'Failed to delete student', 'error');
-                }
-            } catch (error) {
-                console.error('Error deleting student:', error);
-                showBubbleMessage('Failed to delete student', 'error');
-            }
-        });
-    }
-
-    // Close modals
-    const closeStudentScheduleModal = document.getElementById('closeStudentScheduleModal');
-    if (closeStudentScheduleModal) {
-        closeStudentScheduleModal.addEventListener('click', function() {
-            const modal = document.getElementById('studentScheduleModal');
-            if (modal) modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        });
-    }
-
-    const closeEditStudentModal = document.getElementById('closeEditStudentModal');
-    if (closeEditStudentModal) {
-        closeEditStudentModal.addEventListener('click', function() {
-            const modal = document.getElementById('editStudentModal');
-            if (modal) modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        });
-    }
-
-    const cancelEditStudent = document.getElementById('cancelEditStudent');
-    if (cancelEditStudent) {
-        cancelEditStudent.addEventListener('click', function() {
-            const modal = document.getElementById('editStudentModal');
-            if (modal) modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        });
-    }
-
-    const closeDeleteStudentModal = document.getElementById('closeDeleteStudentModal');
-    if (closeDeleteStudentModal) {
-        closeDeleteStudentModal.addEventListener('click', function() {
-            const modal = document.getElementById('deleteStudentModal');
-            if (modal) modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        });
-    }
-
-    const cancelDeleteStudent = document.getElementById('cancelDeleteStudent');
-    if (cancelDeleteStudent) {
-        cancelDeleteStudent.addEventListener('click', function() {
-            const modal = document.getElementById('deleteStudentModal');
-            if (modal) modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        });
-    }
-
-    // Close modals when clicking outside
-    const studentScheduleModal = document.getElementById('studentScheduleModal');
-    if (studentScheduleModal) {
-        studentScheduleModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
-        });
-    }
-
-    const editStudentModal = document.getElementById('editStudentModal');
-    if (editStudentModal) {
-        editStudentModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
-        });
-    }
-
-    const deleteStudentModal = document.getElementById('deleteStudentModal');
-    if (deleteStudentModal) {
-        deleteStudentModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
-        });
-    }
-
-    // Render student schedule
     function renderStudentSchedule(student) {
         const studentSchedules = getStudentSchedules(student);
-
-        // Calculate statistics
         calculateScheduleStatistics(studentSchedules);
-
-        // Render based on current view
         if (currentView === 'weekly') {
             renderWeeklySchedule(studentSchedules);
         } else {
@@ -771,51 +1024,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Calculate schedule statistics
     function calculateScheduleStatistics(studentSchedules) {
-        let lectureHours = 0;
-        let labHours = 0;
-
+        let lectureHours = 0, labHours = 0;
         studentSchedules.forEach(schedule => {
             const duration = calculateScheduleDuration(schedule);
-            if (schedule.scheduleType === 'lecture') {
-                lectureHours += duration;
-            } else if (schedule.scheduleType === 'lab') {
-                labHours += duration;
-            }
+            if (schedule.scheduleType === 'lecture') lectureHours += duration;
+            else if (schedule.scheduleType === 'lab') labHours += duration;
         });
-
-        const lectureCount = document.getElementById('lectureCount');
-        const labCount = document.getElementById('labCount');
-        const totalHours = document.getElementById('totalHours');
-        
-        if (lectureCount) lectureCount.textContent = lectureHours.toFixed(1);
-        if (labCount) labCount.textContent = labHours.toFixed(1);
-        if (totalHours) totalHours.textContent = (lectureHours + labHours).toFixed(1);
+        document.getElementById('lectureCount').textContent = lectureHours.toFixed(1);
+        document.getElementById('labCount').textContent = labHours.toFixed(1);
+        document.getElementById('totalHours').textContent = (lectureHours + labHours).toFixed(1);
     }
 
-    // Calculate schedule duration
     function calculateScheduleDuration(schedule) {
         let [startH, startM] = schedule.startTime.split(':').map(Number);
         let [endH, endM] = schedule.endTime.split(':').map(Number);
-
         if (schedule.startPeriod === 'PM' && startH !== 12) startH += 12;
         if (schedule.startPeriod === 'AM' && startH === 12) startH = 0;
         if (schedule.endPeriod === 'PM' && endH !== 12) endH += 12;
         if (schedule.endPeriod === 'AM' && endH === 12) endH = 0;
-
-        const startMinutes = startH * 60 + startM;
-        const endMinutes = endH * 60 + endM;
-        return (endMinutes - startMinutes) / 60;
+        return ((endH * 60 + endM) - (startH * 60 + startM)) / 60;
     }
 
-    // Render weekly schedule
     function renderWeeklySchedule(studentSchedules) {
         const weeklyGrid = document.getElementById('weeklyGrid');
         if (!weeklyGrid) return;
-        
         weeklyGrid.innerHTML = '';
-
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         
         days.forEach(day => {
@@ -823,13 +1057,47 @@ document.addEventListener('DOMContentLoaded', function() {
             dayDiv.className = 'weekly-day';
             dayDiv.innerHTML = `<h5>${day}</h5>`;
 
-            const daySchedules = studentSchedules.filter(schedule => 
-                schedule.day === day && 
-                (currentShift === 'all' || schedule.section.shift.toLowerCase() === currentShift)
-            );
+            const daySchedules = studentSchedules
+                .filter(s => s.day === day && (currentShift === 'all' || s.section?.shift?.toLowerCase() === currentShift))
+                .sort((a, b) => {
+                    let aStart = parseInt(a.startTime.replace(':', ''));
+                    if (a.startPeriod === 'PM' && aStart < 1200) aStart += 1200;
+                    let bStart = parseInt(b.startTime.replace(':', ''));
+                    if (b.startPeriod === 'PM' && bStart < 1200) bStart += 1200;
+                    return aStart - bStart;
+                });
 
-            // Sort by start time
-            daySchedules.sort((a, b) => {
+            if (daySchedules.length === 0) {
+                dayDiv.innerHTML += '<div class="empty-schedule"><small>No classes</small></div>';
+            } else {
+                daySchedules.forEach(schedule => {
+                    const item = document.createElement('div');
+                    item.className = `schedule-item-small ${schedule.scheduleType}`;
+                    item.innerHTML = `
+                        <div><strong>${escapeHtml(schedule.subject?.courseCode || 'N/A')}</strong></div>
+                        <div>${escapeHtml(schedule.teacher?.fullname || 'TBA')}</div>
+                        <div>${escapeHtml(schedule.room?.roomName || 'TBA')}</div>
+                        <div><small>${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}</small></div>
+                    `;
+                    dayDiv.appendChild(item);
+                });
+            }
+            weeklyGrid.appendChild(dayDiv);
+        });
+    }
+
+    function renderDailySchedule(studentSchedules) {
+        const dailySchedule = document.getElementById('dailySchedule');
+        if (!dailySchedule) return;
+        dailySchedule.innerHTML = '';
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const currentDay = days[currentDayIndex];
+        
+        document.getElementById('currentDayDisplay').textContent = currentDay;
+
+        const daySchedules = studentSchedules
+            .filter(s => s.day === currentDay && (currentShift === 'all' || s.section?.shift?.toLowerCase() === currentShift))
+            .sort((a, b) => {
                 let aStart = parseInt(a.startTime.replace(':', ''));
                 if (a.startPeriod === 'PM' && aStart < 1200) aStart += 1200;
                 let bStart = parseInt(b.startTime.replace(':', ''));
@@ -837,115 +1105,92 @@ document.addEventListener('DOMContentLoaded', function() {
                 return aStart - bStart;
             });
 
-            if (daySchedules.length === 0) {
-                const emptyMsg = document.createElement('div');
-                emptyMsg.className = 'empty-schedule';
-                emptyMsg.innerHTML = '<small>No classes</small>';
-                dayDiv.appendChild(emptyMsg);
-            } else {
-                daySchedules.forEach(schedule => {
-                    const item = document.createElement('div');
-                    item.className = `schedule-item-small ${schedule.scheduleType}`;
-                    
-                    const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
-                    item.innerHTML = `
-                        <div><strong>${safeDisplay(schedule.subject.courseCode)}</strong></div>
-                        <div>${safeDisplay(schedule.teacher.fullname)}</div>
-                        <div>${safeDisplay(schedule.room.roomName)}</div>
-                        <div><small>${timeDisplay}</small></div>
-                    `;
-                    
-                    item.title = `${safeDisplay(schedule.subject.courseCode)} - ${safeDisplay(schedule.subject.descriptiveTitle)}`;
-                    dayDiv.appendChild(item);
-                });
-            }
-
-            weeklyGrid.appendChild(dayDiv);
-        });
-    }
-
-    // Render daily schedule
-    function renderDailySchedule(studentSchedules) {
-        const dailySchedule = document.getElementById('dailySchedule');
-        if (!dailySchedule) return;
-        
-        dailySchedule.innerHTML = '';
-
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const currentDay = days[currentDayIndex];
-        
-        const currentDayDisplay = document.getElementById('currentDayDisplay');
-        if (currentDayDisplay) currentDayDisplay.textContent = currentDay;
-
-        const daySchedules = studentSchedules.filter(schedule => 
-            schedule.day === currentDay && 
-            (currentShift === 'all' || schedule.section.shift.toLowerCase() === currentShift)
-        );
-
-        // Sort by start time
-        daySchedules.sort((a, b) => {
-            let aStart = parseInt(a.startTime.replace(':', ''));
-            if (a.startPeriod === 'PM' && aStart < 1200) aStart += 1200;
-            let bStart = parseInt(b.startTime.replace(':', ''));
-            if (b.startPeriod === 'PM' && bStart < 1200) bStart += 1200;
-            return aStart - bStart;
-        });
-
         if (daySchedules.length === 0) {
-            dailySchedule.innerHTML = `
-                <div class="empty-schedule">
-                    <i class="bi bi-calendar-x"></i>
-                    <p>No classes for ${currentDay}</p>
-                </div>
-            `;
+            dailySchedule.innerHTML = `<div class="empty-schedule"><i class="bi bi-calendar-x"></i><p>No classes for ${currentDay}</p></div>`;
             return;
         }
 
         daySchedules.forEach(schedule => {
             const item = document.createElement('div');
             item.className = `daily-schedule-item ${schedule.scheduleType}`;
-            
-            const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
             item.innerHTML = `
-                <div class="schedule-time">${timeDisplay}</div>
+                <div class="schedule-time">${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}</div>
                 <div class="schedule-details">
-                    <div class="schedule-subject">${safeDisplay(schedule.subject.courseCode)} - ${safeDisplay(schedule.subject.descriptiveTitle)}</div>
-                    <div class="schedule-meta">${safeDisplay(schedule.teacher.fullname)} • ${safeDisplay(schedule.room.roomName)} • ${schedule.scheduleType.charAt(0).toUpperCase() + schedule.scheduleType.slice(1)}</div>
+                    <div class="schedule-subject">${escapeHtml(schedule.subject?.courseCode || 'N/A')} - ${escapeHtml(schedule.subject?.descriptiveTitle || '')}</div>
+                    <div class="schedule-meta">${escapeHtml(schedule.teacher?.fullname || 'TBA')} • ${escapeHtml(schedule.room?.roomName || 'TBA')} • ${capitalizeFirst(schedule.scheduleType)}</div>
                 </div>
             `;
-            
             dailySchedule.appendChild(item);
         });
     }
 
-    // View toggle
-    const scheduleViewSelect = document.getElementById('scheduleViewSelect');
-    if (scheduleViewSelect) {
-        scheduleViewSelect.addEventListener('change', function() {
-            currentView = this.value;
-            updateScheduleView();
-        });
-    }
+    // ==================== MODAL CONTROLS ====================
 
-    function updateScheduleView() {
+    document.getElementById('closeStudentScheduleModal')?.addEventListener('click', () => {
+        document.getElementById('studentScheduleModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    document.getElementById('closeEditStudentModal')?.addEventListener('click', () => {
+        document.getElementById('editStudentModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    document.getElementById('cancelEditStudent')?.addEventListener('click', () => {
+        document.getElementById('editStudentModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    document.getElementById('closeDeleteStudentModal')?.addEventListener('click', () => {
+        document.getElementById('deleteStudentModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    document.getElementById('cancelDeleteStudent')?.addEventListener('click', () => {
+        document.getElementById('deleteStudentModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    // Close modals when clicking outside
+    ['studentScheduleModal', 'editStudentModal', 'deleteStudentModal', 'addStudentModal'].forEach(modalId => {
+        document.getElementById(modalId)?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    });
+
+    // Keyboard - close modals on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            ['studentScheduleModal', 'editStudentModal', 'deleteStudentModal', 'addStudentModal'].forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal && modal.style.display === 'flex') {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+    });
+
+    // View toggle
+    document.getElementById('scheduleViewSelect')?.addEventListener('change', function() {
+        currentView = this.value;
         const weeklyView = document.getElementById('weeklyScheduleView');
         const dailyView = document.getElementById('dailyScheduleView');
-
         if (currentView === 'weekly') {
-            if (weeklyView) weeklyView.style.display = 'block';
-            if (dailyView) dailyView.style.display = 'none';
+            weeklyView.style.display = 'block';
+            dailyView.style.display = 'none';
         } else {
-            if (weeklyView) weeklyView.style.display = 'none';
-            if (dailyView) dailyView.style.display = 'block';
+            weeklyView.style.display = 'none';
+            dailyView.style.display = 'block';
         }
-
         if (currentStudentId) {
             const student = students.find(s => s._id === currentStudentId);
-            if (student) {
-                renderStudentSchedule(student);
-            }
+            if (student) renderStudentSchedule(student);
         }
-    }
+    });
 
     // Shift toggle
     document.querySelectorAll('.shift-btn-small').forEach(btn => {
@@ -953,100 +1198,78 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.shift-btn-small').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentShift = this.dataset.shift;
-            
             if (currentStudentId) {
                 const student = students.find(s => s._id === currentStudentId);
-                if (student) {
-                    renderStudentSchedule(student);
-                }
+                if (student) renderStudentSchedule(student);
             }
         });
     });
 
     // Daily navigation
-    const prevDayBtn = document.getElementById('prevDayBtn');
-    if (prevDayBtn) {
-        prevDayBtn.addEventListener('click', function() {
-            currentDayIndex = (currentDayIndex - 1 + 6) % 6;
-            if (currentStudentId) {
-                const student = students.find(s => s._id === currentStudentId);
-                if (student) {
-                    renderStudentSchedule(student);
-                }
-            }
-        });
+    document.getElementById('prevDayBtn')?.addEventListener('click', () => {
+        currentDayIndex = (currentDayIndex - 1 + 6) % 6;
+        if (currentStudentId) {
+            const student = students.find(s => s._id === currentStudentId);
+            if (student) renderStudentSchedule(student);
+        }
+    });
+
+    document.getElementById('nextDayBtn')?.addEventListener('click', () => {
+        currentDayIndex = (currentDayIndex + 1) % 6;
+        if (currentStudentId) {
+            const student = students.find(s => s._id === currentStudentId);
+            if (student) renderStudentSchedule(student);
+        }
+    });
+
+    // ==================== FILTER LISTENERS ====================
+
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), wait);
+        };
     }
 
-    const nextDayBtn = document.getElementById('nextDayBtn');
-    if (nextDayBtn) {
-        nextDayBtn.addEventListener('click', function() {
-            currentDayIndex = (currentDayIndex + 1) % 6;
-            if (currentStudentId) {
-                const student = students.find(s => s._id === currentStudentId);
-                if (student) {
-                    renderStudentSchedule(student);
-                }
-            }
-        });
-    }
+    const debouncedFilter = debounce(applyFiltersAndRender, 300);
 
-    // Filter listeners
-    const studentSearch = document.getElementById('studentSearch');
-    if (studentSearch) {
-        studentSearch.addEventListener('input', applyFilters);
-    }
+    document.getElementById('studentSearch')?.addEventListener('input', debouncedFilter);
+    document.getElementById('yearLevelFilter')?.addEventListener('change', applyFiltersAndRender);
+    document.getElementById('sectionFilter')?.addEventListener('change', applyFiltersAndRender);
+    document.getElementById('statusFilter')?.addEventListener('change', applyFiltersAndRender);
 
-    const yearLevelFilter = document.getElementById('yearLevelFilter');
-    if (yearLevelFilter) {
-        yearLevelFilter.addEventListener('change', applyFilters);
-    }
+    // ==================== UI HELPERS ====================
 
-    const sectionFilter = document.getElementById('sectionFilter');
-    if (sectionFilter) {
-        sectionFilter.addEventListener('change', applyFilters);
-    }
-
-    const statusFilter = document.getElementById('statusFilter');
-    if (statusFilter) {
-        statusFilter.addEventListener('change', applyFilters);
-    }
-
-    // Loading state
     function showLoadingState(show) {
         const loadingState = document.getElementById('loadingState');
         const tableContainer = document.querySelector('.students-table-container');
         if (loadingState) loadingState.style.display = show ? 'block' : 'none';
-        if (tableContainer) {
-            tableContainer.style.display = show ? 'none' : 'block';
-        }
+        if (tableContainer) tableContainer.style.display = show ? 'none' : 'block';
     }
 
-    // Empty state
     function showEmptyState(show) {
         const emptyState = document.getElementById('emptyState');
         const tableContainer = document.querySelector('.students-table-container');
+        const paginationControls = document.getElementById('paginationControls');
+        
         if (emptyState) emptyState.style.display = show ? 'block' : 'none';
-        if (tableContainer) {
-            tableContainer.style.display = show ? 'none' : 'block';
-        }
+        if (tableContainer) tableContainer.style.display = show ? 'none' : 'block';
+        if (paginationControls) paginationControls.style.display = show ? 'none' : 'flex';
     }
 
-    // Bubble notification
     function showBubbleMessage(msg, type = "success") {
         const bubble = document.getElementById('studentBubbleMessage');
         if (!bubble) return;
-        
         bubble.textContent = msg;
         bubble.className = "section-bubble-message";
         bubble.classList.add(type);
+        bubble.setAttribute('role', 'alert');
         void bubble.offsetWidth;
         bubble.classList.add("show");
-        
-        setTimeout(() => {
-            bubble.classList.remove("show");
-        }, 3000);
+        setTimeout(() => bubble.classList.remove("show"), 3000);
     }
 
-    // Initial load
+    // ==================== INITIALIZE ====================
     loadAllData();
 });
