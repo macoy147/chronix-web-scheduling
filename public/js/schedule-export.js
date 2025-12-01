@@ -1,12 +1,11 @@
 /**
  * Schedule Export Utility - UPDATED with Header, Subject Summary, and Footer
- * Provides Excel and PDF export functionality with merged cells showing subjects, instructors, and rooms
+ * Provides PDF and CSV export functionality with merged cells showing subjects, instructors, and rooms
  */
 
 class ScheduleExporter {
     constructor() {
         this.loadedLibraries = {
-            xlsx: false,
             jspdf: false,
             autoTable: false
         };
@@ -32,17 +31,11 @@ class ScheduleExporter {
      * Load required libraries dynamically
      */
     async loadLibraries() {
-        if (this.loadedLibraries.xlsx && this.loadedLibraries.jspdf && this.loadedLibraries.autoTable) {
+        if (this.loadedLibraries.jspdf && this.loadedLibraries.autoTable) {
             return true;
         }
 
         try {
-            // Load SheetJS for Excel export
-            if (!this.loadedLibraries.xlsx) {
-                await this.loadScript('https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js');
-                this.loadedLibraries.xlsx = true;
-            }
-
             // Load jsPDF for PDF export
             if (!this.loadedLibraries.jspdf) {
                 await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
@@ -100,44 +93,6 @@ class ScheduleExporter {
                 reject(new Error('Failed to load image'));
             };
             img.src = imagePath;
-        });
-    }
-
-    /**
-     * Create circular clipped image from base64
-     */
-    async createCircularImage(base64Image, size = 200) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = size;
-                canvas.height = size;
-                const ctx = canvas.getContext('2d');
-                
-                // Create circular clip path
-                ctx.beginPath();
-                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-                ctx.closePath();
-                ctx.clip();
-                
-                // Draw image centered and scaled to fill circle
-                const scale = Math.max(size / img.width, size / img.height);
-                const x = (size / 2) - (img.width / 2) * scale;
-                const y = (size / 2) - (img.height / 2) * scale;
-                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                
-                try {
-                    const dataURL = canvas.toDataURL('image/png');
-                    resolve(dataURL);
-                } catch (error) {
-                    reject(error);
-                }
-            };
-            img.onerror = function() {
-                reject(new Error('Failed to create circular image'));
-            };
-            img.src = base64Image;
         });
     }
 
@@ -465,7 +420,36 @@ class ScheduleExporter {
     }
 
     /**
-     * Export to PDF with enhanced subject display - UPDATED WITH HEADER, SUMMARY, AND FOOTER
+     * Calculate duration in hours for display
+     */
+    calculateDuration(startTime, startPeriod, endTime, endPeriod) {
+        const start24 = this.convertTo24Hour(startTime, startPeriod);
+        const end24 = this.convertTo24Hour(endTime, endPeriod);
+        
+        const [startH, startM] = start24.split(':').map(Number);
+        const [endH, endM] = end24.split(':').map(Number);
+        
+        const startMinutes = startH * 60 + startM;
+        const endMinutes = endH * 60 + endM;
+        
+        return (endMinutes - startMinutes) / 60;
+    }
+
+    /**
+     * Get appropriate font size and line spacing based on schedule duration
+     */
+    getFontSizeForDuration(durationHours) {
+        if (durationHours <= 1) {
+            return { subject: 4, details: 3 , lineHeight: 1.5 }; // Smallest font for 1-hour classes
+        } else if (durationHours <= 2) {
+            return { subject: 5, details: 4.5, lineHeight: 2 }; // Medium font for 2-hour classes
+        } else {
+            return { subject: 6, details: 5, lineHeight: 2.8 }; // Normal font for longer classes
+        }
+    }
+
+    /**
+     * Export to PDF with enhanced subject display - UPDATED WITH DYNAMIC FONT SIZING AND SPACING
      */
     async exportToPDF(schedules, filename = 'timetable', userInfo = {}) {
         try {
@@ -508,13 +492,13 @@ class ScheduleExporter {
             }
 
             try {
-                bagongPilipinasLogo = await this.loadImageAsBase64('/img/img/BAGONG_PILIPINAS_LOGO.png');
+                bagongPilipinasLogo = await this.loadImageAsBase64('/img/img/BAGONG_PILIPINAS.png');
             } catch (error) {
                 console.warn('Failed to load BAGONG PILIPINAS logo:', error);
             }
 
             try {
-                wuriFooter = await this.loadImageAsBase64('/img/img/WURI_FOOTER.png');
+                wuriFooter = await this.loadImageAsBase64('/img/img/FOOTER.png');
             } catch (error) {
                 console.warn('Failed to load WURI footer:', error);
             }
@@ -731,7 +715,7 @@ class ScheduleExporter {
                 // Add WURI footer image if available
                 if (wuriFooter && i === pageCount) {
                     try {
-                        const footerHeight = 20;
+                        const footerHeight = 12;
                         const footerWidth = doc.internal.pageSize.getWidth() - 28;
                         doc.addImage(
                             wuriFooter, 
@@ -790,7 +774,7 @@ class ScheduleExporter {
     }
 
     /**
-     * Create the enhanced timetable table with merged cells - UPDATED FOR PORTRAIT
+     * Create the enhanced timetable table with merged cells - UPDATED WITH DYNAMIC FONT SIZING AND SPACING
      */
     createEnhancedTimetableTable(doc, timetable, startY) {
         const pageWidth = doc.internal.pageSize.getWidth();
@@ -802,7 +786,7 @@ class ScheduleExporter {
         const dayColWidth = (tableWidth - timeColWidth) / this.days.length;
         
         let currentY = startY;
-        const rowHeight = 10; // Slightly taller rows for multi-line content
+        const rowHeight = 10; // Base row height
         
         // Draw table header
         doc.setFillColor(0, 45, 98); // CTU Deep Blue
@@ -855,40 +839,45 @@ class ScheduleExporter {
                     doc.rect(xPos, currentY, dayColWidth, cellHeight);
                     
                     // Add cell content if present
-                    if (cell.content) {
+                    if (cell.content && cell.schedule) {
                         // Add subtle background color based on schedule type
-                        if (cell.schedule) {
-                            const fillColor = cell.schedule.scheduleType === 'lab' 
-                                ? [255, 243, 224] // Light orange for lab
-                                : [224, 242, 255]; // Light blue for lecture
-                            
-                            doc.setFillColor(...fillColor);
-                            doc.rect(xPos + 1, currentY + 1, dayColWidth - 2, cellHeight - 2, 'F');
-                        }
+                        const fillColor = cell.schedule.scheduleType === 'lab' 
+                            ? [255, 243, 224] // Light orange for lab
+                            : [224, 242, 255]; // Light blue for lecture
+                        
+                        doc.setFillColor(...fillColor);
+                        doc.rect(xPos + 1, currentY + 1, dayColWidth - 2, cellHeight - 2, 'F');
+                        
+                        // Calculate duration and get appropriate font size and spacing
+                        const duration = this.calculateDuration(
+                            cell.schedule.startTime, 
+                            cell.schedule.startPeriod,
+                            cell.schedule.endTime, 
+                            cell.schedule.endPeriod
+                        );
+                        
+                        const fontSize = this.getFontSizeForDuration(duration);
                         
                         // Split content into lines
                         const lines = cell.content.split('\n');
                         
-                        // Calculate vertical position for each line
-                        const lineHeight = 3;
-                        const totalTextHeight = lines.length * lineHeight;
+                        // Calculate vertical position for each line with dynamic spacing
+                        const totalTextHeight = lines.length * fontSize.lineHeight;
                         const startTextY = currentY + (cellHeight - totalTextHeight) / 2 + 2;
                         
-                        // Draw each line
-                        doc.setFontSize(6);
-                        doc.setFont(undefined, 'bold');
+                        // Draw each line with dynamic font sizing and spacing
                         doc.setTextColor(0, 0, 0);
                         
                         lines.forEach((line, lineIndex) => {
-                            const lineY = startTextY + (lineIndex * lineHeight);
+                            const lineY = startTextY + (lineIndex * fontSize.lineHeight);
                             
-                            // First line (subject) is bold, others are normal
+                            // First line (subject) uses subject font size, others use details font size
                             if (lineIndex === 0) {
                                 doc.setFont(undefined, 'bold');
-                                doc.setFontSize(6);
+                                doc.setFontSize(fontSize.subject);
                             } else {
                                 doc.setFont(undefined, 'normal');
-                                doc.setFontSize(5);
+                                doc.setFontSize(fontSize.details);
                             }
                             
                             doc.text(line, xPos + (dayColWidth / 2), lineY, { 
@@ -898,16 +887,9 @@ class ScheduleExporter {
                         });
                         
                         // Add duration indicator for merged cells
-                        if (cell.isMerged && cell.schedule) {
-                            const duration = this.calculateDuration(
-                                cell.schedule.startTime, 
-                                cell.schedule.startPeriod,
-                                cell.schedule.endTime, 
-                                cell.schedule.endPeriod
-                            );
-                            
+                        if (cell.isMerged) {
                             // Add small duration indicator at bottom
-                            doc.setFontSize(5);
+                            doc.setFontSize(4);
                             doc.setFont(undefined, 'normal');
                             doc.setTextColor(100, 100, 100);
                             doc.text(
@@ -947,28 +929,10 @@ class ScheduleExporter {
     }
 
     /**
-     * Calculate duration in hours for display
+     * Export to CSV format with timetable structure similar to PDF
      */
-    calculateDuration(startTime, startPeriod, endTime, endPeriod) {
-        const start24 = this.convertTo24Hour(startTime, startPeriod);
-        const end24 = this.convertTo24Hour(endTime, endPeriod);
-        
-        const [startH, startM] = start24.split(':').map(Number);
-        const [endH, endM] = end24.split(':').map(Number);
-        
-        const startMinutes = startH * 60 + startM;
-        const endMinutes = endH * 60 + endM;
-        
-        return (endMinutes - startMinutes) / 60;
-    }
-
-    /**
-     * Export to Excel with enhanced subject display
-     */
-    async exportToExcel(schedules, filename = 'timetable', userInfo = {}) {
+    async exportToCSV(schedules, filename = 'timetable', userInfo = {}) {
         try {
-            await this.loadLibraries();
-
             if (!schedules || schedules.length === 0) {
                 throw new Error('No schedules to export');
             }
@@ -982,293 +946,93 @@ class ScheduleExporter {
             // Get section details
             const sectionDetails = this.getSectionDetails(schedules);
 
-            // Create workbook
-            const wb = window.XLSX.utils.book_new();
+            // Create CSV content with timetable structure
+            let csvContent = '';
+            
+            // Add header information (similar to PDF)
+            csvContent += 'Republic of the Philippines\n';
+            csvContent += 'CEBU TECHNOLOGICAL UNIVERSITY\n';
+            csvContent += 'Daanbantayan Campus: Aguho, Daanbantayan, Cebu\n\n';
+            csvContent += 'CHRONIX - Class Timetable\n\n';
+            
+            // Add user and section info
+            if (userInfo.name) {
+                csvContent += `Name:,${userInfo.name}\n`;
+            }
+            if (sectionDetails.sectionName) {
+                csvContent += `Section:,${sectionDetails.sectionName}\n`;
+            }
+            if (sectionDetails.adviser) {
+                csvContent += `Advisor Name:,${sectionDetails.adviser}\n`;
+            }
+            csvContent += `Export Date:,${new Date().toLocaleDateString()}\n`;
+            csvContent += `Total Classes:,${schedules.length}\n`;
+            csvContent += `Shift:,${sectionDetails.shift}\n\n`;
+            
+            // Create timetable header
+            const headerRow = ['TIME', ...this.days];
+            csvContent += headerRow.join(',') + '\n';
+            
+            // Add timetable data with merged cell representation
+            timetable.forEach(row => {
+                const timeRow = [row.time];
+                
+                this.days.forEach(day => {
+                    const cell = row.days[day];
+                    if (cell.rowSpan === 0) {
+                        // This cell is merged with the one above - represent as empty in CSV
+                        timeRow.push('');
+                    } else if (cell.content) {
+                        // Replace newlines with semicolons for CSV readability
+                        const cellContent = cell.content.replace(/\n/g, '; ');
+                        timeRow.push(`"${cellContent}"`);
+                    } else {
+                        timeRow.push('');
+                    }
+                });
+                
+                csvContent += timeRow.join(',') + '\n';
+            });
+            
+            // Add empty rows before summary
+            csvContent += '\n\n';
+            
+            // Add summary section
+            csvContent += 'SUMMARY OF COURSES\n';
+            csvContent += 'UNITS,SUBJECT CODE,DESCRIPTIVE TITLE\n';
+            
+            subjectsSummary.forEach(subject => {
+                csvContent += `${subject.units},"${subject.courseCode}","${subject.descriptiveTitle}"\n`;
+            });
+            
+            // Add footer
+            csvContent += '\n\nGenerated by CHRONIX - CTU Class Scheduling System';
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
 
-            // Prepare data for Excel with merged cells
-            const excelData = this.prepareEnhancedExcelData(timetable, userInfo, subjectsSummary, sectionDetails);
-
-            // Create worksheet
-            const ws = window.XLSX.utils.aoa_to_sheet(excelData.data);
-
-            // Apply merges
-            ws['!merges'] = excelData.merges;
-
-            // Apply styling
-            this.applyEnhancedExcelStyling(ws, excelData.data);
-
-            // Add worksheet to workbook
-            window.XLSX.utils.book_append_sheet(wb, ws, 'Timetable');
-
-            // Generate filename
-            const exportFilename = `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`;
-
-            // Save file
-            window.XLSX.writeFile(wb, exportFilename);
-
-            console.log('✅ Excel enhanced timetable export successful:', exportFilename);
+            console.log('✅ CSV timetable export successful');
             return true;
         } catch (error) {
-            console.error('❌ Error exporting to Excel:', error);
+            console.error('❌ Error exporting to CSV:', error);
             throw error;
         }
     }
 
     /**
-     * Prepare data for Excel export with merged cells - UPDATED FOR ENHANCED DISPLAY WITH SUMMARY
-     */
-    prepareEnhancedExcelData(timetable, userInfo, subjectsSummary, sectionDetails) {
-        const data = [];
-        const merges = [];
-        
-        // Title row
-        data.push(['Republic of the Philippines']);
-        merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: this.days.length } });
-        
-        // University name
-        data.push(['CEBU TECHNOLOGICAL UNIVERSITY']);
-        merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: this.days.length } });
-        
-        // Campus information
-        data.push(['Daanbantayan Campus: Aguho, Daanbantayan, Cebu']);
-        merges.push({ s: { r: 2, c: 0 }, e: { r: 2, c: this.days.length } });
-        
-        // Empty row
-        data.push([]);
-        
-        // CHRONIX title
-        data.push(['CHRONIX - Class Timetable']);
-        merges.push({ s: { r: 4, c: 0 }, e: { r: 4, c: this.days.length } });
-        
-        // User info - UPDATED LAYOUT
-        if (userInfo.name) {
-            data.push([`Name: ${userInfo.name}`]);
-            merges.push({ s: { r: 5, c: 0 }, e: { r: 5, c: this.days.length } });
-        }
-        
-        if (sectionDetails.sectionName) {
-            data.push([`Section: ${sectionDetails.sectionName}`]);
-            merges.push({ s: { r: 6, c: 0 }, e: { r: 6, c: this.days.length } });
-        }
-        
-        if (sectionDetails.adviser) {
-            data.push([`Advisor Name: ${sectionDetails.adviser}`]);
-            merges.push({ s: { r: 7, c: 0 }, e: { r: 7, c: this.days.length } });
-        }
-        
-        data.push([`Export Date: ${new Date().toLocaleDateString()}`]);
-        merges.push({ s: { r: 8, c: 0 }, e: { r: 8, c: this.days.length } });
-        
-        data.push([`Total Classes: ${timetable.flatMap(row => Object.values(row.days)).filter(cell => cell.content).length} | Shift: ${sectionDetails.shift}`]);
-        merges.push({ s: { r: 9, c: 0 }, e: { r: 9, c: this.days.length } });
-        
-        // Empty row
-        data.push([]);
-        
-        // Table header
-        const headerRow = ['TIME', ...this.days];
-        data.push(headerRow);
-        
-        // Timetable data - NOW WITH ENHANCED DISPLAY
-        timetable.forEach((row, rowIndex) => {
-            const dataRow = [row.time];
-            
-            this.days.forEach(day => {
-                const cell = row.days[day];
-                dataRow.push(cell.content);
-                
-                // Add merge information for cells with rowSpan > 1
-                if (cell.rowSpan > 1) {
-                    merges.push({
-                        s: { r: 11 + rowIndex, c: 1 + this.days.indexOf(day) },
-                        e: { r: 11 + rowIndex + cell.rowSpan - 1, c: 1 + this.days.indexOf(day) }
-                    });
-                }
-            });
-            
-            data.push(dataRow);
-        });
-        
-        // Empty rows before summary
-        data.push([]);
-        data.push([]);
-        
-        // Summary title
-        data.push(['SUMMARY OF COURSES']);
-        merges.push({ s: { r: data.length - 1, c: 0 }, e: { r: data.length - 1, c: 2 } });
-        
-        // Summary header
-        data.push(['UNITS', 'SUBJECT CODE', 'DESCRIPTIVE TITLE']);
-        
-        // Summary data
-        subjectsSummary.forEach(subject => {
-            data.push([
-                subject.units,
-                subject.courseCode,
-                subject.descriptiveTitle
-            ]);
-        });
-        
-        return { data, merges };
-    }
-
-    /**
-     * Apply enhanced styling to Excel worksheet
-     */
-    applyEnhancedExcelStyling(ws, data) {
-        // Define styles
-        const titleStyle = {
-            font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: "002D62" } },
-            alignment: { horizontal: 'center', vertical: 'center' }
-        };
-        
-        const universityStyle = {
-            font: { name: 'Calibri', sz: 16, bold: true, color: { rgb: "002D62" } },
-            alignment: { horizontal: 'center', vertical: 'center' }
-        };
-        
-        const headerStyle = {
-            font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "002D62" } },
-            alignment: { horizontal: 'center', vertical: 'center' },
-            border: {
-                top: { style: 'thin', color: { rgb: "000000" } },
-                bottom: { style: 'thin', color: { rgb: "000000" } },
-                left: { style: 'thin', color: { rgb: "000000" } },
-                right: { style: 'thin', color: { rgb: "000000" } }
-            }
-        };
-        
-        const timeCellStyle = {
-            font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: "002D62" } },
-            fill: { fgColor: { rgb: "F4F7F9" } },
-            alignment: { horizontal: 'left', vertical: 'center' },
-            border: {
-                top: { style: 'thin', color: { rgb: "E0E0E0" } },
-                bottom: { style: 'thin', color: { rgb: "E0E0E0" } },
-                left: { style: 'thin', color: { rgb: "E0E0E0" } },
-                right: { style: 'thin', color: { rgb: "E0E0E0" } }
-            }
-        };
-        
-        const lectureCellStyle = {
-            font: { name: 'Calibri', sz: 8, bold: true, color: { rgb: "000000" } },
-            fill: { fgColor: { rgb: "E0F2FE" } }, // Light blue for lectures
-            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-            border: {
-                top: { style: 'thin', color: { rgb: "E0E0E0" } },
-                bottom: { style: 'thin', color: { rgb: "E0E0E0" } },
-                left: { style: 'thin', color: { rgb: "E0E0E0" } },
-                right: { style: 'thin', color: { rgb: "E0E0E0" } }
-            }
-        };
-        
-        const labCellStyle = {
-            font: { name: 'Calibri', sz: 8, bold: true, color: { rgb: "000000" } },
-            fill: { fgColor: { rgb: "FFF3E0" } }, // Light orange for labs
-            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-            border: {
-                top: { style: 'thin', color: { rgb: "E0E0E0" } },
-                bottom: { style: 'thin', color: { rgb: "E0E0E0" } },
-                left: { style: 'thin', color: { rgb: "E0E0E0" } },
-                right: { style: 'thin', color: { rgb: "E0E0E0" } }
-            }
-        };
-        
-        const summaryHeaderStyle = {
-            font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "002D62" } },
-            alignment: { horizontal: 'center', vertical: 'center' },
-            border: {
-                top: { style: 'thin', color: { rgb: "000000" } },
-                bottom: { style: 'thin', color: { rgb: "000000" } },
-                left: { style: 'thin', color: { rgb: "000000" } },
-                right: { style: 'thin', color: { rgb: "000000" } }
-            }
-        };
-        
-        const summaryRowStyle = {
-            font: { name: 'Calibri', sz: 10, color: { rgb: "000000" } },
-            alignment: { horizontal: 'left', vertical: 'center' },
-            border: {
-                top: { style: 'thin', color: { rgb: "E0E0E0" } },
-                bottom: { style: 'thin', color: { rgb: "E0E0E0" } },
-                left: { style: 'thin', color: { rgb: "E0E0E0" } },
-                right: { style: 'thin', color: { rgb: "E0E0E0" } }
-            }
-        };
-        
-        // Apply styles to cells
-        data.forEach((row, rowIndex) => {
-            row.forEach((cell, colIndex) => {
-                const cellRef = window.XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
-                
-                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
-                
-                if (rowIndex === 0) {
-                    ws[cellRef].s = titleStyle;
-                } else if (rowIndex === 1) {
-                    ws[cellRef].s = universityStyle;
-                } else if (rowIndex === 11) { // Header row
-                    ws[cellRef].s = headerStyle;
-                } else if (rowIndex > 11 && colIndex === 0) { // Time column
-                    ws[cellRef].s = timeCellStyle;
-                } else if (rowIndex > 11 && colIndex > 0 && cell) { // Class cells with content
-                    // Determine if this is a lecture or lab based on the "L" suffix
-                    const isLab = cell.toString().includes(' L\n');
-                    ws[cellRef].s = isLab ? labCellStyle : lectureCellStyle;
-                } else if (rowIndex > 11 && colIndex > 0) { // Empty class cells
-                    ws[cellRef].s = {
-                        font: { name: 'Calibri', sz: 9, color: { rgb: "000000" } },
-                        alignment: { horizontal: 'center', vertical: 'center' },
-                        border: {
-                            top: { style: 'thin', color: { rgb: "E0E0E0" } },
-                            bottom: { style: 'thin', color: { rgb: "E0E0E0" } },
-                            left: { style: 'thin', color: { rgb: "E0E0E0" } },
-                            right: { style: 'thin', color: { rgb: "E0E0E0" } }
-                        }
-                    };
-                } else if (rowIndex >= data.length - subjectsSummary.length - 2 && rowIndex < data.length - 1 && colIndex < 3) {
-                    // Summary rows
-                    if (rowIndex === data.length - subjectsSummary.length - 2) {
-                        // Summary title
-                        ws[cellRef].s = {
-                            font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: "002D62" } },
-                            alignment: { horizontal: 'center', vertical: 'center' }
-                        };
-                    } else if (rowIndex === data.length - subjectsSummary.length - 1) {
-                        // Summary header
-                        ws[cellRef].s = summaryHeaderStyle;
-                    } else {
-                        // Summary data rows
-                        ws[cellRef].s = summaryRowStyle;
-                    }
-                }
-            });
-        });
-        
-        // Set column widths
-        ws['!cols'] = [
-            { wch: 10 }, // Time column
-            ...this.days.map(() => ({ wch: 18 })), // Day columns (wider for multi-line content)
-            { wch: 8 }, // Units column in summary
-            { wch: 15 }, // Course code column in summary
-            { wch: 40 } // Descriptive title column in summary
-        ];
-        
-        // Set row heights
-        ws['!rows'] = data.map((row, index) => {
-            if (index === 0 || index === 2) return { hpt: 20 };
-            if (index === 1) return { hpt: 25 };
-            if (index === 11) return { hpt: 20 };
-            if (index > 11 && index < data.length - subjectsSummary.length - 2) return { hpt: 45 }; // Taller rows for multi-line content
-            if (index >= data.length - subjectsSummary.length - 2) return { hpt: 20 }; // Summary rows
-            return { hpt: 15 };
-        });
-    }
-
-    /**
-     * Show export options dialog - UPDATED for enhanced timetable format
+     * Show export options dialog - UPDATED with only PDF and CSV options
      */
     showExportDialog(schedules, userInfo = {}, filename = 'timetable') {
         return new Promise((resolve, reject) => {
@@ -1297,7 +1061,7 @@ class ScheduleExporter {
                 background: white;
                 border-radius: 16px;
                 padding: 32px;
-                max-width: 450px;
+                max-width: 500px;
                 width: 90%;
                 box-shadow: 0 12px 48px rgba(0,0,0,0.2);
                 animation: slideUp 0.3s ease;
@@ -1310,24 +1074,6 @@ class ScheduleExporter {
                     <strong>Enhanced Format:</strong> Shows subject, instructor, and room information with official CTU header and footer
                 </p>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button id="exportExcelBtn" style="
-                        padding: 14px 24px;
-                        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-                        color: white;
-                        border: none;
-                        border-radius: 10px;
-                        font-size: 1em;
-                        font-weight: 600;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 10px;
-                        transition: all 0.3s ease;
-                    ">
-                        <i class="bi bi-file-earmark-excel" style="font-size: 1.2em;"></i>
-                        Export to Excel (Enhanced)
-                    </button>
                     <button id="exportPdfBtn" style="
                         padding: 14px 24px;
                         background: linear-gradient(135deg, #A3000C 0%, #8B0009 100%);
@@ -1345,6 +1091,24 @@ class ScheduleExporter {
                     ">
                         <i class="bi bi-file-earmark-pdf" style="font-size: 1.2em;"></i>
                         Export to PDF (Enhanced)
+                    </button>
+                    <button id="exportCsvBtn" style="
+                        padding: 14px 24px;
+                        background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+                        color: white;
+                        border: none;
+                        border-radius: 10px;
+                        font-size: 1em;
+                        font-weight: 600;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 10px;
+                        transition: all 0.3s ease;
+                    ">
+                        <i class="bi bi-file-earmark-text" style="font-size: 1.2em;"></i>
+                        Export to CSV (Timetable Format)
                     </button>
                     <button id="exportCancelBtn" style="
                         padding: 12px 24px;
@@ -1366,18 +1130,9 @@ class ScheduleExporter {
             document.body.appendChild(overlay);
 
             // Add hover effects
-            const excelBtn = modal.querySelector('#exportExcelBtn');
             const pdfBtn = modal.querySelector('#exportPdfBtn');
+            const csvBtn = modal.querySelector('#exportCsvBtn');
             const cancelBtn = modal.querySelector('#exportCancelBtn');
-
-            excelBtn.addEventListener('mouseenter', () => {
-                excelBtn.style.transform = 'translateY(-2px)';
-                excelBtn.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
-            });
-            excelBtn.addEventListener('mouseleave', () => {
-                excelBtn.style.transform = 'translateY(0)';
-                excelBtn.style.boxShadow = 'none';
-            });
 
             pdfBtn.addEventListener('mouseenter', () => {
                 pdfBtn.style.transform = 'translateY(-2px)';
@@ -1388,6 +1143,15 @@ class ScheduleExporter {
                 pdfBtn.style.boxShadow = 'none';
             });
 
+            csvBtn.addEventListener('mouseenter', () => {
+                csvBtn.style.transform = 'translateY(-2px)';
+                csvBtn.style.boxShadow = '0 6px 20px rgba(255, 152, 0, 0.4)';
+            });
+            csvBtn.addEventListener('mouseleave', () => {
+                csvBtn.style.transform = 'translateY(0)';
+                csvBtn.style.boxShadow = 'none';
+            });
+
             cancelBtn.addEventListener('mouseenter', () => {
                 cancelBtn.style.background = '#d5d8db';
             });
@@ -1396,20 +1160,6 @@ class ScheduleExporter {
             });
 
             // Handle button clicks
-            excelBtn.addEventListener('click', async () => {
-                try {
-                    excelBtn.disabled = true;
-                    excelBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting Timetable...';
-                    await this.exportToExcel(schedules, filename, userInfo);
-                    document.body.removeChild(overlay);
-                    resolve('excel');
-                } catch (error) {
-                    excelBtn.disabled = false;
-                    excelBtn.innerHTML = '<i class="bi bi-file-earmark-excel"></i> Export to Excel (Enhanced)';
-                    reject(error);
-                }
-            });
-
             pdfBtn.addEventListener('click', async () => {
                 try {
                     pdfBtn.disabled = true;
@@ -1420,6 +1170,20 @@ class ScheduleExporter {
                 } catch (error) {
                     pdfBtn.disabled = false;
                     pdfBtn.innerHTML = '<i class="bi bi-file-earmark-pdf"></i> Export to PDF (Enhanced)';
+                    reject(error);
+                }
+            });
+
+            csvBtn.addEventListener('click', async () => {
+                try {
+                    csvBtn.disabled = true;
+                    csvBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting Timetable...';
+                    await this.exportToCSV(schedules, filename, userInfo);
+                    document.body.removeChild(overlay);
+                    resolve('csv');
+                } catch (error) {
+                    csvBtn.disabled = false;
+                    csvBtn.innerHTML = '<i class="bi bi-file-earmark-text"></i> Export to CSV (Timetable Format)';
                     reject(error);
                 }
             });
