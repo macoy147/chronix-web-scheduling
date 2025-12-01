@@ -549,10 +549,14 @@ class ScheduleExporter {
             doc.text('Province of Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 15, { align: 'center' });
             
             // Main campus location
-            doc.text('Main Campus: M.J. Cuenco Ave., Cebu City', doc.internal.pageSize.getWidth() / 2, yPos + 20, { align: 'center' });
+            doc.text('Daanbantayan Campus: M.J. Cuenco Ave., Cebu City', doc.internal.pageSize.getWidth() / 2, yPos + 20, { align: 'center' });
             
             // Daanbantayan Campus
-            doc.text('Daanbantayan Campus: Aguho, Daanbantayan, Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 25, { align: 'center' });
+            doc.setFont(undefined, 'bold');
+            doc.text('COLLEGE OF TECHNOLOGY AND ENGINEERING', doc.internal.pageSize.getWidth() / 2, yPos + 25, { align: 'center' });
+            doc.setFont(undefined, 'bold');
+            doc.text('BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY', doc.internal.pageSize.getWidth() / 2, yPos + 30, { align: 'center' });
+
 
             yPos += 35;
 
