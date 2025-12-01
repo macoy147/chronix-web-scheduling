@@ -14,7 +14,8 @@
     <link rel="stylesheet" href="/css/admin-dashboard.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ApexCharts Library -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#002D62">
@@ -886,7 +887,7 @@
                         </select>
                     </div>
                     <div class="mobile-chart-wrapper">
-                        <canvas id="mobileStudentDistributionChart" aria-label="Student distribution chart" role="img"></canvas>
+                        <div id="mobileStudentDistributionChart" aria-label="Student distribution chart" role="img"></div>
                     </div>
                 </div>
 
@@ -902,7 +903,7 @@
                         </select>
                     </div>
                     <div class="mobile-chart-wrapper">
-                        <canvas id="mobileRoomUtilizationChart" aria-label="Room utilization chart" role="img"></canvas>
+                        <div id="mobileRoomUtilizationChart" aria-label="Room utilization chart" role="img"></div>
                     </div>
                 </div>
 
@@ -917,7 +918,7 @@
                         </select>
                     </div>
                     <div class="mobile-chart-wrapper">
-                        <canvas id="mobileScheduleDensityChart" aria-label="Schedule distribution chart" role="img"></canvas>
+                        <div id="mobileScheduleDensityChart" aria-label="Schedule distribution chart" role="img"></div>
                     </div>
                 </div>
             </div>
@@ -1012,675 +1013,100 @@
         </div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="mobileLoadingOverlay" class="loading-overlay" style="display: none;" aria-live="polite" aria-label="Loading dashboard data">
+        <div class="loading-content">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <p>Loading Dashboard Data...</p>
+        </div>
+    </div>
+
+    <!-- Connection Status Indicator -->
+    <div id="mobileConnectionStatus" class="mobile-connection-status" aria-live="polite"></div>
+
     <!-- Scripts -->
-    <script type="module" src="/js/api-config.js"></script>
-    <script type="module" src="/js/error-handler.js"></script>
-    <script type="module" src="/js/auth-guard.js"></script>
-    
-    <!-- Mobile-specific JavaScript -->
-    <script type="module">
-    import API_BASE_URL from '/js/api-config.js';
-    import { handleApiError } from '/js/error-handler.js';
-    import AuthGuard from '/js/auth-guard.js';
+    <script type="module" src="/js/api-config.js?v=1.0.2"></script>
+    <script type="module" src="/js/error-handler.js?v=1.0.2"></script>
+    <script type="module" src="/js/auth-guard.js?v=1.0.2"></script>
+    <!-- Mobile Dashboard Script with All Fixes Applied -->
+    <script type="module" src="/js/admin-dashboard-mobile.js?v=1.0.2"></script>
 
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Mobile Admin Dashboard loaded');
-        
-        // Check authentication first
-        if (!AuthGuard.checkAuthentication('admin')) {
-            return;
-        }
-
-        // Mobile menu functionality
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const mobileSideMenu = document.getElementById('mobileSideMenu');
-        const mobileSideMenuClose = document.getElementById('mobileSideMenuClose');
-        const mobileOverlay = document.getElementById('mobileOverlay');
-        
-        function openMobileMenu() {
-            mobileSideMenu.classList.add('open');
-            mobileOverlay.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeMobileMenu() {
-            mobileSideMenu.classList.remove('open');
-            mobileOverlay.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-        
-        mobileMenuBtn.addEventListener('click', openMobileMenu);
-        mobileSideMenuClose.addEventListener('click', closeMobileMenu);
-        mobileOverlay.addEventListener('click', closeMobileMenu);
-        
-        // Close menu when clicking on links
-        document.querySelectorAll('.mobile-side-menu-links a').forEach(link => {
-            link.addEventListener('click', closeMobileMenu);
-        });
-        
-        // Mobile logout functionality
-        const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
-        if (mobileLogoutBtn) {
-            mobileLogoutBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                if (confirm('Are you sure you want to logout?')) {
-                    showMobileNotification('Logging out...', 'info');
-                    setTimeout(() => {
-                        AuthGuard.logout();
-                    }, 1000);
-                }
-            });
-        }
-        
-        // Mobile refresh functionality
-        const mobileRefreshBtn = document.getElementById('mobileRefreshBtn');
-        if (mobileRefreshBtn) {
-            mobileRefreshBtn.addEventListener('click', function() {
-                refreshMobileDashboardData();
-            });
-        }
-        
-        // Mobile filter event listeners
-        const mobileStudentDistributionType = document.getElementById('mobileStudentDistributionType');
-        if (mobileStudentDistributionType) {
-            mobileStudentDistributionType.addEventListener('change', function() {
-                updateMobileStudentDistributionChart();
-            });
-        }
-        
-        const mobileRoomChartType = document.getElementById('mobileRoomChartType');
-        if (mobileRoomChartType) {
-            mobileRoomChartType.addEventListener('change', function() {
-                updateMobileRoomUtilizationChart();
-            });
-        }
-        
-        const mobileScheduleDensityType = document.getElementById('mobileScheduleDensityType');
-        if (mobileScheduleDensityType) {
-            mobileScheduleDensityType.addEventListener('change', function() {
-                updateMobileScheduleDensityChart();
-            });
-        }
-        
-        // Update mobile profile info
-        function updateMobileProfileInfo() {
-            const currentUser = AuthGuard.getCurrentUser();
-            if (currentUser) {
-                const mobileProfileName = document.getElementById('mobileProfileName');
-                if (mobileProfileName) {
-                    mobileProfileName.textContent = currentUser.fullname;
-                }
-
-                const mobileProfileAvatar = document.getElementById('mobileProfileAvatar');
-                if (mobileProfileAvatar) {
-                    if (currentUser.profilePicture) {
-                        mobileProfileAvatar.src = currentUser.profilePicture.startsWith('http') 
-                            ? currentUser.profilePicture 
-                            : currentUser.profilePicture;
-                    } else {
-                        mobileProfileAvatar.src = '/img/default_admin_avatar.png';
-                    }
-                }
-            }
-        }
-        
-        // Initialize mobile dashboard
-        async function initializeMobileDashboard() {
-            showMobileLoadingOverlay();
-            updateMobileProfileInfo();
-            
-            try {
-                // Load dashboard data
-                await loadMobileDashboardData();
-                setupMobileConnectionMonitoring();
-            } catch (error) {
-                console.error('Failed to initialize mobile dashboard:', error);
-                showMobileError('Failed to load dashboard data. Please check your connection and try again.');
-            } finally {
-                setTimeout(() => hideMobileLoadingOverlay(), 500);
-            }
-        }
-        
-        // Load mobile dashboard data
-        async function loadMobileDashboardData() {
-            try {
-                // Use the same API calls as desktop version
-                const [studentsResponse, teachersResponse, roomsResponse, schedulesResponse] = await Promise.all([
-                    fetch('/users/students').then(r => r.json()),
-                    fetch('/teachers').then(r => r.json()),
-                    fetch('/rooms').then(r => r.json()),
-                    fetch('/schedules').then(r => r.json())
-                ]);
-
-                const data = {
-                    students: Array.isArray(studentsResponse) ? studentsResponse : [],
-                    teachers: Array.isArray(teachersResponse) ? teachersResponse : [],
-                    rooms: Array.isArray(roomsResponse) ? roomsResponse : [],
-                    schedules: Array.isArray(schedulesResponse) ? schedulesResponse : []
-                };
-                
-                // Update KPI cards
-                updateMobileKPICards(data);
-                
-                // Update charts
-                updateMobileCharts(data);
-                
-                // Update recent activity
-                updateMobileRecentActivity(data);
-                
-                // Update last updated timestamp
-                updateMobileLastUpdated();
-                
-            } catch (error) {
-                console.error('Error loading mobile dashboard data:', error);
-                // Fallback to mock data if API fails
-                const mockData = {
-                    students: [{}, {}, {}], // array with mock items for counting
-                    teachers: [{}, {}],
-                    rooms: [{ status: 'Available' }, { status: 'Available' }, { status: 'Under Maintenance' }],
-                    schedules: [{}, {}, {}]
-                };
-                updateMobileKPICards(mockData);
-                throw error;
-            }
-        }
-        
-        // Update mobile KPI cards with real data
-        function updateMobileKPICards(data) {
-            const studentsCount = data.students.length;
-            const teachersCount = data.teachers.length;
-            const availableRoomsCount = data.rooms.filter(room => room.status === 'Available').length;
-            const totalRoomsCount = data.rooms.length;
-            const schedulesCount = data.schedules.length;
-            
-            // Animate counters
-            animateMobileCounter('mobileTotalStudents', studentsCount);
-            animateMobileCounter('mobileTotalTeachers', teachersCount);
-            animateMobileCounter('mobileAvailableRooms', availableRoomsCount);
-            animateMobileCounter('mobileTotalRooms', totalRoomsCount);
-            animateMobileCounter('mobileActiveSchedules', schedulesCount);
-            
-            // Update trends (using 0 as previous value for demo)
-            updateMobileTrend('mobileStudentsTrend', studentsCount, 0);
-            updateMobileTrend('mobileTeachersTrend', teachersCount, 0);
-            updateMobileTrend('mobileRoomsTrend', availableRoomsCount, 0);
-            updateMobileTrend('mobileSchedulesTrend', schedulesCount, 0);
-        }
-
-        // Animate mobile counter numbers
-        function animateMobileCounter(elementId, targetValue) {
-            const element = document.getElementById(elementId);
-            if (!element) return;
-            
-            const duration = 1000;
-            const startValue = 0;
-            const startTime = performance.now();
-            
-            function updateCounter(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-                const currentValue = Math.floor(startValue + (targetValue - startValue) * easeOutQuart);
-                
-                element.textContent = currentValue.toLocaleString();
-                
-                if (progress < 1) {
-                    requestAnimationFrame(updateCounter);
-                }
-            }
-            
-            requestAnimationFrame(updateCounter);
-        }
-
-        // Update mobile trend indicators
-        function updateMobileTrend(elementId, currentValue, previousValue) {
-            const trendElement = document.getElementById(elementId);
-            if (!trendElement) return;
-            
-            const difference = currentValue - previousValue;
-            
-            trendElement.style.opacity = '0';
-            setTimeout(() => {
-                if (difference > 0) {
-                    trendElement.innerHTML = `<i class="bi bi-arrow-up" aria-hidden="true"></i> <span>+${difference}</span>`;
-                    trendElement.className = 'mobile-kpi-trend positive';
-                } else if (difference < 0) {
-                    trendElement.innerHTML = `<i class="bi bi-arrow-down" aria-hidden="true"></i> <span>${difference}</span>`;
-                    trendElement.className = 'mobile-kpi-trend negative';
-                } else {
-                    trendElement.innerHTML = `<i class="bi bi-dash" aria-hidden="true"></i> <span>No change</span>`;
-                    trendElement.className = 'mobile-kpi-trend neutral';
-                }
-                trendElement.style.opacity = '1';
-            }, 200);
-        }
-
-        // Store chart instances and data
-        let mobileChartInstances = {
-            studentDistribution: null,
-            roomUtilization: null,
-            scheduleDensity: null
-        };
-        let mobileChartData = null;
-
-        // Update mobile charts
-        function updateMobileCharts(data) {
-            console.log('Rendering mobile charts with data:', data);
-            mobileChartData = data;
-            renderMobileStudentDistributionChart(data);
-            renderMobileRoomUtilizationChart(data);
-            renderMobileScheduleDensityChart(data);
-        }
-
-        function renderMobileStudentDistributionChart(data) {
-            const ctx = document.getElementById('mobileStudentDistributionChart');
-            if (!ctx) return;
-            
-            // Destroy existing chart
-            if (mobileChartInstances.studentDistribution) {
-                mobileChartInstances.studentDistribution.destroy();
-            }
-
-            // Aggregate students by section
-            const sectionCounts = {};
-            data.students.forEach(student => {
-                const section = student.section || 'Unassigned';
-                sectionCounts[section] = (sectionCounts[section] || 0) + 1;
-            });
-
-            const entries = Object.entries(sectionCounts)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 6); // Show top 6 for mobile
-
-            const labels = entries.map(([section]) => section);
-            const chartData = entries.map(([, count]) => count);
-            const colors = ['#3E8EDE', '#FF6835', '#4BB543', '#8B5CF6', '#F2D283', '#EC4899'];
-
-            mobileChartInstances.studentDistribution = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Students',
-                        data: chartData,
-                        backgroundColor: colors,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 45, 98, 0.9)',
-                            padding: 10,
-                            cornerRadius: 6
-                        }
-                    },
-                    scales: {
-                        x: { 
-                            grid: { display: false },
-                            ticks: { font: { size: 10 } }
-                        },
-                        y: { 
-                            beginAtZero: true,
-                            ticks: { font: { size: 10 } }
-                        }
-                    }
-                }
-            });
-        }
-
-        function renderMobileRoomUtilizationChart(data) {
-            const ctx = document.getElementById('mobileRoomUtilizationChart');
-            if (!ctx) return;
-            
-            // Destroy existing chart
-            if (mobileChartInstances.roomUtilization) {
-                mobileChartInstances.roomUtilization.destroy();
-            }
-
-            // Aggregate rooms by status
-            const statusCounts = {
-                'Available': 0,
-                'Occupied': 0,
-                'Under Maintenance': 0
-            };
-            
-            data.rooms.forEach(room => {
-                const status = room.status || 'Available';
-                if (statusCounts.hasOwnProperty(status)) {
-                    statusCounts[status]++;
-                }
-            });
-
-            const labels = Object.keys(statusCounts);
-            const chartData = Object.values(statusCounts);
-            const colors = ['#4BB543', '#FF6835', '#D8000C'];
-
-            mobileChartInstances.roomUtilization = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: chartData,
-                        backgroundColor: colors,
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                font: { size: 10 },
-                                padding: 10,
-                                usePointStyle: true
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 45, 98, 0.9)',
-                            padding: 10,
-                            cornerRadius: 6
-                        }
-                    }
-                }
-            });
-        }
-
-        function renderMobileScheduleDensityChart(data) {
-            const ctx = document.getElementById('mobileScheduleDensityChart');
-            if (!ctx) return;
-            
-            // Destroy existing chart
-            if (mobileChartInstances.scheduleDensity) {
-                mobileChartInstances.scheduleDensity.destroy();
-            }
-
-            // Aggregate schedules by day
-            const dayCounts = {
-                'Monday': 0,
-                'Tuesday': 0,
-                'Wednesday': 0,
-                'Thursday': 0,
-                'Friday': 0,
-                'Saturday': 0
-            };
-            
-            data.schedules.forEach(schedule => {
-                const day = schedule.day || 'Monday';
-                if (dayCounts.hasOwnProperty(day)) {
-                    dayCounts[day]++;
-                }
-            });
-
-            const labels = Object.keys(dayCounts);
-            const chartData = Object.values(dayCounts);
-            const colors = ['#3E8EDE', '#FF6835', '#4BB543', '#8B5CF6', '#F2D283', '#EC4899'];
-
-            mobileChartInstances.scheduleDensity = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Schedules',
-                        data: chartData,
-                        backgroundColor: colors,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 45, 98, 0.9)',
-                            padding: 10,
-                            cornerRadius: 6
-                        }
-                    },
-                    scales: {
-                        x: { 
-                            grid: { display: false },
-                            ticks: { font: { size: 10 } }
-                        },
-                        y: { 
-                            beginAtZero: true,
-                            ticks: { font: { size: 10 } }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateMobileStudentDistributionChart() {
-            if (mobileChartData) {
-                renderMobileStudentDistributionChart(mobileChartData);
-            }
-        }
-
-        function updateMobileRoomUtilizationChart() {
-            if (mobileChartData) {
-                renderMobileRoomUtilizationChart(mobileChartData);
-            }
-        }
-
-        function updateMobileScheduleDensityChart() {
-            if (mobileChartData) {
-                renderMobileScheduleDensityChart(mobileChartData);
-            }
-        }
-
-        // Update mobile recent activity
-        function updateMobileRecentActivity(data) {
-            const activityContainer = document.getElementById('mobileRecentActivity');
-            if (!activityContainer) return;
-            
-            // Create activity from real data
-            const activities = [];
-            
-            // Add activities from student logins
-            data.students.slice(0, 2).forEach(student => {
-                activities.push({
-                    icon: 'person-check',
-                    text: `Student ${student.fullname || 'Unknown'} logged in`,
-                    time: 'Recently'
-                });
-            });
-            
-            // Add activities from schedules
-            if (data.schedules.length > 0) {
-                activities.push({
-                    icon: 'calendar-plus',
-                    text: `${data.schedules.length} active schedules`,
-                    time: 'Current'
-                });
-            }
-            
-            // Add room activities
-            const maintenanceRooms = data.rooms.filter(room => room.status === 'Under Maintenance');
-            if (maintenanceRooms.length > 0) {
-                activities.push({
-                    icon: 'tools',
-                    text: `${maintenanceRooms.length} rooms under maintenance`,
-                    time: 'Currently'
-                });
-            }
-            
-            // Fill with mock data if not enough real activities
-            if (activities.length < 3) {
-                activities.push({
-                    icon: 'person-plus',
-                    text: 'New teacher registered',
-                    time: '1 hour ago'
-                });
-            }
-            
-            activityContainer.innerHTML = activities.map((activity, index) => `
-                <div class="mobile-activity-item" style="animation-delay: ${index * 0.1}s" tabindex="0">
-                    <i class="bi bi-${activity.icon}" aria-hidden="true"></i>
-                    <div class="mobile-activity-content">
-                        <span class="mobile-activity-text">${activity.text}</span>
-                        <span class="mobile-activity-time">${activity.time}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Update mobile last updated timestamp
-        function updateMobileLastUpdated() {
-            const lastUpdatedElement = document.getElementById('mobileLastUpdated');
-            if (lastUpdatedElement) {
-                lastUpdatedElement.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-            }
-        }
-
-        // Refresh mobile dashboard data
-        async function refreshMobileDashboardData() {
-            const refreshBtn = document.getElementById('mobileRefreshBtn');
-            if (refreshBtn) {
-                refreshBtn.classList.add('loading');
-                refreshBtn.disabled = true;
-            }
-            
-            try {
-                await loadMobileDashboardData();
-                showMobileNotification('Dashboard updated successfully', 'success');
-            } catch (error) {
-                console.error('Error refreshing mobile dashboard:', error);
-                showMobileNotification('Failed to refresh dashboard data', 'error');
-            } finally {
-                if (refreshBtn) {
-                    refreshBtn.classList.remove('loading');
-                    refreshBtn.disabled = false;
-                }
-            }
-        }
-
-        // Setup mobile connection monitoring
-        function setupMobileConnectionMonitoring() {
-            const connectionStatus = document.getElementById('mobileConnectionStatus');
-            
-            function updateConnectionStatus() {
-                const isOnline = navigator.onLine;
-                
-                if (connectionStatus) {
-                    if (isOnline) {
-                        connectionStatus.textContent = 'Back online';
-                        connectionStatus.className = 'mobile-connection-status online';
-                        setTimeout(() => {
-                            connectionStatus.textContent = '';
-                            connectionStatus.className = 'mobile-connection-status';
-                        }, 3000);
-                    } else {
-                        connectionStatus.textContent = 'You are currently offline';
-                        connectionStatus.className = 'mobile-connection-status offline';
-                    }
-                }
-                
-                if (isOnline) {
-                    // Try to refresh data when coming back online
-                    refreshMobileDashboardData();
-                }
-            }
-
-            window.addEventListener('online', updateConnectionStatus);
-            window.addEventListener('offline', updateConnectionStatus);
-            updateConnectionStatus();
-        }
-        
-        // Mobile UI Utility Functions
-        function showMobileLoadingOverlay() {
-            const loadingOverlay = document.getElementById('mobileLoadingOverlay');
-            if (loadingOverlay) {
-                loadingOverlay.style.display = 'flex';
-            }
-        }
-
-        function hideMobileLoadingOverlay() {
-            const loadingOverlay = document.getElementById('mobileLoadingOverlay');
-            if (loadingOverlay) {
-                loadingOverlay.style.display = 'none';
-            }
-        }
-        
-        // Mobile notification system
-        function showMobileNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.setAttribute('role', 'alert');
-            notification.setAttribute('aria-live', 'polite');
-            notification.innerHTML = `
-                <div class="notification-content">
-                    <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}" aria-hidden="true"></i>
-                    <span>${message}</span>
-                </div>
-            `;
-            
-            document.body.appendChild(notification);
-
-            // Animate in
-            setTimeout(() => {
-                notification.classList.add('show');
-            }, 100);
-
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-        
-        function showMobileError(message) {
-            showMobileNotification(message, 'error');
-        }
-
-        // Initialize the mobile dashboard
-        initializeMobileDashboard();
-    }); 
-</script>
-
-<!-- Mobile detection and redirection -->
+<!-- Desktop detection and redirection -->
 <script>
-    let lastRedirectTime = 0;
-    const REDIRECT_COOLDOWN = 1000;
+(function() {
+    'use strict';
+    
+    // Check if we're already on desktop page to prevent loops
+    if (!window.location.pathname.includes('-mobile')) {
+        console.log('Already on desktop page, skipping redirect check');
+        return;
+    }
+    
+    // Check for redirect preference in sessionStorage
+    const redirectPreference = sessionStorage.getItem('dashboard_redirect_preference');
+    if (redirectPreference === 'mobile') {
+        console.log('User prefers mobile version, skipping desktop redirect');
+        return;
+    }
+    
+    function isDesktopDevice() {
+        // Check if screen width is greater than 767px
+        return window.innerWidth > 767;
+    }
+
+    // Prevent redirect loops with cooldown
+    let lastRedirectTime = parseInt(sessionStorage.getItem('last_redirect_time') || '0');
+    const REDIRECT_COOLDOWN = 2000; // 2 seconds
 
     function shouldRedirectToDesktop() {
         const now = Date.now();
+        
+        // Check cooldown
         if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+            console.log('Redirect cooldown active, skipping...');
             return false;
         }
-        return window.innerWidth > 767 && window.location.pathname.includes('-mobile');
+        
+        // Check if desktop
+        if (!isDesktopDevice()) {
+            return false;
+        }
+        
+        // Check if already on desktop page
+        if (!window.location.pathname.includes('-mobile')) {
+            return false;
+        }
+        
+        return true;
     }
 
+    function performRedirect() {
+        const now = Date.now();
+        lastRedirectTime = now;
+        sessionStorage.setItem('last_redirect_time', now.toString());
+        console.log('Redirecting to desktop version...');
+        window.location.replace('/admin-dashboard.html');
+    }
+
+    // Initial redirect check (only on page load)
     if (shouldRedirectToDesktop()) {
-        lastRedirectTime = Date.now();
-        window.location.href = '/admin-dashboard.html';
+        performRedirect();
     }
 
+    // Handle resize events with debouncing
     let resizeTimeout;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(function() {
             if (shouldRedirectToDesktop()) {
-                lastRedirectTime = Date.now();
-                window.location.href = '/admin-dashboard.html';
+                performRedirect();
             }
-        }, 250);
-});
+        }, 500);
+    });
+    
+    // Add option to stay on mobile version
+    console.log('💡 Tip: To stay on mobile version, run: sessionStorage.setItem("dashboard_redirect_preference", "mobile")');
+})();
 </script>
 </body>
 </html>

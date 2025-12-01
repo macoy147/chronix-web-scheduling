@@ -6,7 +6,7 @@ import { cache } from './dashboard-cache.js';
 import { loadDashboardData, exportToCSV, rateLimiter } from './dashboard-api.js';
 import { chartManager, aggregateStudentsBySection, aggregateStudentsByYear, aggregateStudentsByProgram,
          aggregateRoomsByStatus, aggregateRoomsByBuilding, aggregateRoomsByType,
-         aggregateSchedulesByDay, aggregateSchedulesByType, getCommonChartOptions } from './dashboard-charts.js';
+         aggregateSchedulesByDay, aggregateSchedulesByType, getBarChartConfig, getDonutChartConfig, getRadialBarChartConfig } from './dashboard-charts-apex.js';
 import { showKPISkeletons, hideKPISkeletons, animateCounter, updateTrend, showLoadingOverlay,
          hideLoadingOverlay, showNotification, showErrorWithRetry, updateConnectionStatus,
          updateLastUpdated, animateChartTransition, setupProfileDropdown, setupKeyboardShortcuts,
@@ -220,169 +220,136 @@ function renderAllCharts() {
 }
 
 /**
- * Render student distribution chart
+ * Render student distribution chart with ApexCharts
  * Improvement #2: Update instead of recreate
+ * ENHANCED: Now uses MongoDB aggregated data for accuracy
  */
 function renderStudentDistributionChart() {
     const type = dashboardState.filters.studentDistributionType;
-    const { students, sections } = dashboardState.data;
+    const { students, sections, chartData } = dashboardState.data;
+    
+    console.log('renderStudentDistributionChart called with type:', type);
+    console.log('Data available:', {
+        students: students?.length,
+        sections: sections?.length,
+        hasChartData: !!chartData,
+        chartDataKeys: chartData ? Object.keys(chartData) : []
+    });
     
     let aggregatedData;
     switch (type) {
         case 'section':
-            aggregatedData = aggregateStudentsBySection(students);
+            console.log('Rendering by section');
+            aggregatedData = aggregateStudentsBySection(students, chartData);
             break;
         case 'year':
-            aggregatedData = aggregateStudentsByYear(students, sections);
+            console.log('Rendering by year');
+            aggregatedData = aggregateStudentsByYear(students, sections, chartData);
             break;
         case 'program':
-            aggregatedData = aggregateStudentsByProgram(students, sections);
+            console.log('Rendering by program');
+            aggregatedData = aggregateStudentsByProgram(students, sections, chartData);
             break;
         default:
-            aggregatedData = aggregateStudentsBySection(students);
+            console.log('Rendering by section (default)');
+            aggregatedData = aggregateStudentsBySection(students, chartData);
     }
 
-    const config = {
-        type: 'bar',
-        data: {
-            labels: aggregatedData.labels,
-            datasets: [{
-                label: 'Number of Students',
-                data: aggregatedData.data,
-                backgroundColor: generateCTUColors(aggregatedData.labels.length, 0.8),
-                borderRadius: 8,
-                maxBarThickness: 50
-            }]
-        },
-        options: {
-            ...getCommonChartOptions('bar'),
-            plugins: {
-                ...getCommonChartOptions('bar').plugins,
-                tooltip: {
-                    ...getCommonChartOptions('bar').plugins.tooltip,
-                    callbacks: {
-                        label: function(context) {
-                            return `Students: ${context.parsed.y.toLocaleString()}`;
-                        }
-                    }
-                }
-            }
-        }
-    };
+    console.log('Aggregated data:', aggregatedData);
 
+    const config = getBarChartConfig(aggregatedData.labels, aggregatedData.data, 'Students');
     chartManager.createOrUpdate('studentDistributionChart', config);
+    
+    console.log('Chart updated successfully');
 }
 
 /**
- * Render room utilization chart
+ * Render room utilization chart with ApexCharts - DONUT CHART
+ * ENHANCED: Now uses MongoDB aggregated data for accuracy
  */
 function renderRoomUtilizationChart() {
     const type = dashboardState.filters.roomChartType;
-    const { rooms } = dashboardState.data;
+    const { rooms, chartData } = dashboardState.data;
+    
+    console.log('renderRoomUtilizationChart called with type:', type);
+    console.log('Data available:', {
+        rooms: rooms?.length,
+        hasChartData: !!chartData,
+        chartDataKeys: chartData ? Object.keys(chartData) : []
+    });
     
     let aggregatedData;
-    let backgroundColor;
+    let colors;
     
     switch (type) {
         case 'status':
-            aggregatedData = aggregateRoomsByStatus(rooms);
-            backgroundColor = ['#4BB543', '#FF6835', '#D8000C'];
+            console.log('Rendering by status');
+            aggregatedData = aggregateRoomsByStatus(rooms, chartData);
+            colors = ['#4BB543', '#FF6835', '#D8000C'];
             break;
         case 'building':
-            aggregatedData = aggregateRoomsByBuilding(rooms);
-            backgroundColor = generateCTUColors(aggregatedData.labels.length, 0.8);
+            console.log('Rendering by building');
+            aggregatedData = aggregateRoomsByBuilding(rooms, chartData);
+            colors = ['#3E8EDE', '#8B5CF6', '#EC4899', '#F2D283', '#00D4FF', '#FF6B9D'];
             break;
         case 'type':
-            aggregatedData = aggregateRoomsByType(rooms);
-            backgroundColor = ['#3E8EDE', '#8B5CF6', '#EC4899'];
+            console.log('Rendering by type');
+            aggregatedData = aggregateRoomsByType(rooms, chartData);
+            colors = ['#3E8EDE', '#8B5CF6', '#EC4899'];
             break;
         default:
-            aggregatedData = aggregateRoomsByStatus(rooms);
-            backgroundColor = ['#4BB543', '#FF6835', '#D8000C'];
+            console.log('Rendering by status (default)');
+            aggregatedData = aggregateRoomsByStatus(rooms, chartData);
+            colors = ['#4BB543', '#FF6835', '#D8000C'];
     }
 
-    const config = {
-        type: 'doughnut',
-        data: {
-            labels: aggregatedData.labels,
-            datasets: [{
-                data: aggregatedData.data,
-                backgroundColor: backgroundColor,
-                borderColor: '#FFFFFF',
-                borderWidth: 3,
-                hoverOffset: 15
-            }]
-        },
-        options: {
-            ...getCommonChartOptions('doughnut'),
-            plugins: {
-                ...getCommonChartOptions('doughnut').plugins,
-                tooltip: {
-                    ...getCommonChartOptions('doughnut').plugins.tooltip,
-                    callbacks: {
-                        label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            return `${context.label}: ${context.parsed} (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    };
+    console.log('Aggregated room data:', aggregatedData);
 
+    // Use donut chart for clean, professional look
+    const config = getDonutChartConfig(aggregatedData.labels, aggregatedData.data, colors);
     chartManager.createOrUpdate('roomUtilizationChart', config);
+    
+    console.log('Room chart updated successfully');
 }
 
 /**
- * Render schedule density chart
+ * Render schedule density chart with ApexCharts
+ * ENHANCED: Now uses MongoDB aggregated data for accuracy
  */
 function renderScheduleDensityChart() {
     const type = dashboardState.filters.scheduleDensityType;
-    const { schedules, subjects } = dashboardState.data;
+    const { schedules, subjects, chartData } = dashboardState.data;
+    
+    console.log('renderScheduleDensityChart called with type:', type);
+    console.log('Data available:', {
+        schedules: schedules?.length,
+        subjects: subjects?.length,
+        hasChartData: !!chartData,
+        chartDataKeys: chartData ? Object.keys(chartData) : []
+    });
     
     let aggregatedData;
     
     switch (type) {
         case 'day':
-            aggregatedData = aggregateSchedulesByDay(schedules);
+            console.log('Rendering by day');
+            aggregatedData = aggregateSchedulesByDay(schedules, chartData);
             break;
         case 'type':
-            aggregatedData = aggregateSchedulesByType(schedules, subjects);
+            console.log('Rendering by type');
+            aggregatedData = aggregateSchedulesByType(schedules, subjects, chartData);
             break;
         default:
-            aggregatedData = aggregateSchedulesByDay(schedules);
+            console.log('Rendering by day (default)');
+            aggregatedData = aggregateSchedulesByDay(schedules, chartData);
     }
 
-    const config = {
-        type: 'bar',
-        data: {
-            labels: aggregatedData.labels,
-            datasets: [{
-                label: 'Number of Schedules',
-                data: aggregatedData.data,
-                backgroundColor: generateCTUColors(aggregatedData.labels.length, 0.7),
-                borderRadius: 8,
-                maxBarThickness: 50
-            }]
-        },
-        options: {
-            ...getCommonChartOptions('bar'),
-            plugins: {
-                ...getCommonChartOptions('bar').plugins,
-                tooltip: {
-                    ...getCommonChartOptions('bar').plugins.tooltip,
-                    callbacks: {
-                        label: function(context) {
-                            return `Schedules: ${context.parsed.y.toLocaleString()}`;
-                        }
-                    }
-                }
-            }
-        }
-    };
+    console.log('Aggregated schedule data:', aggregatedData);
 
+    const config = getBarChartConfig(aggregatedData.labels, aggregatedData.data, 'Schedules');
     chartManager.createOrUpdate('scheduleDensityChart', config);
+    
+    console.log('Schedule chart updated successfully');
 }
 
 /**
@@ -522,38 +489,68 @@ function setupEventListeners() {
         });
     }
 
-    // Chart filters with debouncing
+    // Chart filters - removed debouncing for immediate response
     const studentDistributionType = document.getElementById('studentDistributionType');
     if (studentDistributionType) {
-        studentDistributionType.addEventListener('change', debounce(function() {
+        studentDistributionType.addEventListener('change', function() {
+            console.log('Student distribution dropdown changed to:', this.value);
             const value = sanitizeChartFilter('studentDistributionType', this.value);
             dashboardState.updateFilter('studentDistributionType', value);
+            console.log('Filter updated in state:', dashboardState.filters.studentDistributionType);
+            
+            // Animate transition
             animateChartTransition('studentDistributionChart');
-            setTimeout(() => renderStudentDistributionChart(), 300);
+            
+            // Render chart after animation
+            setTimeout(() => {
+                console.log('Rendering chart with new filter');
+                renderStudentDistributionChart();
+            }, 300);
+            
             trackUserInteraction('filter_change', 'student_distribution', value);
-        }, 300));
+        });
     }
 
     const roomChartType = document.getElementById('roomChartType');
     if (roomChartType) {
-        roomChartType.addEventListener('change', debounce(function() {
+        roomChartType.addEventListener('change', function() {
+            console.log('Room chart dropdown changed to:', this.value);
             const value = sanitizeChartFilter('roomChartType', this.value);
             dashboardState.updateFilter('roomChartType', value);
+            console.log('Filter updated in state:', dashboardState.filters.roomChartType);
+            
+            // Animate transition
             animateChartTransition('roomUtilizationChart');
-            setTimeout(() => renderRoomUtilizationChart(), 300);
+            
+            // Render chart after animation
+            setTimeout(() => {
+                console.log('Rendering room chart with new filter');
+                renderRoomUtilizationChart();
+            }, 300);
+            
             trackUserInteraction('filter_change', 'room_utilization', value);
-        }, 300));
+        });
     }
 
     const scheduleDensityType = document.getElementById('scheduleDensityType');
     if (scheduleDensityType) {
-        scheduleDensityType.addEventListener('change', debounce(function() {
+        scheduleDensityType.addEventListener('change', function() {
+            console.log('Schedule chart dropdown changed to:', this.value);
             const value = sanitizeChartFilter('scheduleDensityType', this.value);
             dashboardState.updateFilter('scheduleDensityType', value);
+            console.log('Filter updated in state:', dashboardState.filters.scheduleDensityType);
+            
+            // Animate transition
             animateChartTransition('scheduleDensityChart');
-            setTimeout(() => renderScheduleDensityChart(), 300);
+            
+            // Render chart after animation
+            setTimeout(() => {
+                console.log('Rendering schedule chart with new filter');
+                renderScheduleDensityChart();
+            }, 300);
+            
             trackUserInteraction('filter_change', 'schedule_density', value);
-        }, 300));
+        });
     }
 
     // Export buttons (Improvement #9: Data export feature)

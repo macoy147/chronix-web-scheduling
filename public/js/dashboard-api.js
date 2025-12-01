@@ -58,6 +58,7 @@ export async function fetchWithRetry(url, options = {}, retries = 3, timeout = 1
 /**
  * Load all dashboard data with caching
  * Improvement #7: Better data loading strategy
+ * ENHANCED: Now uses MongoDB aggregation endpoints for accurate chart data
  */
 export async function loadDashboardData(forceRefresh = false) {
     // Check cache first unless force refresh
@@ -76,13 +77,22 @@ export async function loadDashboardData(forceRefresh = false) {
         console.log('Loading fresh data from server...');
         
         // Load all data concurrently for better performance
-        const [students, teachers, rooms, schedules, subjects, sections] = await Promise.all([
+        const [students, teachers, rooms, schedules, subjects, sections, 
+               studentsPerSection, studentsPerYear, studentsPerProgram,
+               schedulesPerDay, schedulesPerType, roomStats] = await Promise.all([
             fetchWithRetry(`${API_BASE_URL}/users/students`).catch(() => []),
             fetchWithRetry(`${API_BASE_URL}/teachers`).catch(() => []),
             fetchWithRetry(`${API_BASE_URL}/rooms`).catch(() => []),
             fetchWithRetry(`${API_BASE_URL}/schedules`).catch(() => []),
             fetchWithRetry(`${API_BASE_URL}/subjects`).catch(() => []),
-            fetchWithRetry(`${API_BASE_URL}/sections`).catch(() => [])
+            fetchWithRetry(`${API_BASE_URL}/sections`).catch(() => []),
+            // NEW: MongoDB aggregation endpoints for accurate chart data
+            fetchWithRetry(`${API_BASE_URL}/students-per-section`).catch(() => []),
+            fetchWithRetry(`${API_BASE_URL}/students-per-year`).catch(() => []),
+            fetchWithRetry(`${API_BASE_URL}/students-per-program`).catch(() => []),
+            fetchWithRetry(`${API_BASE_URL}/schedules-per-day`).catch(() => []),
+            fetchWithRetry(`${API_BASE_URL}/schedules-per-type`).catch(() => []),
+            fetchWithRetry(`${API_BASE_URL}/room-stats`).catch(() => ({}))
         ]);
 
         const data = {
@@ -92,6 +102,15 @@ export async function loadDashboardData(forceRefresh = false) {
             schedules: Array.isArray(schedules) ? schedules : [],
             subjects: Array.isArray(subjects) ? subjects : [],
             sections: Array.isArray(sections) ? sections : [],
+            // NEW: Pre-aggregated chart data from MongoDB
+            chartData: {
+                studentsPerSection: Array.isArray(studentsPerSection) ? studentsPerSection : [],
+                studentsPerYear: Array.isArray(studentsPerYear) ? studentsPerYear : [],
+                studentsPerProgram: Array.isArray(studentsPerProgram) ? studentsPerProgram : [],
+                schedulesPerDay: Array.isArray(schedulesPerDay) ? schedulesPerDay : [],
+                schedulesPerType: Array.isArray(schedulesPerType) ? schedulesPerType : [],
+                roomStats: roomStats || {}
+            },
             lastUpdate: new Date(),
             fromCache: false
         };
@@ -103,7 +122,8 @@ export async function loadDashboardData(forceRefresh = false) {
             students: data.students.length,
             teachers: data.teachers.length,
             rooms: data.rooms.length,
-            schedules: data.schedules.length
+            schedules: data.schedules.length,
+            chartDataLoaded: true
         });
 
         return data;

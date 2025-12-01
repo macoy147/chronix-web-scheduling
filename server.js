@@ -58,6 +58,8 @@ mongoose.connect(MONGODB_URI, {
     await ensureAdminUser();
     // Run migration to add semester field to existing subjects
     await migrateSubjectsSemester();
+    // Sync teacher advisory relationships
+    await syncTeacherAdvisoryRelationships();
 }).catch(err => {
     logger.error('MongoDB connection error:', err);
 });
@@ -161,15 +163,48 @@ async function processProfilePicture(file, userId) {
     }
 }
 
+// ✅ NEW: Sync teacher advisory relationships
+async function syncTeacherAdvisoryRelationships() {
+    try {
+        logger.info('🔄 Starting teacher advisory relationship sync...');
+        
+        // Get all sections with advisers
+        const sectionsWithAdvisers = await Section.find({ adviserTeacher: { $ne: '', $exists: true } });
+        logger.info(`Found ${sectionsWithAdvisers.length} sections with advisers`);
+        
+        let updated = 0;
+        for (const section of sectionsWithAdvisers) {
+            try {
+                const teacher = await User.findById(section.adviserTeacher);
+                if (teacher && teacher.userrole === 'teacher') {
+                    // Update teacher's advisory fields
+                    teacher.advisorySection = section.sectionName;
+                    teacher.section = section.sectionName; // Keep for backward compatibility
+                    await teacher.save();
+                    updated++;
+                    logger.info(`  ✓ Synced: ${teacher.fullname} → ${section.sectionName}`);
+                }
+            } catch (err) {
+                logger.error(`  ✗ Error syncing section ${section.sectionName}:`, err.message);
+            }
+        }
+        
+        logger.info(`✅ Advisory sync complete: Updated ${updated} teachers`);
+    } catch (error) {
+        logger.error('❌ Error during advisory sync:', error);
+    }
+}
+
 // --------------------- MODELS ---------------------
-// User Model - UPDATED with proper fields
+// User Model - UPDATED with proper fields and advisory tracking
 const UserSchema = new mongoose.Schema({
     fullname: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     userrole: { type: String, required: true, enum: ['admin', 'teacher', 'student'] },
     ctuid: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    section: { type: String, default: '' },
+    section: { type: String, default: '' }, // For students: their enrolled section; For teachers: their advisory section (kept for backward compatibility)
+    advisorySection: { type: String, default: '' }, // NEW: Explicit field for teacher's advisory section
     room: { type: String, default: '' },
     birthdate: { type: String, default: '' },
     gender: { type: String, default: '' },
@@ -590,6 +625,7 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
                 }
             }
             updateFields.section = section;
+            updateFields.advisorySection = section; // Also update advisorySection for consistency
             changes.push(`section changed from "${currentUser.section}" to "${section}"`);
         }
         if (room !== undefined && room !== currentUser.room) {
@@ -621,6 +657,40 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
         );
 
         if (!updatedUser) return res.status(404).json({ error: 'User not found' });
+
+        // BIDIRECTIONAL SYNC: Update Section's adviserTeacher when teacher's advisory section changes
+        if (currentUser.userrole === 'teacher' && section !== undefined && section !== currentUser.section) {
+            // Remove this teacher from old section (if any)
+            if (currentUser.section) {
+                await Section.updateMany(
+                    { sectionName: currentUser.section, adviserTeacher: req.params.id },
+                    { $set: { adviserTeacher: '' } }
+                );
+                logger.info(`✅ Removed teacher ${req.params.id} from old section ${currentUser.section}`);
+            }
+            
+            // Add this teacher to new section (if any)
+            if (section) {
+                const targetSection = await Section.findOne({ sectionName: section });
+                if (targetSection) {
+                    // Remove any existing adviser from the target section first
+                    if (targetSection.adviserTeacher) {
+                        await User.findByIdAndUpdate(targetSection.adviserTeacher, {
+                            section: '',
+                            advisorySection: ''
+                        });
+                        logger.info(`✅ Removed old adviser ${targetSection.adviserTeacher} from section ${section}`);
+                    }
+                    
+                    // Set this teacher as the new adviser
+                    targetSection.adviserTeacher = req.params.id;
+                    await targetSection.save();
+                    logger.info(`✅ Set teacher ${req.params.id} as adviser for section ${section}`);
+                } else {
+                    logger.warn(`⚠️ Section ${section} not found, could not update adviserTeacher`);
+                }
+            }
+        }
 
         // Create notification for profile changes
         if (changes.length > 0) {
@@ -783,11 +853,15 @@ app.get('/dashboard-counts', async (req, res) => {
         const studentCount = await User.countDocuments({ userrole: 'student' });
         const teacherCount = await User.countDocuments({ userrole: 'teacher' });
         const availableRoomCount = await Room.countDocuments({ status: 'Available' });
+        const totalRoomCount = await Room.countDocuments();
+        const scheduleCount = await Schedule.countDocuments();
 
         res.json({
             students: studentCount,
             teachers: teacherCount,
-            availableRooms: availableRoomCount
+            availableRooms: availableRoomCount,
+            totalRooms: totalRoomCount,
+            schedules: scheduleCount
         });
     } catch (error) {
         logger.error('Error fetching dashboard counts:', error);
@@ -831,13 +905,13 @@ app.get('/room-stats', async (req, res) => {
     }
 });
 
-// Students per Section
+// Students per Section - Enhanced with MongoDB aggregation
 app.get('/students-per-section', async (req, res) => {
     try {
         const agg = await User.aggregate([
             { $match: { userrole: 'student' } },
             { $group: { _id: "$section", count: { $sum: 1 } } },
-            { $sort: { _id: 1 } }
+            { $sort: { count: -1 } }
         ]);
         const result = agg.map(item => ({
             section: item._id || "Unassigned",
@@ -850,13 +924,95 @@ app.get('/students-per-section', async (req, res) => {
     }
 });
 
+// Students per Year Level - NEW ENDPOINT
+app.get('/students-per-year', async (req, res) => {
+    try {
+        // Get all sections with their year levels
+        const sections = await Section.find().select('sectionName yearLevel');
+        const sectionYearMap = {};
+        sections.forEach(sec => {
+            sectionYearMap[sec.sectionName] = sec.yearLevel;
+        });
+
+        // Get all students
+        const students = await User.find({ userrole: 'student' }).select('section');
+        
+        // Count students by year level
+        const yearCounts = {
+            '1st Year': 0,
+            '2nd Year': 0,
+            '3rd Year': 0,
+            '4th Year': 0,
+            'Unassigned': 0
+        };
+
+        students.forEach(student => {
+            if (student.section && sectionYearMap[student.section]) {
+                const yearLevel = sectionYearMap[student.section];
+                const yearKey = `${yearLevel}${yearLevel === 1 ? 'st' : yearLevel === 2 ? 'nd' : yearLevel === 3 ? 'rd' : 'th'} Year`;
+                if (yearCounts[yearKey] !== undefined) {
+                    yearCounts[yearKey]++;
+                }
+            } else {
+                yearCounts['Unassigned']++;
+            }
+        });
+
+        const result = Object.entries(yearCounts).map(([year, count]) => ({
+            year,
+            count
+        }));
+
+        res.json(result);
+    } catch (error) {
+        logger.error('Error fetching students per year:', error);
+        res.status(500).json({ error: 'Failed to fetch students per year.' });
+    }
+});
+
+// Students per Program - NEW ENDPOINT
+app.get('/students-per-program', async (req, res) => {
+    try {
+        // Get all sections with their programs
+        const sections = await Section.find().select('sectionName programID');
+        const sectionProgramMap = {};
+        sections.forEach(sec => {
+            sectionProgramMap[sec.sectionName] = sec.programID;
+        });
+
+        // Get all students
+        const students = await User.find({ userrole: 'student' }).select('section');
+        
+        // Count students by program
+        const programCounts = {};
+
+        students.forEach(student => {
+            if (student.section && sectionProgramMap[student.section]) {
+                const program = sectionProgramMap[student.section];
+                programCounts[program] = (programCounts[program] || 0) + 1;
+            } else {
+                programCounts['Unassigned'] = (programCounts['Unassigned'] || 0) + 1;
+            }
+        });
+
+        const result = Object.entries(programCounts)
+            .map(([program, count]) => ({ program, count }))
+            .sort((a, b) => b.count - a.count);
+
+        res.json(result);
+    } catch (error) {
+        logger.error('Error fetching students per program:', error);
+        res.status(500).json({ error: 'Failed to fetch students per program.' });
+    }
+});
+
 // Students per Room
 app.get('/students-per-room', async (req, res) => {
     try {
         const agg = await User.aggregate([
             { $match: { userrole: 'student' } },
             { $group: { _id: "$room", count: { $sum: 1 } } },
-            { $sort: { _id: 1 } }
+            { $sort: { count: -1 } }
         ]);
         const result = agg.map(item => ({
             room: item._id || "Unassigned",
@@ -866,6 +1022,59 @@ app.get('/students-per-room', async (req, res) => {
     } catch (error) {
         logger.error('Error fetching students per room:', error);
         res.status(500).json({ error: 'Failed to fetch students per room.' });
+    }
+});
+
+// Schedules per Day - NEW ENDPOINT
+app.get('/schedules-per-day', async (req, res) => {
+    try {
+        const agg = await Schedule.aggregate([
+            { $group: { _id: "$day", count: { $sum: 1 } } },
+            { $sort: { _id: 1 } }
+        ]);
+        
+        // Ensure all days are included
+        const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayCounts = {};
+        daysOfWeek.forEach(day => {
+            dayCounts[day] = 0;
+        });
+        
+        agg.forEach(item => {
+            if (item._id && daysOfWeek.includes(item._id)) {
+                dayCounts[item._id] = item.count;
+            }
+        });
+
+        const result = Object.entries(dayCounts).map(([day, count]) => ({
+            day,
+            count
+        }));
+
+        res.json(result);
+    } catch (error) {
+        logger.error('Error fetching schedules per day:', error);
+        res.status(500).json({ error: 'Failed to fetch schedules per day.' });
+    }
+});
+
+// Schedules per Type - NEW ENDPOINT
+app.get('/schedules-per-type', async (req, res) => {
+    try {
+        const agg = await Schedule.aggregate([
+            { $group: { _id: "$scheduleType", count: { $sum: 1 } } },
+            { $sort: { _id: 1 } }
+        ]);
+        
+        const result = agg.map(item => ({
+            type: item._id ? item._id.charAt(0).toUpperCase() + item._id.slice(1) : 'Unknown',
+            count: item.count
+        }));
+
+        res.json(result);
+    } catch (error) {
+        logger.error('Error fetching schedules per type:', error);
+        res.status(500).json({ error: 'Failed to fetch schedules per type.' });
     }
 });
 
@@ -1058,11 +1267,36 @@ app.post('/sections', async (req, res) => {
         }
         const exists = await Section.findOne({ sectionName: sectionName.trim(), programID: programID });
         if (exists) return res.status(400).json({ error: `Section "${sectionName}" with program "${programID}" already exists. Same section name is allowed only with different programs.` });
+        
+        // Check if adviser teacher is already advising another section
+        if (adviserTeacher) {
+            const existingAdvisory = await Section.findOne({ 
+                adviserTeacher: adviserTeacher,
+                _id: { $exists: true }
+            });
+            if (existingAdvisory) {
+                const teacher = await User.findById(adviserTeacher);
+                return res.status(400).json({ 
+                    error: `Teacher ${teacher?.fullname || 'Unknown'} is already advising section ${existingAdvisory.sectionName}. A teacher can only advise one section.` 
+                });
+            }
+        }
+        
         const section = new Section({
             sectionName: sectionName.trim(),
             programID, yearLevel, shift, adviserTeacher, totalEnrolled, academicYear, semester, status
         });
         await section.save();
+        
+        // Update teacher's advisorySection field if adviser is assigned
+        if (adviserTeacher) {
+            await User.findByIdAndUpdate(adviserTeacher, {
+                advisorySection: sectionName.trim(),
+                section: sectionName.trim() // Keep section field for backward compatibility
+            });
+            logger.info(`✅ Updated teacher ${adviserTeacher} advisory to section ${sectionName.trim()}`);
+        }
+        
         res.json({ message: 'Section created successfully', section });
     } catch (error) {
         res.status(500).json({ error: `Error creating section: ${error.message}` });
@@ -1077,12 +1311,50 @@ app.put('/sections/:id', async (req, res) => {
         }
         const exists = await Section.findOne({ sectionName: sectionName.trim(), programID: programID, _id: { $ne: req.params.id } });
         if (exists) return res.status(400).json({ error: `Section "${sectionName}" with program "${programID}" already exists. Same section name is allowed only with different programs.` });
+        
+        // Get the old section data to check if adviser changed
+        const oldSection = await Section.findById(req.params.id);
+        if (!oldSection) return res.status(404).json({ error: 'Section not found' });
+        
+        // Check if new adviser teacher is already advising another section
+        if (adviserTeacher && adviserTeacher !== oldSection.adviserTeacher) {
+            const existingAdvisory = await Section.findOne({ 
+                adviserTeacher: adviserTeacher,
+                _id: { $ne: req.params.id }
+            });
+            if (existingAdvisory) {
+                const teacher = await User.findById(adviserTeacher);
+                return res.status(400).json({ 
+                    error: `Teacher ${teacher?.fullname || 'Unknown'} is already advising section ${existingAdvisory.sectionName}. A teacher can only advise one section.` 
+                });
+            }
+        }
+        
         const updated = await Section.findByIdAndUpdate(
             req.params.id,
             { sectionName: sectionName.trim(), programID, yearLevel, shift, adviserTeacher, totalEnrolled, academicYear, semester, status },
             { new: true }
         );
-        if (!updated) return res.status(404).json({ error: 'Section not found' });
+        
+        // Update teacher advisory relationships
+        // Remove advisory from old teacher if changed
+        if (oldSection.adviserTeacher && oldSection.adviserTeacher !== adviserTeacher) {
+            await User.findByIdAndUpdate(oldSection.adviserTeacher, {
+                advisorySection: '',
+                section: ''
+            });
+            logger.info(`✅ Removed advisory from teacher ${oldSection.adviserTeacher}`);
+        }
+        
+        // Add advisory to new teacher
+        if (adviserTeacher) {
+            await User.findByIdAndUpdate(adviserTeacher, {
+                advisorySection: sectionName.trim(),
+                section: sectionName.trim() // Keep section field for backward compatibility
+            });
+            logger.info(`✅ Updated teacher ${adviserTeacher} advisory to section ${sectionName.trim()}`);
+        }
+        
         res.json({ message: 'Section updated successfully', section: updated });
     } catch (error) {
         res.status(500).json({ error: `Error updating section: ${error.message}` });
@@ -1091,8 +1363,19 @@ app.put('/sections/:id', async (req, res) => {
 
 app.delete('/sections/:id', async (req, res) => {
     try {
-        const deleted = await Section.findByIdAndDelete(req.params.id);
-        if (!deleted) return res.status(404).json({ error: 'Section not found' });
+        const section = await Section.findById(req.params.id);
+        if (!section) return res.status(404).json({ error: 'Section not found' });
+        
+        // Remove advisory from teacher if section had an adviser
+        if (section.adviserTeacher) {
+            await User.findByIdAndUpdate(section.adviserTeacher, {
+                advisorySection: '',
+                section: ''
+            });
+            logger.info(`✅ Removed advisory from teacher ${section.adviserTeacher} due to section deletion`);
+        }
+        
+        await Section.findByIdAndDelete(req.params.id);
         res.json({ message: 'Section deleted successfully' });
     } catch (error) {
         res.status(500).json({ error: `Error deleting section: ${error.message}` });
@@ -1102,11 +1385,36 @@ app.delete('/sections/:id', async (req, res) => {
 // --------------------- TEACHER ROUTES ---------------------
 app.get('/teachers', async (req, res) => {
     try {
-        const teachers = await User.find({ userrole: 'teacher' }).select('_id fullname email ctuid profilePicture userrole birthdate gender section room lastLogin');
+        const teachers = await User.find({ userrole: 'teacher' }).select('_id fullname email ctuid profilePicture userrole birthdate gender section advisorySection room lastLogin');
         res.json(teachers);
     } catch (error) {
         logger.error('Error fetching teachers:', error);
         res.status(500).json({ error: 'Failed to fetch teachers' });
+    }
+});
+
+// NEW: Get teacher advisory information with section details
+app.get('/teachers/:id/advisory', async (req, res) => {
+    try {
+        const teacher = await User.findById(req.params.id);
+        if (!teacher || teacher.userrole !== 'teacher') {
+            return res.status(404).json({ error: 'Teacher not found' });
+        }
+        
+        let advisorySection = null;
+        if (teacher.advisorySection) {
+            advisorySection = await Section.findOne({ sectionName: teacher.advisorySection });
+        }
+        
+        res.json({
+            teacherId: teacher._id,
+            teacherName: teacher.fullname,
+            advisorySection: teacher.advisorySection || null,
+            sectionDetails: advisorySection || null
+        });
+    } catch (error) {
+        logger.error('Error fetching teacher advisory:', error);
+        res.status(500).json({ error: 'Failed to fetch teacher advisory information' });
     }
 });
 

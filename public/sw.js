@@ -1,5 +1,5 @@
-// public/sw.js - Basic Service Worker for PWA
-const CACHE_NAME = 'chronix-dashboard-v1.0.0';
+// public/sw.js - Service Worker with Network-First Strategy for Development
+const CACHE_NAME = 'chronix-dashboard-v1.0.1'; // Increment version to force update
 const urlsToCache = [
     '/',
     '/css/admin-dashboard.css',
@@ -15,6 +15,8 @@ const urlsToCache = [
 
 self.addEventListener('install', function(event) {
     console.log('Service Worker installing...');
+    // Skip waiting to activate immediately
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(function(cache) {
@@ -28,24 +30,56 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
-    event.respondWith(
-        caches.match(event.request)
-            .then(function(response) {
-                // Return cached version or fetch from network
-                if (response) {
+    const url = new URL(event.request.url);
+    
+    // Network-first strategy for HTML, CSS, and JS files (always get fresh content)
+    if (url.pathname.endsWith('.html') || 
+        url.pathname.endsWith('.css') || 
+        url.pathname.endsWith('.js') ||
+        url.pathname.includes('/js/') ||
+        url.pathname.includes('/css/')) {
+        
+        event.respondWith(
+            fetch(event.request)
+                .then(function(response) {
+                    // Clone the response before caching
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME).then(function(cache) {
+                        cache.put(event.request, responseToCache);
+                    });
                     return response;
-                }
-                return fetch(event.request);
-            })
-            .catch(function() {
-                // If both cache and network fail, show offline page
-                return caches.match('/offline.html');
-            })
-    );
+                })
+                .catch(function() {
+                    // If network fails, try cache
+                    return caches.match(event.request);
+                })
+        );
+    } else {
+        // Cache-first strategy for images and other static assets
+        event.respondWith(
+            caches.match(event.request)
+                .then(function(response) {
+                    if (response) {
+                        return response;
+                    }
+                    return fetch(event.request).then(function(response) {
+                        const responseToCache = response.clone();
+                        caches.open(CACHE_NAME).then(function(cache) {
+                            cache.put(event.request, responseToCache);
+                        });
+                        return response;
+                    });
+                })
+                .catch(function() {
+                    return caches.match('/offline.html');
+                })
+        );
+    }
 });
 
 self.addEventListener('activate', function(event) {
     console.log('Service Worker activating...');
+    // Take control of all pages immediately
     event.waitUntil(
         caches.keys().then(function(cacheNames) {
             return Promise.all(
@@ -56,6 +90,8 @@ self.addEventListener('activate', function(event) {
                     }
                 })
             );
+        }).then(function() {
+            return self.clients.claim();
         })
     );
 });

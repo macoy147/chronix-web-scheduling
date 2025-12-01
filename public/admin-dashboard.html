@@ -11,11 +11,12 @@
     <link rel="preload" href="/css/admin-dashboard.css" as="style">
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style">
     
-    <link rel="stylesheet" href="/css/admin-dashboard.css">
-    <link rel="stylesheet" href="/css/admin-dashboard-improvements.css">
+    <link rel="stylesheet" href="/css/admin-dashboard.css?v=1.0.1">
+    <link rel="stylesheet" href="/css/admin-dashboard-improvements.css?v=1.0.1">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ApexCharts Library -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#002D62">
@@ -208,11 +209,11 @@
                 </div>
             </section>
 
-            <!-- Charts Section -->
+            <!-- Charts Section - ApexCharts Implementation -->
             <section class="charts-section" aria-labelledby="charts-heading">
                 <h2 id="charts-heading" class="sr-only">Data Charts</h2>
                 <div class="charts-grid">
-                    <!-- Student Distribution -->
+                    <!-- Student Distribution - Enhanced Bar Chart -->
                     <div class="chart-container" role="region" aria-labelledby="student-chart-heading">
                         <div class="chart-header">
                             <h3 id="student-chart-heading">Student Distribution</h3>
@@ -224,11 +225,11 @@
                             </select>
                         </div>
                         <div class="chart-wrapper">
-                            <canvas id="studentDistributionChart" aria-label="Student distribution chart" role="img"></canvas>
+                            <div id="studentDistributionChart" aria-label="Student distribution chart" role="img"></div>
                         </div>
                     </div>
 
-                    <!-- Room Utilization -->
+                    <!-- Room Utilization - Modern RadialBar Chart -->
                     <div class="chart-container" role="region" aria-labelledby="room-chart-heading">
                         <div class="chart-header">
                             <h3 id="room-chart-heading">Room Utilization</h3>
@@ -240,11 +241,11 @@
                             </select>
                         </div>
                         <div class="chart-wrapper">
-                            <canvas id="roomUtilizationChart" aria-label="Room utilization chart" role="img"></canvas>
+                            <div id="roomUtilizationChart" aria-label="Room utilization chart" role="img"></div>
                         </div>
                     </div>
 
-                    <!-- Schedule Density -->
+                    <!-- Schedule Density - Enhanced Bar Chart -->
                     <div class="chart-container" role="region" aria-labelledby="schedule-chart-heading">
                         <div class="chart-header">
                             <h3 id="schedule-chart-heading">Schedule Distribution</h3>
@@ -255,7 +256,7 @@
                             </select>
                         </div>
                         <div class="chart-wrapper">
-                            <canvas id="scheduleDensityChart" aria-label="Schedule distribution chart" role="img"></canvas>
+                            <div id="scheduleDensityChart" aria-label="Schedule distribution chart" role="img"></div>
                         </div>
                     </div>
                 </div>
@@ -318,11 +319,11 @@
     <div id="connectionStatus" class="connection-status" aria-live="polite"></div>
 
     <!-- Scripts -->
-    <script type="module" src="/js/api-config.js"></script>
-    <script type="module" src="/js/error-handler.js"></script>
-    <script type="module" src="/js/auth-guard.js"></script>
+    <script type="module" src="/js/api-config.js?v=1.0.1"></script>
+    <script type="module" src="/js/error-handler.js?v=1.0.1"></script>
+    <script type="module" src="/js/auth-guard.js?v=1.0.1"></script>
     <!-- Use improved dashboard script -->
-    <script type="module" src="/js/admin-dashboard-improved.js"></script>
+    <script type="module" src="/js/admin-dashboard-improved.js?v=1.0.1"></script>
     
     <!-- Mobile Menu Toggle -->
     <script>
@@ -348,44 +349,83 @@ document.addEventListener('DOMContentLoaded', function() {
     
 <!-- Mobile detection and redirection -->
 <script>
-// Mobile detection and redirection
-function isMobileDevice() {
-    return window.innerWidth <= 767 || 
-           /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-
-// Prevent redirect loops
-let lastRedirectTime = 0;
-const REDIRECT_COOLDOWN = 1000;
-
-function shouldRedirectToMobile() {
-    const now = Date.now();
-    if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
-        return false;
+// Mobile detection and redirection - FIXED
+(function() {
+    'use strict';
+    
+    // Check if we're already on mobile page to prevent loops
+    if (window.location.pathname.includes('-mobile')) {
+        console.log('Already on mobile page, skipping redirect check');
+        return;
     }
     
-    return isMobileDevice() && !window.location.pathname.includes('-mobile');
-}
+    // Check for redirect preference in sessionStorage
+    const redirectPreference = sessionStorage.getItem('dashboard_redirect_preference');
+    if (redirectPreference === 'desktop') {
+        console.log('User prefers desktop version, skipping mobile redirect');
+        return;
+    }
+    
+    function isMobileDevice() {
+        // Check both screen width and user agent
+        const isMobileWidth = window.innerWidth <= 767;
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        return isMobileWidth || isMobileUA;
+    }
 
-// Initial redirect check
-if (shouldRedirectToMobile()) {
-    lastRedirectTime = Date.now();
-    console.log('Redirecting to mobile version...');
-    window.location.href = '/admin-dashboard-mobile.html';
-}
+    // Prevent redirect loops with cooldown
+    let lastRedirectTime = parseInt(sessionStorage.getItem('last_redirect_time') || '0');
+    const REDIRECT_COOLDOWN = 2000; // 2 seconds
 
-// Handle resize events
-let resizeTimeout;
-window.addEventListener('resize', function() {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(function() {
-        if (shouldRedirectToMobile()) {
-            lastRedirectTime = Date.now();
-            console.log('Screen resized - redirecting to mobile version...');
-            window.location.href = '/admin-dashboard-mobile.html';
+    function shouldRedirectToMobile() {
+        const now = Date.now();
+        
+        // Check cooldown
+        if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+            console.log('Redirect cooldown active, skipping...');
+            return false;
         }
-    }, 250);
-});
+        
+        // Check if mobile
+        if (!isMobileDevice()) {
+            return false;
+        }
+        
+        // Check if already on mobile page
+        if (window.location.pathname.includes('-mobile')) {
+            return false;
+        }
+        
+        return true;
+    }
+
+    function performRedirect() {
+        const now = Date.now();
+        lastRedirectTime = now;
+        sessionStorage.setItem('last_redirect_time', now.toString());
+        console.log('Redirecting to mobile version...');
+        window.location.replace('/admin-dashboard-mobile.html');
+    }
+
+    // Initial redirect check (only on page load)
+    if (shouldRedirectToMobile()) {
+        performRedirect();
+    }
+
+    // Handle resize events with debouncing
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (shouldRedirectToMobile()) {
+                performRedirect();
+            }
+        }, 500); // Increased debounce time
+    });
+    
+    // Add option to stay on desktop version
+    console.log('💡 Tip: To stay on desktop version, run: sessionStorage.setItem("dashboard_redirect_preference", "desktop")');
+})();
 </script>
 </body>
 </html>

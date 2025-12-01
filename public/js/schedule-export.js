@@ -97,6 +97,44 @@ class ScheduleExporter {
     }
 
     /**
+     * Create circular clipped image from base64
+     */
+    async createCircularImage(base64Image, size = 200) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                // Create circular clip path
+                ctx.beginPath();
+                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                
+                // Draw image centered and scaled to fill circle
+                const scale = Math.max(size / img.width, size / img.height);
+                const x = (size / 2) - (img.width / 2) * scale;
+                const y = (size / 2) - (img.height / 2) * scale;
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                
+                try {
+                    const dataURL = canvas.toDataURL('image/png');
+                    resolve(dataURL);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            img.onerror = function() {
+                reject(new Error('Failed to create circular image'));
+            };
+            img.src = base64Image;
+        });
+    }
+
+    /**
      * Convert schedule data to timetable format with merged cells - UPDATED FOR ENHANCED DISPLAY
      */
     convertToTimetableFormat(schedules) {
@@ -230,8 +268,8 @@ class ScheduleExporter {
             subjectText += ' L';
         }
         
-        // Format instructor name: "Lastname, FI" (Last name + First Initial)
-        const instructorText = this.formatInstructorName(schedule.teacher?.fullname || 'TBA');
+        // Use full instructor name (same as admin-teachers display)
+        const instructorText = schedule.teacher?.fullname || 'TBA';
         
         // Format room
         const roomText = schedule.room?.roomName || 'TBA';
@@ -412,9 +450,28 @@ class ScheduleExporter {
         const firstSchedule = schedules[0];
         const section = firstSchedule.section;
         
+        // Get adviser name - adviserTeacher contains the teacher ID
+        let adviserName = 'N/A';
+        if (section?.adviserTeacher) {
+            // Try to find the teacher in the schedules by matching their ID
+            const adviserSchedule = schedules.find(s => 
+                s.teacher && (s.teacher._id === section.adviserTeacher || s.teacher._id?.toString() === section.adviserTeacher?.toString())
+            );
+            
+            if (adviserSchedule && adviserSchedule.teacher?.fullname) {
+                adviserName = adviserSchedule.teacher.fullname;
+            } else {
+                // If not found in schedules, keep the ID as fallback (will show ID)
+                adviserName = section.adviserTeacher;
+            }
+        } else if (section?.adviser) {
+            // Fallback to adviser field if it exists
+            adviserName = section.adviser;
+        }
+        
         return {
             sectionName: section?.sectionName || 'N/A',
-            adviser: section?.adviser || 'N/A',
+            adviser: adviserName,
             shift: section?.shift || 'N/A'
         };
     }
@@ -450,13 +507,19 @@ class ScheduleExporter {
 
     /**
      * Export to PDF with enhanced subject display - UPDATED WITH DYNAMIC FONT SIZING AND SPACING
+     * NOW SUPPORTS MULTI-SECTION EXPORT (each section on separate page)
      */
-    async exportToPDF(schedules, filename = 'timetable', userInfo = {}) {
+    async exportToPDF(schedules, filename = 'timetable', userInfo = {}, isMultiSection = false) {
         try {
             await this.loadLibraries();
 
             if (!schedules || schedules.length === 0) {
                 throw new Error('No schedules to export');
+            }
+
+            // If multi-section export, group schedules by section
+            if (isMultiSection) {
+                return await this.exportMultiSectionPDF(schedules, filename, userInfo);
             }
 
             // Convert to timetable format with enhanced display
@@ -501,6 +564,19 @@ class ScheduleExporter {
                 wuriFooter = await this.loadImageAsBase64('/img/img/FOOTER.png');
             } catch (error) {
                 console.warn('Failed to load WURI footer:', error);
+            }
+
+            // BLOCK 1: Load and Process Profile Picture
+            // Load user profile picture if available
+            let userProfilePicture = null;
+            if (userInfo.profilePicture) {
+                try {
+                    userProfilePicture = await this.loadImageAsBase64(userInfo.profilePicture);
+                    // Create circular version of the profile picture
+                    userProfilePicture = await this.createCircularImage(userProfilePicture, 100);
+                } catch (error) {
+                    console.warn('Failed to load user profile picture:', error);
+                }
             }
 
             let yPos = 15;
@@ -554,9 +630,8 @@ class ScheduleExporter {
             // Daanbantayan Campus
             doc.setFont(undefined, 'bold');
             doc.text('COLLEGE OF TECHNOLOGY AND ENGINEERING', doc.internal.pageSize.getWidth() / 2, yPos + 25, { align: 'center' });
-            doc.setFont(undefined, 'bold');
+            
             doc.text('BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY', doc.internal.pageSize.getWidth() / 2, yPos + 30, { align: 'center' });
-
 
             yPos += 35;
 
@@ -574,6 +649,26 @@ class ScheduleExporter {
             doc.setDrawColor(224, 224, 224);
             doc.setLineWidth(0.3);
             doc.rect(14, yPos, doc.internal.pageSize.getWidth() - 28, infoBoxHeight);
+
+            // BLOCK 2: Add Profile Picture to PDF
+            // Add user profile picture if available (circular, on the right side)
+            if (userProfilePicture) {
+                try {
+                    const profileSize = 18; // Size of the circular profile picture
+                    const profileX = doc.internal.pageSize.getWidth() - 42; // Position on the right (moved 10mm left)
+                    const profileY = yPos + 2; // Vertically centered in the info box
+                    
+                    // Add circular profile picture
+                    doc.addImage(userProfilePicture, 'PNG', profileX, profileY, profileSize, profileSize);
+                    
+                    // Add a subtle border around the profile picture
+                    doc.setDrawColor(242, 210, 131); // CTU Gold
+                    doc.setLineWidth(0.5);
+                    doc.circle(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2);
+                } catch (error) {
+                    console.warn('Failed to add user profile picture to PDF:', error);
+                }
+            }
 
             doc.setFontSize(9);
             doc.setFont(undefined, 'bold');
@@ -1036,9 +1131,364 @@ class ScheduleExporter {
     }
 
     /**
+     * Export multiple sections to PDF - each section on a separate page
+     */
+    async exportMultiSectionPDF(schedules, filename = 'all_schedules', userInfo = {}) {
+        try {
+            // Group schedules by section
+            const schedulesBySection = new Map();
+            
+            schedules.forEach(schedule => {
+                const sectionId = schedule.section?._id || schedule.section;
+                const sectionName = schedule.section?.sectionName || 'Unknown Section';
+                const sectionShift = schedule.section?.shift || 'N/A';
+                const sectionYearLevel = schedule.section?.yearLevel || 'N/A';
+                
+                if (!schedulesBySection.has(sectionId)) {
+                    schedulesBySection.set(sectionId, {
+                        sectionName,
+                        sectionShift,
+                        yearLevel: sectionYearLevel,
+                        schedules: []
+                    });
+                }
+                
+                schedulesBySection.get(sectionId).schedules.push(schedule);
+            });
+
+            // Sort sections by year level, then by name
+            const sortedSections = Array.from(schedulesBySection.entries()).sort((a, b) => {
+                const yearA = parseInt(a[1].yearLevel) || 0;
+                const yearB = parseInt(b[1].yearLevel) || 0;
+                
+                if (yearA !== yearB) {
+                    return yearA - yearB;
+                }
+                
+                return a[1].sectionName.localeCompare(b[1].sectionName);
+            });
+
+            console.log(`📊 Exporting ${sortedSections.length} sections to multi-page PDF`);
+
+            // Create PDF - PORTRAIT ORIENTATION 8x13 inches
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', [330.2, 203.2]);
+
+            // Load logos once
+            let ctuLogo = null;
+            let chronixLogo = null;
+            let bagongPilipinasLogo = null;
+            let wuriFooter = null;
+            
+            try {
+                ctuLogo = await this.loadImageAsBase64('/img/img/CTU_new_logo-removebg-preview.png');
+            } catch (error) {
+                console.warn('Failed to load CTU logo:', error);
+            }
+
+            try {
+                chronixLogo = await this.loadImageAsBase64('/img/img/CHRONIX_LOGO.png');
+            } catch (error) {
+                console.warn('Failed to load CHRONIX logo:', error);
+            }
+
+            try {
+                bagongPilipinasLogo = await this.loadImageAsBase64('/img/img/BAGONG_PILIPINAS.png');
+            } catch (error) {
+                console.warn('Failed to load BAGONG PILIPINAS logo:', error);
+            }
+
+            try {
+                wuriFooter = await this.loadImageAsBase64('/img/img/FOOTER.png');
+            } catch (error) {
+                console.warn('Failed to load WURI footer:', error);
+            }
+
+            // Load user profile picture if available
+            let userProfilePicture = null;
+            if (userInfo.profilePicture) {
+                try {
+                    userProfilePicture = await this.loadImageAsBase64(userInfo.profilePicture);
+                    userProfilePicture = await this.createCircularImage(userProfilePicture, 100);
+                } catch (error) {
+                    console.warn('Failed to load user profile picture:', error);
+                }
+            }
+
+            // Generate a page for each section
+            sortedSections.forEach(([sectionId, sectionData], sectionIndex) => {
+                if (sectionIndex > 0) {
+                    doc.addPage();
+                }
+
+                console.log(`📄 Creating page ${sectionIndex + 1} for section: ${sectionData.sectionName}`);
+
+                // Convert to timetable format
+                const timetable = this.convertToTimetableFormat(sectionData.schedules);
+                const subjectsSummary = this.extractSubjectsSummary(sectionData.schedules);
+                const sectionDetails = this.getSectionDetails(sectionData.schedules);
+
+                // Render page content
+                this.renderSingleSectionPage(
+                    doc,
+                    timetable,
+                    subjectsSummary,
+                    sectionDetails,
+                    sectionData.schedules,
+                    userInfo,
+                    userProfilePicture,
+                    ctuLogo,
+                    chronixLogo,
+                    bagongPilipinasLogo,
+                    wuriFooter
+                );
+            });
+
+            // Generate filename
+            const exportFilename = `${filename}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+            // Save file
+            doc.save(exportFilename);
+
+            console.log(`✅ Multi-section PDF export successful: ${sortedSections.length} sections exported to ${exportFilename}`);
+            return true;
+        } catch (error) {
+            console.error('❌ Error exporting multi-section PDF:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Render a single section page in the PDF
+     */
+    renderSingleSectionPage(doc, timetable, subjectsSummary, sectionDetails, schedules, userInfo, userProfilePicture, ctuLogo, chronixLogo, bagongPilipinasLogo, wuriFooter) {
+        let yPos = 15;
+
+        // Add header with logos and text
+        if (ctuLogo) {
+            try {
+                doc.addImage(ctuLogo, 'PNG', 14, yPos, 18, 18);
+            } catch (error) {
+                console.warn('Failed to add CTU logo to PDF:', error);
+            }
+        }
+
+        if (chronixLogo) {
+            try {
+                doc.addImage(chronixLogo, 'PNG', 35, yPos, 18, 18);
+            } catch (error) {
+                console.warn('Failed to add CHRONIX logo to PDF:', error);
+            }
+        }
+
+        if (bagongPilipinasLogo) {
+            try {
+                doc.addImage(bagongPilipinasLogo, 'PNG', doc.internal.pageSize.getWidth() - 32, yPos, 18, 18);
+            } catch (error) {
+                console.warn('Failed to add BAGONG PILIPINAS logo to PDF:', error);
+            }
+        }
+
+        // Add header text (centered)
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 45, 98);
+        
+        doc.text('Republic of the Philippines', doc.internal.pageSize.getWidth() / 2, yPos + 5, { align: 'center' });
+        doc.setFontSize(14);
+        doc.text('CEBU TECHNOLOGICAL UNIVERSITY', doc.internal.pageSize.getWidth() / 2, yPos + 10, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text('Province of Cebu', doc.internal.pageSize.getWidth() / 2, yPos + 15, { align: 'center' });
+        doc.text('Daanbantayan Campus: M.J. Cuenco Ave., Cebu City', doc.internal.pageSize.getWidth() / 2, yPos + 20, { align: 'center' });
+        doc.setFont(undefined, 'bold');
+        doc.text('COLLEGE OF TECHNOLOGY AND ENGINEERING', doc.internal.pageSize.getWidth() / 2, yPos + 25, { align: 'center' });
+        doc.text('BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY', doc.internal.pageSize.getWidth() / 2, yPos + 30, { align: 'center' });
+
+        yPos += 35;
+
+        // Add horizontal line
+        doc.setDrawColor(242, 210, 131);
+        doc.setLineWidth(0.5);
+        doc.line(14, yPos, doc.internal.pageSize.getWidth() - 14, yPos);
+
+        yPos += 8;
+
+        // Add user information
+        doc.setFillColor(244, 247, 249);
+        const infoBoxHeight = 22;
+        doc.rect(14, yPos, doc.internal.pageSize.getWidth() - 28, infoBoxHeight, 'F');
+        doc.setDrawColor(224, 224, 224);
+        doc.setLineWidth(0.3);
+        doc.rect(14, yPos, doc.internal.pageSize.getWidth() - 28, infoBoxHeight);
+
+        // Add user profile picture if available
+        if (userProfilePicture) {
+            try {
+                const profileSize = 18;
+                const profileX = doc.internal.pageSize.getWidth() - 42;
+                const profileY = yPos + 2;
+                
+                doc.addImage(userProfilePicture, 'PNG', profileX, profileY, profileSize, profileSize);
+                doc.setDrawColor(242, 210, 131);
+                doc.setLineWidth(0.5);
+                doc.circle(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2);
+            } catch (error) {
+                console.warn('Failed to add user profile picture to PDF:', error);
+            }
+        }
+
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 45, 98);
+
+        let infoYPos = yPos + 6;
+        const col1X = 20;
+        const col2X = 100;
+
+        // Row 1: Name and Section
+        if (userInfo.name) {
+            doc.text('Name:', col1X, infoYPos);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(85, 85, 85);
+            doc.text(userInfo.name, col1X + 12, infoYPos);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(0, 45, 98);
+        }
+
+        if (sectionDetails.sectionName) {
+            doc.text('Section:', col2X, infoYPos);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(85, 85, 85);
+            doc.text(sectionDetails.sectionName, col2X + 15, infoYPos);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(0, 45, 98);
+        }
+
+        infoYPos += 6;
+
+        // Row 2: Advisor Name and Export Date
+        if (sectionDetails.adviser) {
+            doc.text('Advisor Name:', col1X, infoYPos);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(85, 85, 85);
+            doc.text(sectionDetails.adviser, col1X + 25, infoYPos);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(0, 45, 98);
+        }
+
+        doc.text('Export Date:', col2X, infoYPos);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(85, 85, 85);
+        doc.text(new Date().toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        }), col2X + 22, infoYPos);
+        
+        infoYPos += 6;
+
+        // Row 3: Total Classes and Shift
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 45, 98);
+        doc.text('Total Classes:', col1X, infoYPos);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(85, 85, 85);
+        doc.text(schedules.length.toString(), col1X + 25, infoYPos);
+        
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 45, 98);
+        doc.text('Shift:', col2X, infoYPos);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(85, 85, 85);
+        doc.text(sectionDetails.shift, col2X + 10, infoYPos);
+
+        yPos += infoBoxHeight + 12;
+
+        // Create timetable table
+        const timetableEndY = this.createEnhancedTimetableTable(doc, timetable, yPos);
+        
+        // Add subjects summary after timetable
+        yPos = timetableEndY + 10;
+        
+        // Add summary title
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 45, 98);
+        doc.text('SUMMARY OF COURSES', 14, yPos);
+        
+        yPos += 8;
+        
+        // Add summary table header
+        doc.setFillColor(0, 45, 98);
+        doc.rect(14, yPos, doc.internal.pageSize.getWidth() - 28, 8, 'F');
+        
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('UNITS', 20, yPos + 5);
+        doc.text('SUBJECT CODE', 50, yPos + 5);
+        doc.text('DESCRIPTIVE TITLE', 120, yPos + 5);
+        
+        yPos += 8;
+        
+        // Add summary rows
+        doc.setFontSize(7);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(0, 0, 0);
+        
+        subjectsSummary.forEach((subject, index) => {
+            if (index % 2 === 0) {
+                doc.setFillColor(245, 247, 249);
+                doc.rect(14, yPos, doc.internal.pageSize.getWidth() - 28, 6, 'F');
+            }
+            
+            doc.text(subject.units.toString(), 20, yPos + 4);
+            doc.text(subject.courseCode, 50, yPos + 4);
+            
+            const maxWidth = doc.internal.pageSize.getWidth() - 140;
+            const wrappedTitle = doc.splitTextToSize(subject.descriptiveTitle, maxWidth);
+            doc.text(wrappedTitle, 120, yPos + 4);
+            
+            yPos += Math.max(6, (wrappedTitle.length * 3));
+        });
+
+        // Add footer
+        if (wuriFooter) {
+            try {
+                const footerHeight = 12;
+                const footerWidth = doc.internal.pageSize.getWidth() - 28;
+                doc.addImage(
+                    wuriFooter, 
+                    'PNG', 
+                    14, 
+                    doc.internal.pageSize.getHeight() - footerHeight - 10, 
+                    footerWidth, 
+                    footerHeight
+                );
+            } catch (error) {
+                console.warn('Failed to add WURI footer to PDF:', error);
+                doc.setDrawColor(242, 210, 131);
+                doc.setLineWidth(0.3);
+                doc.line(14, doc.internal.pageSize.getHeight() - 12, doc.internal.pageSize.getWidth() - 14, doc.internal.pageSize.getHeight() - 12);
+                doc.setFontSize(7);
+                doc.setTextColor(128);
+                doc.text('Generated by CHRONIX - CTU Class Scheduling System', 14, doc.internal.pageSize.getHeight() - 8);
+            }
+        } else {
+            doc.setDrawColor(242, 210, 131);
+            doc.setLineWidth(0.3);
+            doc.line(14, doc.internal.pageSize.getHeight() - 12, doc.internal.pageSize.getWidth() - 14, doc.internal.pageSize.getHeight() - 12);
+            doc.setFontSize(7);
+            doc.setTextColor(128);
+            doc.text('Generated by CHRONIX - CTU Class Scheduling System', 14, doc.internal.pageSize.getHeight() - 8);
+        }
+    }
+
+    /**
      * Show export options dialog - UPDATED with only PDF and CSV options
      */
-    showExportDialog(schedules, userInfo = {}, filename = 'timetable') {
+    showExportDialog(schedules, userInfo = {}, filename = 'timetable', isMultiSection = false) {
         return new Promise((resolve, reject) => {
             // Create modal overlay
             const overlay = document.createElement('div');
@@ -1168,7 +1618,7 @@ class ScheduleExporter {
                 try {
                     pdfBtn.disabled = true;
                     pdfBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting Timetable...';
-                    await this.exportToPDF(schedules, filename, userInfo);
+                    await this.exportToPDF(schedules, filename, userInfo, isMultiSection);
                     document.body.removeChild(overlay);
                     resolve('pdf');
                 } catch (error) {

@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (modalTeacherName) modalTeacherName.textContent = safeDisplay(teacher.fullname);
         if (modalTeacherEmail) modalTeacherEmail.textContent = safeDisplay(teacher.email);
         if (modalTeacherId) modalTeacherId.textContent = safeDisplay(teacher.ctuid);
-        if (modalAdvisorySection) modalAdvisorySection.textContent = safeDisplay(teacher.section, 'Not assigned');
+        if (modalAdvisorySection) modalAdvisorySection.textContent = safeDisplay(teacher.advisorySection || teacher.section, 'Not assigned');
         if (teacherScheduleTitle) teacherScheduleTitle.textContent = `${safeDisplay(teacher.fullname)}'s Schedule`;
 
         // Load teacher avatar if available
@@ -334,7 +334,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 option.textContent = `${section.sectionName} (Year ${section.yearLevel} - ${section.shift})`;
                 editSection.appendChild(option);
             });
-            editSection.value = safeDisplay(teacher.section, '');
+            // Use advisorySection first, fallback to section for backward compatibility
+            editSection.value = safeDisplay(teacher.advisorySection || teacher.section, '');
         }
 
         // Populate Room dropdown

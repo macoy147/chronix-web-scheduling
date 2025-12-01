@@ -271,9 +271,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Find adviser for a section by matching teacher.section with section.sectionName
+    // Find adviser for a section by matching teacher.advisorySection with section.sectionName
     function findAdviserForSection(sectionName) {
-        const adviser = teachers.find(teacher => teacher.section === sectionName);
+        const adviser = teachers.find(teacher => 
+            teacher.advisorySection === sectionName || teacher.section === sectionName
+        );
         return adviser ? adviser.fullname : 'No Adviser';
     }
 
@@ -286,7 +288,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    section: sectionName
+                    advisorySection: sectionName,
+                    section: sectionName // Keep for backward compatibility
                 })
             });
             console.log(`✅ Synced adviser: Teacher ${teacherId} assigned to section ${sectionName}`);

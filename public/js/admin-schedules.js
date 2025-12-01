@@ -1,6 +1,7 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
+import scheduleExporter from './schedule-export.js';
 
 
 // Simple auth helper
@@ -103,7 +104,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const sectionFilterSelect = document.getElementById('sectionFilterSelect');
     if (sectionFilterSelect) {
         sectionFilterSelect.addEventListener('change', function() {
-            currentSection = this.value;
+            // FIXED: Properly reset currentSection when default option is selected
+            currentSection = this.value || ''; // Empty string if no value
             
             // Auto-set year level based on selected section
             if (currentSection) {
@@ -113,6 +115,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (yearLevelSelect) {
                         yearLevelSelect.value = currentYearLevel;
                     }
+                }
+            } else {
+                // FIXED: Reset year level when no section is selected
+                currentYearLevel = '';
+                if (yearLevelSelect) {
+                    yearLevelSelect.value = '';
                 }
             }
             
@@ -1478,7 +1486,110 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // Export schedule functionality
+    // Show multi-section export confirmation modal
+    function showMultiSectionExportConfirmation(sectionCount, totalSchedules) {
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.style.display = 'flex';
+            
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 500px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <i class="bi bi-file-earmark-pdf" style="font-size: 48px; color: #A3000C;"></i>
+                    </div>
+                    <h3 style="color: #002D62; text-align: center; margin-bottom: 16px;">
+                        Export Multiple Sections
+                    </h3>
+                    <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin: 0 0 12px 0; color: #555; font-size: 0.95em;">
+                            You are about to export schedules for <strong style="color: #A3000C;">${sectionCount} section${sectionCount !== 1 ? 's' : ''}</strong> 
+                            with a total of <strong style="color: #A3000C;">${totalSchedules} schedule${totalSchedules !== 1 ? 's' : ''}</strong>.
+                        </p>
+                        <p style="margin: 0; color: #555; font-size: 0.95em;">
+                            <i class="bi bi-info-circle" style="color: #0066cc;"></i>
+                            Each section will be on a <strong>separate page</strong> in the PDF to avoid time conflicts.
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 12px; justify-content: center;">
+                        <button id="confirmExportBtn" style="
+                            padding: 12px 32px;
+                            background: linear-gradient(135deg, #A3000C 0%, #8B0009 100%);
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 1em;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        ">
+                            <i class="bi bi-check-circle"></i> Continue Export
+                        </button>
+                        <button id="cancelExportBtn" style="
+                            padding: 12px 32px;
+                            background: #e5e8eb;
+                            color: #555;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 1em;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        ">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            document.body.style.overflow = 'hidden';
+            
+            const confirmBtn = modal.querySelector('#confirmExportBtn');
+            const cancelBtn = modal.querySelector('#cancelExportBtn');
+            
+            // Hover effects
+            confirmBtn.addEventListener('mouseenter', () => {
+                confirmBtn.style.transform = 'translateY(-2px)';
+                confirmBtn.style.boxShadow = '0 6px 20px rgba(163, 0, 12, 0.4)';
+            });
+            confirmBtn.addEventListener('mouseleave', () => {
+                confirmBtn.style.transform = 'translateY(0)';
+                confirmBtn.style.boxShadow = 'none';
+            });
+            
+            cancelBtn.addEventListener('mouseenter', () => {
+                cancelBtn.style.background = '#d5d8db';
+            });
+            cancelBtn.addEventListener('mouseleave', () => {
+                cancelBtn.style.background = '#e5e8eb';
+            });
+            
+            // Button handlers
+            confirmBtn.onclick = () => {
+                document.body.removeChild(modal);
+                document.body.style.overflow = 'auto';
+                resolve(true);
+            };
+            
+            cancelBtn.onclick = () => {
+                document.body.removeChild(modal);
+                document.body.style.overflow = 'auto';
+                resolve(false);
+            };
+            
+            // Close on overlay click
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                    document.body.style.overflow = 'auto';
+                    resolve(false);
+                }
+            };
+        });
+    }
+
+    // Export schedule functionality - UPDATED TO SUPPORT MULTI-SECTION EXPORT
     async function setupExportButton() {
         const exportBtn = document.getElementById('exportScheduleBtn');
         if (!exportBtn) return;
@@ -1494,9 +1605,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 let schedulesToExport = schedules;
                 let exportDescription = 'All Schedules';
                 let filename = 'all_schedules';
+                let isMultiSection = false; // Flag to indicate multi-section export
 
                 // If year level and section are selected, filter schedules
                 if (currentYearLevel !== '' && currentSection !== '') {
+                    // SINGLE SECTION EXPORT
                     schedulesToExport = schedules.filter(s => 
                         (s.section._id || s.section) === currentSection
                     );
@@ -1507,6 +1620,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         exportDescription = `${selectedSection.sectionName} (${selectedSection.shift})`;
                         filename = `schedule_${selectedSection.sectionName.replace(/\s+/g, '_')}_${selectedSection.shift}`;
                     }
+                    isMultiSection = false;
                 } else if (currentYearLevel !== '') {
                     // If only year level is selected, filter by year level
                     schedulesToExport = schedules.filter(s => {
@@ -1515,11 +1629,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     exportDescription = `Year ${currentYearLevel} Schedules`;
                     filename = `schedules_year_${currentYearLevel}`;
+                    isMultiSection = true; // Multiple sections in year level
+                } else {
+                    // NO FILTER - EXPORT ALL SCHEDULES (MULTI-SECTION)
+                    schedulesToExport = schedules;
+                    exportDescription = 'All Schedules';
+                    filename = 'all_schedules';
+                    isMultiSection = true; // Multiple sections across all years
                 }
 
                 if (schedulesToExport.length === 0) {
                     showBubbleMessage('No schedules to export with current filter', 'error');
                     return;
+                }
+
+                // Count unique sections for better messaging
+                const uniqueSections = new Set(schedulesToExport.map(s => s.section._id || s.section));
+                const sectionCount = uniqueSections.size;
+
+                // Show confirmation modal for multi-section export
+                if (isMultiSection && sectionCount > 1) {
+                    const confirmed = await showMultiSectionExportConfirmation(sectionCount, schedulesToExport.length);
+                    if (!confirmed) {
+                        return;
+                    }
                 }
 
                 // Import the export module
@@ -1535,18 +1668,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     profilePicture: currentUser?.profilePicture || null
                 };
 
-                // Show export dialog
+                // Show export dialog with multi-section flag
                 const result = await scheduleExporter.showExportDialog(
                     schedulesToExport,
                     userInfo,
-                    filename
+                    filename,
+                    isMultiSection
                 );
 
                 if (result) {
-                    showBubbleMessage(
-                        `${exportDescription} exported successfully as ${result.toUpperCase()}! (${schedulesToExport.length} schedule${schedulesToExport.length !== 1 ? 's' : ''})`,
-                        'success'
-                    );
+                    const successMessage = isMultiSection && sectionCount > 1
+                        ? `${exportDescription} exported successfully as ${result.toUpperCase()}! (${sectionCount} sections, ${schedulesToExport.length} total schedules)`
+                        : `${exportDescription} exported successfully as ${result.toUpperCase()}! (${schedulesToExport.length} schedule${schedulesToExport.length !== 1 ? 's' : ''})`;
+                    
+                    showBubbleMessage(successMessage, 'success');
                 }
             } catch (error) {
                 console.error('Export error:', error);
