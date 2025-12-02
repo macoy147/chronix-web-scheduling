@@ -1,5 +1,5 @@
 /**
- * Admin Students Management - Desktop Version
+ * Admin Students Management - Desktop Version - ENHANCED WITH FIXES
  * Features: CRUD operations, pagination, validation, profile upload
  * Status is automatically determined by whether student has schedules
  */
@@ -7,6 +7,17 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
+
+// Prevent browser caching for this page
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
+
+// Check if page was reloaded
+if (performance.navigation.type === 1) {
+    console.log('Page was reloaded, will force fresh data fetch');
+    sessionStorage.setItem('forceRefreshStudents', 'true');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     if (!AuthGuard.checkAuthentication('admin')) {
@@ -75,12 +86,19 @@ document.addEventListener('DOMContentLoaded', function() {
     updateProfileInfo();
     fetchUserData();
 
-    // ==================== DATA LOADING ====================
+    // ==================== DATA LOADING - UPDATED WITH FIXES ====================
 
-    async function loadAllData() {
+    async function loadAllData(forceRefresh = false) {
         try {
+            console.log('🔄 Loading all student data...');
             showLoadingState(true);
-            await Promise.all([loadStudents(), loadSchedules(), loadSections(), loadRooms()]);
+            await Promise.all([
+                loadStudents(forceRefresh), 
+                loadSchedules(forceRefresh), 
+                loadSections(forceRefresh), 
+                loadRooms(forceRefresh)
+            ]);
+            console.log('✅ All data loaded successfully');
             updateStatistics();
             populateSectionFilter();
             populateAddStudentSections();
@@ -93,21 +111,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadStudents() {
+    async function loadStudents(forceRefresh = false) {
         try {
-            // Add cache-busting parameter to ensure fresh data
-            const res = await fetch(`/users/students?_t=${Date.now()}`, {
-                cache: 'no-cache',
+            console.log('Fetching students from server...');
+            // Use cache-busting URL
+            const url = forceRefresh ? `/users/students?_t=${Date.now()}` : `/users/students?_=${Date.now()}`;
+            
+            const res = await fetch(url, {
+                method: 'GET',
                 headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                }
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                cache: 'no-store',
+                credentials: 'same-origin'
             });
+            
             if (res.ok) {
                 const fetchedStudents = await res.json();
                 // Filter out any null or invalid entries
                 students = fetchedStudents.filter(s => s && s._id);
-                console.log(`✅ Loaded ${students.length} students from server`);
+                console.log(`✅ Students data received from server: ${students.length} students`);
+                console.log('📊 First 3 students:', students.slice(0, 3));
             } else {
                 console.error('Failed to load students:', res.status);
                 students = [];
@@ -118,28 +145,64 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadSchedules() {
+    async function loadSchedules(forceRefresh = false) {
         try {
-            const res = await fetch('/schedules');
-            if (res.ok) schedules = await res.json();
+            const url = forceRefresh ? `/schedules?_t=${Date.now()}` : `/schedules?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
+            if (res.ok) {
+                schedules = await res.json();
+                console.log('✅ Loaded schedules:', schedules.length, 'schedules');
+            }
         } catch (error) {
             schedules = [];
         }
     }
 
-    async function loadSections() {
+    async function loadSections(forceRefresh = false) {
         try {
-            const res = await fetch('/sections');
-            if (res.ok) sections = await res.json();
+            const url = forceRefresh ? `/sections?_t=${Date.now()}` : `/sections?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
+            if (res.ok) {
+                sections = await res.json();
+                console.log('✅ Loaded sections:', sections.length, 'sections');
+            }
         } catch (error) {
             sections = [];
         }
     }
 
-    async function loadRooms() {
+    async function loadRooms(forceRefresh = false) {
         try {
-            const res = await fetch('/rooms');
-            if (res.ok) rooms = await res.json();
+            const url = forceRefresh ? `/rooms?_t=${Date.now()}` : `/rooms?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
+            if (res.ok) {
+                rooms = await res.json();
+                console.log('✅ Loaded rooms:', rooms.length, 'rooms');
+            }
         } catch (error) {
             rooms = [];
         }
@@ -683,11 +746,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 showBubbleMessage('Student added successfully!', 'success');
                 closeAddStudentModal();
                 
-                // Reload data and refresh table immediately
-                await loadStudents();
-                await loadSchedules();
-                updateStatistics();
-                applyFiltersAndRender();
+                console.log('🔄 Forcing data refresh after student creation...');
+                
+                // Wait for database to sync
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Force reload with aggressive cache busting
+                await loadAllData(true);
+                
+                // Scroll to top to see the new student
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                console.log('✅ Data refresh complete. Total students now:', students.length);
             } else {
                 showBubbleMessage(result.error || 'Failed to add student', 'error');
             }
@@ -887,16 +957,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('editStudentModal').style.display = 'none';
                 document.body.style.overflow = 'auto';
                 
-                // Update the student in the local array immediately
-                const studentIndex = students.findIndex(s => s._id === currentStudentId);
-                if (studentIndex !== -1) {
-                    students[studentIndex] = { ...students[studentIndex], ...updatedData.user };
-                }
+                console.log('🔄 Forcing data refresh after student update...');
                 
-                // Reload schedules and refresh table immediately
-                await loadSchedules();
-                updateStatistics();
-                applyFiltersAndRender();
+                // Wait for database to sync
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Force reload with aggressive cache busting
+                await loadAllData(true);
+                
+                console.log('✅ Data refresh complete. Total students now:', students.length);
             } else {
                 const error = await res.json();
                 showBubbleMessage(error.error || 'Failed to update student', 'error');
@@ -958,13 +1027,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Clear the studentToDelete reference
                 studentToDelete = null;
                 
-                // Force reload fresh data from server to ensure consistency
-                await loadStudents();
-                await loadSchedules();
+                console.log('🔄 Forcing data refresh after student deletion...');
                 
-                // Update statistics and refresh table
-                updateStatistics();
-                applyFiltersAndRender();
+                // Wait for database to sync
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Force reload with aggressive cache busting
+                await loadAllData(true);
+                
+                console.log('✅ Data refresh complete. Total students now:', students.length);
             } else {
                 const error = await res.json();
                 console.error(`❌ Failed to delete student: ${error.error}`);
@@ -1271,5 +1342,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==================== INITIALIZE ====================
-    loadAllData();
+    // Initial load - check if we need to force refresh
+    const forceInitialRefresh = sessionStorage.getItem('forceRefreshStudents') === 'true';
+    if (forceInitialRefresh) {
+        sessionStorage.removeItem('forceRefreshStudents');
+        console.log('Forcing initial refresh due to page reload');
+        loadAllData(true);
+    } else {
+        loadAllData();
+    }
 });

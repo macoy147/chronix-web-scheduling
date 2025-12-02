@@ -860,6 +860,17 @@
     <script type="module">
     import AuthGuard from '/js/auth-guard.js';
 
+    // Prevent browser caching for mobile page
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+
+    // Check if page was reloaded
+    if (performance.navigation.type === 1) {
+        console.log('Mobile page was reloaded, will force fresh data fetch');
+        sessionStorage.setItem('forceRefreshRoomsMobile', 'true');
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Mobile Admin Rooms loaded');
         
@@ -1104,11 +1115,31 @@
         }
         
         // Load rooms for mobile
-        async function loadMobileRooms() {
+        async function loadMobileRooms(forceRefresh = false) {
             try {
-                const res = await fetch('/rooms');
+                console.log('🔄 Loading mobile rooms data...');
+                
+                // Use cache-busting URL
+                const timestamp = Date.now();
+                const roomsUrl = forceRefresh ? `/rooms?_t=${timestamp}` : `/rooms?_=${timestamp}`;
+                
+                const res = await fetch(roomsUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    cache: 'no-store',
+                    credentials: 'same-origin'
+                });
+                
                 const data = await res.json();
                 allMobileRooms = Array.isArray(data) ? data : [];
+                
+                console.log('✅ Mobile rooms data loaded:', allMobileRooms.length, 'rooms');
+                
                 displayMobileRooms(allMobileRooms);
             } catch (error) {
                 console.error('Error loading rooms:', error);
@@ -1124,7 +1155,15 @@
             }
         }
         
-        loadMobileRooms();
+        // Initial load - check if we need to force refresh
+        const forceInitialRefresh = sessionStorage.getItem('forceRefreshRoomsMobile') === 'true';
+        if (forceInitialRefresh) {
+            sessionStorage.removeItem('forceRefreshRoomsMobile');
+            console.log('Forcing initial mobile refresh due to page reload');
+            loadMobileRooms(true);
+        } else {
+            loadMobileRooms();
+        }
         
         // Mobile create button and modal handlers
         const mobileOpenRoomModal = document.getElementById('mobileOpenRoomModal');
@@ -1261,7 +1300,16 @@
                         );
                         if (roomModal) roomModal.style.display = 'none';
                         if (roomForm) roomForm.reset();
-                        loadMobileRooms();
+                        
+                        console.log('🔄 Forcing mobile data refresh after room creation/update...');
+                        
+                        // Wait for database to sync
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Force reload with aggressive cache busting
+                        await loadMobileRooms(true);
+                        
+                        console.log('✅ Mobile data refresh complete. Total rooms now:', allMobileRooms.length);
                     } else {
                         showBubbleMessage(result.error || 'Failed to save room', 'error');
                     }
@@ -1297,7 +1345,11 @@
                     
                     if (res.ok) {
                         showBubbleMessage('Room deleted successfully!', 'success');
-                        loadMobileRooms();
+                        
+                        console.log('🔄 Forcing mobile data refresh after room deletion...');
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        await loadMobileRooms(true);
+                        console.log('✅ Mobile data refresh complete. Total rooms now:', allMobileRooms.length);
                     } else {
                         showBubbleMessage(result.error || 'Failed to delete room', 'error');
                     }

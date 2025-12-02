@@ -1,4 +1,16 @@
+// admin-rooms.js - ENHANCED VERSION WITH FIXES
 import AuthGuard from './auth-guard.js';
+
+// Prevent browser caching for this page
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
+
+// Check if page was reloaded
+if (performance.navigation.type === 1) {
+    console.log('Page was reloaded, will force fresh data fetch');
+    sessionStorage.setItem('forceRefreshRooms', 'true');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
@@ -122,13 +134,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2700);
     }
 
-    // Load all data
-    async function loadAllData() {
+    // Load all data - UPDATED WITH FIXES
+    async function loadAllData(forceRefresh = false) {
         try {
+            console.log('🔄 Loading all room data...');
+            
+            // Show loading state
+            const tbody = document.getElementById('roomsTableBody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="loading-state" style="text-align: center; padding: 48px 24px;">
+                            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                            <div style="margin-top: 16px; color: #6c757d;">Loading rooms...</div>
+                        </td>
+                    </tr>
+                `;
+            }
+            
             await Promise.all([
-                loadRooms(),
-                loadSections()
+                loadRooms(forceRefresh),
+                loadSections(forceRefresh)
             ]);
+            
+            console.log('✅ All data loaded. Rooms:', rooms.length, 'Sections:', sections.length);
+            
             updateStatistics();
             renderRoomsTable();
             setupSearchFunctionality();
@@ -153,13 +183,25 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('maintenanceRooms').textContent = maintenance;
     }
 
-    // Load sections
-    async function loadSections() {
+    // Load sections - UPDATED WITH FIXES
+    async function loadSections(forceRefresh = false) {
         try {
-            const res = await fetch('/sections');
+            // Use cache-busting URL
+            const url = forceRefresh ? `/sections?_t=${Date.now()}` : `/sections?_=${Date.now()}`;
+            
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
+            
             if (res.ok) {
                 sections = await res.json();
-                console.log('Loaded sections:', sections);
+                console.log('✅ Loaded sections:', sections.length, 'sections');
             } else {
                 console.error('Failed to load sections');
                 sections = [];
@@ -378,16 +420,35 @@ document.addEventListener('DOMContentLoaded', function() {
         return warnings;
     }
 
-    // Load rooms
-    async function loadRooms() {
+    // Load rooms - UPDATED WITH FIXES
+    async function loadRooms(forceRefresh = false) {
         const tbody = document.getElementById('roomsTableBody');
         if (!tbody) return;
         
         tbody.innerHTML = '<tr><td colspan="8">Loading...</td></tr>';
         try {
-            const res = await fetch('/rooms');
+            console.log('Fetching rooms from server...');
+            
+            // Use cache-busting URL
+            const url = forceRefresh ? `/rooms?_t=${Date.now()}` : `/rooms?_=${Date.now()}`;
+            
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                cache: 'no-store',
+                credentials: 'same-origin'
+            });
+            
             const data = await res.json();
             rooms = Array.isArray(data) ? data : [];
+            
+            console.log('✅ Rooms data received from server:', rooms.length, 'rooms');
+            console.log('📊 First 3 rooms:', rooms.slice(0, 3));
             
             if (rooms.length > 0) {
                 renderRoomsTable();
@@ -552,7 +613,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (modal) modal.style.display = 'none';
                     if (form) form.reset();
                     hideModalError();
-                    await loadAllData();
+                    
+                    console.log('🔄 Forcing data refresh after room creation/update...');
+                    
+                    // Wait for database to sync
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with aggressive cache busting
+                    await loadAllData(true);
+                    
+                    // Scroll to top to see the new room
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    console.log('✅ Data refresh complete. Total rooms now:', rooms.length);
                 } else {
                     showModalError(result.error || (editMode ? "Failed to update room." : "Failed to create room."));
                 }
@@ -643,7 +716,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     showBubbleMessage("Room deleted successfully!", "success");
                     if (deleteModal) deleteModal.style.display = 'none';
                     deleteRoomId = null;
-                    await loadAllData();
+                    
+                    console.log('🔄 Forcing data refresh after room deletion...');
+                    
+                    // Wait for database to sync
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with aggressive cache busting
+                    await loadAllData(true);
+                    
+                    console.log('✅ Data refresh complete. Total rooms now:', rooms.length);
                 } else {
                     showBubbleMessage(result.error || "Failed to delete room.", "error");
                 }
@@ -920,6 +1002,13 @@ document.addEventListener('DOMContentLoaded', function() {
         showBubbleMessage(`Exported ${rows.length} room(s) to CSV`, 'success');
     }
 
-    // Initial load
-    loadAllData();
+    // Initial load - check if we need to force refresh
+    const forceInitialRefresh = sessionStorage.getItem('forceRefreshRooms') === 'true';
+    if (forceInitialRefresh) {
+        sessionStorage.removeItem('forceRefreshRooms');
+        console.log('Forcing initial refresh due to page reload');
+        loadAllData(true);
+    } else {
+        loadAllData();
+    }
 });

@@ -1071,12 +1071,12 @@ body {
 
 .modal-content {
     background: #fff;
-    padding: 32px 36px 28px 36px;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 22px 24px 18px 24px;
+    border-radius: 14px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
     width: 100%;
     max-width: 520px;
-    max-height: 90vh;
+    max-height: 88vh;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -1095,13 +1095,13 @@ body {
     }
 }
 .modal-content h3 {
-    font-size: 1.4em;
+    font-size: 1.25em;
     font-weight: 700;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     color: var(--ctu-deep-blue, #002D62);
 }
 .form-row {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     display: flex;
     flex-direction: column;
 }
@@ -1109,10 +1109,10 @@ body {
 .form-row textarea,
 .form-row select {
     width: 100%;
-    padding: 12px 16px;
+    padding: 10px 14px;
     border: 2px solid #e5e8eb;
-    border-radius: 8px;
-    font-size: 0.95em;
+    border-radius: 7px;
+    font-size: 0.9em;
     background: #f8f9fb;
     transition: all .2s ease;
     font-family: inherit;
@@ -1131,20 +1131,20 @@ body {
     color: #999;
 }
 .form-row textarea {
-    min-height: 48px;
-    max-height: 180px;
+    min-height: 44px;
+    max-height: 100px;
     resize: vertical;
 }
 .modal-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
-    margin-top: 20px;
+    gap: 10px;
+    margin-top: 16px;
 }
 .modal-cancel, .modal-submit {
-    padding: 10px 32px;
-    border-radius: 8px;
-    font-size: 0.95em;
+    padding: 9px 28px;
+    border-radius: 7px;
+    font-size: 0.9em;
     font-weight: 600;
     border: none;
     cursor: pointer;
@@ -1176,18 +1176,19 @@ body {
     max-width: 380px;
 }
 #descModalText {
-    font-size: 1em;
+    font-size: 0.92em;
     white-space: pre-line;
     margin-bottom: 10px;
     text-align: justify;
+    line-height: 1.5;
 }
 
 /* Horizontal modal grid for subject form */
 .horizontal-modal .horizontal-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px 24px;
-    margin-bottom: 14px;
+    gap: 12px 16px;
+    margin-bottom: 12px;
 }
 .horizontal-modal .form-row {
     margin-bottom: 0;
@@ -1197,41 +1198,10 @@ body {
     width: 100%;
 }
 .horizontal-modal form > .form-row[style] {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
-/* Compact Modal - Smaller Size */
-.compact-modal {
-    max-width: 720px !important;
-    padding: 24px 28px 22px 28px !important;
-}
-
-.compact-modal h3 {
-    font-size: 1.25em !important;
-    margin-bottom: 16px !important;
-}
-
-.compact-modal .horizontal-grid {
-    gap: 12px 18px !important;
-    margin-bottom: 10px !important;
-}
-
-.compact-modal .form-row input,
-.compact-modal .form-row select,
-.compact-modal .form-row textarea {
-    padding: 9px 12px !important;
-    font-size: 0.9em !important;
-}
-
-.compact-modal .modal-actions {
-    margin-top: 16px !important;
-}
-
-.compact-modal .modal-cancel,
-.compact-modal .modal-submit {
-    padding: 8px 24px !important;
-    font-size: 0.9em !important;
-}
+/* Compact Modal - Not needed, removed to use default sizing */
 
 /* Floating Label Styles */
 .floating-label-group {
@@ -1239,12 +1209,12 @@ body {
 }
 
 .floating-label-group input {
-    padding: 14px 12px 6px 12px !important;
+    padding: 10px 14px !important;
 }
 
 .floating-label-group label {
     position: absolute;
-    left: 12px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
     color: #999;
@@ -1259,16 +1229,13 @@ body {
 /* When input has focus or has value */
 .floating-label-group input:focus + label,
 .floating-label-group input:not(:placeholder-shown) + label {
-    top: 8px;
-    font-size: 0.7em;
+    top: -8px;
+    left: 10px;
+    font-size: 0.75em;
     color: var(--ctu-red-accent);
     font-weight: 600;
-    background: #f8f9fb;
-}
-
-.floating-label-group input:focus {
-    padding-top: 16px !important;
-    padding-bottom: 4px !important;
+    background: #fff;
+    padding: 0 6px;
 }
 
 /* For readonly field (Total Hours) */
@@ -1287,7 +1254,7 @@ body {
 
 .select-label {
     display: block;
-    font-size: 0.75em;
+    font-size: 0.7em;
     font-weight: 600;
     color: var(--ctu-text-secondary);
     margin-bottom: 4px;
@@ -1303,15 +1270,15 @@ body {
 .modal-error-alert {
     background: #fff3cd;
     border: 2px solid #ff9800;
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 16px;
+    border-radius: 7px;
+    padding: 9px 12px;
+    margin-bottom: 14px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     color: #d84315;
     font-weight: 500;
-    font-size: 0.9em;
+    font-size: 0.85em;
     animation: slideDown 0.3s ease;
 }
 
@@ -1327,13 +1294,13 @@ body {
 }
 
 .modal-error-alert i {
-    font-size: 1.3em;
+    font-size: 1.1em;
     flex-shrink: 0;
 }
 
 .modal-error-alert span {
     flex: 1;
-    line-height: 1.4;
+    line-height: 1.3;
 }
 /* Mobile modal adjustments */
 @media (max-width: 768px) {
@@ -1580,129 +1547,6 @@ body {
     color: var(--ctu-deep-blue);
 }
 
-@media (max-width: 768px) {
-    .nav-links {
-        display: none;
-    }
-    
-    .mobile-menu-toggle {
-        display: block;
-    }
-    
-    .mobile-bottom-nav {
-        display: block;
-        bottom: -100%;
-    }
-    
-    .mobile-bottom-nav.nav-visible {
-        bottom: 0;
-    }
-    
-    .admin-nav {
-        padding: 0 12px;
-        height: 60px;
-    }
-    
-    .nav-left {
-        margin-right: auto;
-    }
-    
-    .admin-dashboard-main {
-        transform: scale(1);
-        padding-bottom: 30px;
-    }
-    
-    .admin-center-container {
-        padding: 0 12px;
-    }
-    
-    .dashboard-title {
-        font-size: 1.3em;
-        margin-bottom: 14px;
-    }
-    
-    .subjects-table-wrapper {
-        border-radius: 10px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    }
-    
-    .table-controls {
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-    
-    .table-left-actions {
-        width: 100%;
-        flex-direction: column;
-        gap: 12px;
-    }
-    
-    .table-actions {
-        width: 100%;
-        flex-direction: column;
-        gap: 12px;
-    }
-    
-    .search-box {
-        max-width: 100%;
-        width: 100%;
-    }
-    
-    .filter-controls {
-        width: 100%;
-        flex-direction: column;
-    }
-    
-    .filter-dropdown {
-        width: 100%;
-        min-width: auto;
-    }
-    
-    .subject-create-btn {
-        width: 100%;
-        padding: 12px 20px;
-        font-size: 0.9em;
-        justify-content: center;
-    }
-    
-    .filter-btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-@media (max-width: 600px) {
-    .admin-logo {
-        width: 28px;
-        height: 28px;
-        margin-right: 8px;
-    }
-    
-    .admin-app-title {
-        font-size: 1em;
-        margin-right: 12px;
-    }
-    
-    .profile-img {
-        width: 28px;
-        height: 28px;
-    }
-    
-    .profile-name {
-        font-size: 0.9em;
-    }
-    
-    .dashboard-title {
-        font-size: 1.2em;
-    }
-    
-    .subject-create-btn {
-        font-size: 0.85em;
-        padding: 10px 16px;
-    }
-}
-
 /* Touch-friendly interactions */
 @media (hover: none) and (pointer: coarse) {
     .subject-create-btn,
@@ -1762,5 +1606,111 @@ body {
     .modal-submit:hover,
     .modal-cancel:hover {
         transform: none;
+    }
+}
+
+/* ====== SUBJECT FORM MODAL SPECIFIC STYLES ====== */
+
+/* Target ONLY the main subject form modal (create/edit) */
+#subjectFormModal .modal-content.horizontal-modal {
+    max-width: 650px !important;
+    width: 90vw !important;
+    min-width: 300px;
+    padding: 25px 28px;
+}
+
+/* Adjust the form layout for better spacing */
+#subjectFormModal .horizontal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+/* Make form inputs fill their containers */
+#subjectFormModal .form-row {
+    margin-bottom: 0;
+    width: 100%;
+}
+
+#subjectFormModal .form-row input,
+#subjectFormModal .form-row select,
+#subjectFormModal .form-row textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Adjust textarea to span full width */
+#subjectFormModal .form-row[style*="grid-column"] {
+    grid-column: 1 / -1 !important;
+}
+
+/* Modal header adjustments */
+#subjectFormModal .modal-content h3 {
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    color: var(--ctu-deep-blue);
+}
+
+/* Button spacing */
+#subjectFormModal .modal-actions {
+    margin-top: 10px;
+    gap: 12px;
+}
+
+/* Error alert styling */
+#subjectFormModal .modal-error-alert {
+    margin-bottom: 18px;
+    padding: 12px 16px;
+}
+
+/* ====== RESPONSIVE ADJUSTMENTS ====== */
+
+/* Tablet */
+@media (max-width: 768px) {
+    #subjectFormModal .modal-content.horizontal-modal {
+        max-width: 90vw !important;
+        padding: 20px 22px;
+    }
+    
+    #subjectFormModal .horizontal-grid {
+        gap: 14px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 576px) {
+    #subjectFormModal .modal-content.horizontal-modal {
+        max-width: 95vw !important;
+        padding: 18px 20px;
+        border-radius: 12px;
+    }
+    
+    #subjectFormModal .horizontal-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+    
+    #subjectFormModal .modal-content h3 {
+        font-size: 1.2em;
+        margin-bottom: 18px;
+    }
+    
+    #subjectFormModal .modal-actions {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+    
+    #subjectFormModal .modal-cancel,
+    #subjectFormModal .modal-submit {
+        width: 100%;
+        padding: 12px;
+    }
+}
+
+/* Large screens */
+@media (min-width: 1200px) {
+    #subjectFormModal .modal-content.horizontal-modal {
+        max-width: 700px !important;
     }
 }

@@ -1,9 +1,16 @@
-// admin-subjects.js - ENHANCED VERSION
+// admin-subjects.js - ENHANCED VERSION WITH FIXES
 import AuthGuard from './auth-guard.js';
 
+// Prevent browser caching for this page
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
 
-// Simple auth helper
- 
+// Check if page was reloaded
+if (performance.navigation.type === 1) {
+    console.log('Page was reloaded, will force fresh data fetch');
+    sessionStorage.setItem('forceRefresh', 'true');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Admin Subjects loaded');
@@ -18,6 +25,15 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Mobile page detected, skipping desktop subjects.js initialization');
         return;
     }
+
+    // Store all subjects for filtering
+    let allSubjects = [];
+    let activeFilters = {
+        yearLevel: null,
+        semester: null,
+        prerequisite: null,
+        type: null
+    };
 
     // Profile dropdown
     const profileDropdown = document.querySelector('.admin-profile-dropdown');
@@ -103,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Modal elements
-    const modal = document.getElementById('subjectModal');
+    const modal = document.getElementById('subjectFormModal');
     const openBtn = document.getElementById('openSubjectModal');
     const closeBtn = document.getElementById('closeSubjectModal');
     const form = document.getElementById('subjectForm');
@@ -225,8 +241,27 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('year4Subjects').textContent = year4;
     }
 
-    // Load subjects from server
-    async function loadSubjects() {
+    // Debug function to trace data flow
+    function debugSubjectsState() {
+        console.group('📊 Debug Subjects State');
+        console.log('allSubjects array length:', allSubjects.length);
+        console.log('allSubjects array:', allSubjects);
+        
+        const tableRows = document.querySelectorAll('#subjectsTableBody tr');
+        console.log('Table rows count (excluding loading/empty rows):', tableRows.length);
+        
+        // Check if table has proper data (not loading/empty states)
+        tableRows.forEach((row, index) => {
+            if (row.cells && row.cells.length > 0 && !row.classList.contains('loading-state') && !row.classList.contains('no-data') && !row.classList.contains('error-state')) {
+                const codeCell = row.cells[0];
+                console.log(`Row ${index}: ${codeCell.textContent}`);
+            }
+        });
+        console.groupEnd();
+    }
+
+    // Load subjects from server - UPDATED WITH FIXES
+    async function loadSubjects(forceRefresh = false) {
         const tbody = document.getElementById('subjectsTableBody');
         if (!tbody) return;
         
@@ -241,21 +276,53 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             console.log('Fetching subjects from server...');
-            const res = await fetch('/subjects');
+            
+            // Use cache-busting URL
+            const url = forceRefresh ? `/subjects?_t=${Date.now()}` : `/subjects?_=${Date.now()}`;
+            
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                cache: 'no-store',
+                credentials: 'same-origin'
+            });
             
             if (!res.ok) {
                 throw new Error(`Server returned ${res.status}: ${res.statusText}`);
             }
             
             const data = await res.json();
-            console.log('Subjects data received:', data);
-            allSubjects = Array.isArray(data) ? data : []; // Store all subjects
+            console.log('✅ Subjects data received from server:', data.length, 'subjects');
+            console.log('📊 First 3 subjects:', data.slice(0, 3));
+            
+            // CRITICAL: Ensure allSubjects is properly updated
+            allSubjects = Array.isArray(data) ? data : [];
+            
+            // Debug: Log the actual data
+            console.log('📊 allSubjects array updated:', allSubjects.length, 'items');
+            if (allSubjects.length > 0) {
+                console.log('First subject:', allSubjects[0]);
+            }
+            
+            // Always update statistics
+            updateStatistics();
+            
+            console.log('📋 Rendering', allSubjects.length, 'subjects to table...');
             
             if (allSubjects.length > 0) {
-                updateStatistics();
                 renderSubjectsTable(allSubjects);
                 setupFilterDropdown();
                 setupExportButton();
+                
+                // Update prerequisite dropdown with fresh data
+                populateCoPrerequisiteDropdown();
+                
+                console.log('✅ Table rendered successfully');
             } else {
                 tbody.innerHTML = `
                     <tr>
@@ -266,6 +333,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </tr>
                 `;
             }
+            
+            // Debug logging
+            debugSubjectsState();
+            
         } catch (error) {
             console.error('Error loading subjects:', error);
             tbody.innerHTML = `
@@ -284,11 +355,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render subjects table
     function renderSubjectsTable(subjects) {
         const tbody = document.getElementById('subjectsTableBody');
-        if (!tbody) return;
+        if (!tbody) {
+            console.error('❌ Table body element not found!');
+            return;
+        }
         
+        console.log('🔄 Clearing table and rendering', subjects.length, 'subjects...');
         tbody.innerHTML = '';
         
-        subjects.forEach(subj => {
+        if (subjects.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="11" class="no-data">
+                        <i class="bi bi-inbox"></i>
+                        <span>No subjects found matching your criteria.</span>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        subjects.forEach((subj, index) => {
             const tr = document.createElement('tr');
             const descriptiveTitle = subj.descriptiveTitle || '';
             const semester = subj.semester || '-';
@@ -345,6 +432,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Attach event listeners
         attachTableEventListeners();
+        
+        console.log('✅ Rendered', subjects.length, 'subjects to table');
     }
 
     // Attach event listeners to table actions
@@ -368,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Form submit handler
+    // Form submit handler - UPDATED WITH FIXES
     if (form) {
         form.onsubmit = async (e) => {
             e.preventDefault();
@@ -426,7 +515,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (modal) modal.style.display = 'none';
                     if (form) form.reset();
                     hideModalError();
-                    loadSubjects();
+                    
+                    console.log('🔄 Forcing table refresh after subject creation/update...');
+                    
+                    // Clear current data to show loading state
+                    const tbody = document.getElementById('subjectsTableBody');
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="11" class="loading-state">
+                                    <div class="loading-spinner"></div>
+                                    <span>Refreshing data...</span>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                    
+                    // Wait for database to sync
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with aggressive cache busting
+                    await loadSubjects(true);
+                    
+                    // Scroll to top to see the new subject
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    console.log('✅ Table refresh complete. Total subjects now:', allSubjects.length);
                 } else {
                     // Show error in modal instead of bubble
                     showModalError(result.error || "Failed to save subject. Please check your input.");
@@ -441,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Edit modal
     async function openEditModal(id) {
         try {
-            const res = await fetch('/subjects');
+            const res = await fetch(`/subjects?_=${Date.now()}`);
             if (!res.ok) throw new Error('Failed to fetch subjects');
             
             const data = await res.json();
@@ -509,7 +623,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 console.log('Manually selected option:', matchingOption.textContent);
                             } else {
                                 console.warn('No matching option found for:', prereqValue);
-                                console.warn('Subject data:', subject);
                             }
                         }
                     }
@@ -536,7 +649,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleDelete(id) {
         try {
             // Fetch subject details for confirmation message
-            const res = await fetch('/subjects');
+            const res = await fetch(`/subjects?_=${Date.now()}`);
             if (res.ok) {
                 const data = await res.json();
                 const subject = data.find(s => s._id === id);
@@ -579,7 +692,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (res.ok) {
                     showBubbleMessage("Subject deleted successfully!", "success");
-                    loadSubjects();
+                    
+                    // Small delay to ensure database write completes
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with cache-busting
+                    await loadSubjects(true);
                 } else {
                     showBubbleMessage(result.error || "Failed to delete subject.", "error");
                 }
@@ -609,7 +727,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function showDescription(id) {
         try {
-            const res = await fetch('/subjects');
+            const res = await fetch(`/subjects?_=${Date.now()}`);
             if (res.ok) {
                 const data = await res.json();
                 const subject = data.find(s => s._id === id);
@@ -642,26 +760,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Cancel button in main modal
-    const cancelBtn = document.getElementById('cancelSubjectBtn');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-            if (modal) modal.style.display = 'none';
-            if (form) form.reset();
-            editMode = false;
-            editingId = null;
-        });
-    }
-
     // Search and filter functionality
     const searchInput = document.getElementById('subjectSearch');
-    let allSubjects = []; // Store all subjects for filtering
-    let activeFilters = {
-        yearLevel: null,
-        semester: null,
-        prerequisite: null,
-        type: null
-    };
     
     if (searchInput) {
         searchInput.addEventListener('input', function() {
@@ -1013,6 +1113,13 @@ document.addEventListener('DOMContentLoaded', function() {
         showBubbleMessage(`Exported ${filtered.length} subject(s) successfully!`, 'success');
     }
 
-    // Initial load
-    loadSubjects();
+    // Initial load - check if we need to force refresh
+    const forceInitialRefresh = sessionStorage.getItem('forceRefresh') === 'true';
+    if (forceInitialRefresh) {
+        sessionStorage.removeItem('forceRefresh');
+        console.log('Forcing initial refresh due to page reload');
+        loadSubjects(true);
+    } else {
+        loadSubjects();
+    }
 });

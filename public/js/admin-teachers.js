@@ -1,10 +1,18 @@
+// admin-teachers.js - ENHANCED VERSION WITH FIXES
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
 
+// Prevent browser caching for this page
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
 
-// Simple auth helper
- 
+// Check if page was reloaded
+if (performance.navigation.type === 1) {
+    console.log('Page was reloaded, will force fresh data fetch');
+    sessionStorage.setItem('forceRefreshTeachers', 'true');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
@@ -83,16 +91,18 @@ document.addEventListener('DOMContentLoaded', function() {
     updateProfileInfo();
     fetchUserData();
 
-    // Load all data
-    async function loadAllData() {
+    // Load all data - UPDATED WITH FIXES
+    async function loadAllData(forceRefresh = false) {
         try {
+            console.log('🔄 Loading all teacher data...');
             showLoadingState(true);
             await Promise.all([
-                loadTeachers(),
-                loadSchedules(),
-                loadSections(),
-                loadRooms()
+                loadTeachers(forceRefresh),
+                loadSchedules(forceRefresh),
+                loadSections(forceRefresh),
+                loadRooms(forceRefresh)
             ]);
+            console.log('✅ All data loaded successfully');
             renderTeachersTable();
             showLoadingState(false);
         } catch (error) {
@@ -102,12 +112,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadTeachers() {
+    async function loadTeachers(forceRefresh = false) {
         try {
-            const res = await fetch('/teachers');
+            console.log('Fetching teachers from server...');
+            const url = forceRefresh ? `/teachers?_t=${Date.now()}` : `/teachers?_=${Date.now()}`;
+            
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                cache: 'no-store',
+                credentials: 'same-origin'
+            });
+            
             if (res.ok) {
                 teachers = await res.json();
-                console.log('Loaded teachers with full data:', teachers);
+                console.log('✅ Teachers data received from server:', teachers.length, 'teachers');
+                console.log('📊 First 3 teachers:', teachers.slice(0, 3));
             } else {
                 console.error('Failed to load teachers');
                 teachers = [];
@@ -118,12 +143,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadSchedules() {
+    async function loadSchedules(forceRefresh = false) {
         try {
-            const res = await fetch('/schedules');
+            const url = forceRefresh ? `/schedules?_t=${Date.now()}` : `/schedules?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
             if (res.ok) {
                 schedules = await res.json();
-                console.log('Loaded schedules for teachers:', schedules);
+                console.log('✅ Loaded schedules for teachers:', schedules.length, 'schedules');
             } else {
                 console.error('Failed to load schedules');
                 schedules = [];
@@ -134,12 +168,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadSections() {
+    async function loadSections(forceRefresh = false) {
         try {
-            const res = await fetch('/sections');
+            const url = forceRefresh ? `/sections?_t=${Date.now()}` : `/sections?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
             if (res.ok) {
                 sections = await res.json();
-                console.log('Loaded sections:', sections);
+                console.log('✅ Loaded sections:', sections.length, 'sections');
             } else {
                 console.error('Failed to load sections');
                 sections = [];
@@ -150,12 +193,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadRooms() {
+    async function loadRooms(forceRefresh = false) {
         try {
-            const res = await fetch('/rooms');
+            const url = forceRefresh ? `/rooms?_t=${Date.now()}` : `/rooms?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
             if (res.ok) {
                 rooms = await res.json();
-                console.log('Loaded rooms:', rooms);
+                console.log('✅ Loaded rooms:', rooms.length, 'rooms');
             } else {
                 console.error('Failed to load rooms');
                 rooms = [];
@@ -548,15 +600,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (editModal) editModal.style.display = 'none';
                     document.body.style.overflow = 'auto';
                     
-                    // Update local teachers array with the full updated user object
-                    const teacherIndex = teachers.findIndex(t => t._id === currentTeacherId);
-                    if (teacherIndex !== -1) {
-                        teachers[teacherIndex] = updatedTeacher;
-                        console.log('✅ Updated teacher in local array:', teachers[teacherIndex]);
-                    }
+                    console.log('🔄 Forcing data refresh after teacher update...');
                     
-                    // Re-render the table to show updated data
-                    renderTeachersTable();
+                    // Wait for database to sync
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with aggressive cache busting
+                    await loadAllData(true);
+                    
+                    console.log('✅ Data refresh complete. Total teachers now:', teachers.length);
                 } else {
                     const error = await res.json();
                     showBubbleMessage(error.error || 'Failed to update teacher', 'error');
@@ -585,8 +637,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (deleteModal) deleteModal.style.display = 'none';
                     document.body.style.overflow = 'auto';
                     
-                    // Reload data to reflect changes
-                    await loadAllData();
+                    console.log('🔄 Forcing data refresh after teacher deletion...');
+                    
+                    // Wait for database to sync
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with aggressive cache busting
+                    await loadAllData(true);
+                    
+                    console.log('✅ Data refresh complete. Total teachers now:', teachers.length);
                 } else {
                     const error = await res.json();
                     showBubbleMessage(error.error || 'Failed to delete teacher', 'error');
@@ -938,6 +997,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // Initial load
-    loadAllData();
+    // Initial load - check if we need to force refresh
+    const forceInitialRefresh = sessionStorage.getItem('forceRefreshTeachers') === 'true';
+    if (forceInitialRefresh) {
+        sessionStorage.removeItem('forceRefreshTeachers');
+        console.log('Forcing initial refresh due to page reload');
+        loadAllData(true);
+    } else {
+        loadAllData();
+    }
 });

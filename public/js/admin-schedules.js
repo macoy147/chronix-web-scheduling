@@ -1,11 +1,19 @@
+// admin-schedules.js - ENHANCED VERSION WITH FIXES
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
 import scheduleExporter from './schedule-export.js';
 
+// Prevent browser caching for this page
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
 
-// Simple auth helper
- 
+// Check if page was reloaded
+if (performance.navigation.type === 1) {
+    console.log('Page was reloaded, will force fresh data fetch');
+    sessionStorage.setItem('forceRefreshSchedules', 'true');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
@@ -209,16 +217,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Load all necessary data
-    async function loadAllData() {
+    // Load all necessary data - UPDATED WITH FIXES
+    async function loadAllData(forceRefresh = false) {
         try {
+            console.log('🔄 Loading all schedule data...');
+            
             await Promise.all([
-                loadSchedules(),
-                loadSubjects(),
-                loadTeachers(),
-                loadSections(),
-                loadRooms()
+                loadSchedules(forceRefresh),
+                loadSubjects(forceRefresh),
+                loadTeachers(forceRefresh),
+                loadSections(forceRefresh),
+                loadRooms(forceRefresh)
             ]);
+            
+            console.log('✅ All data loaded successfully');
             
             // Populate section filter after sections are loaded
             populateSectionFilter();
@@ -408,12 +420,22 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    async function loadSchedules() {
+    // Load functions - UPDATED WITH FIXES
+    async function loadSchedules(forceRefresh = false) {
         try {
-            const res = await fetch('/schedules');
+            const url = forceRefresh ? `/schedules?_t=${Date.now()}` : `/schedules?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
             if (res.ok) {
                 schedules = await res.json();
-                console.log('Loaded schedules:', schedules);
+                console.log('✅ Loaded schedules:', schedules.length, 'schedules');
             } else {
                 console.error('Failed to load schedules');
                 schedules = [];
@@ -424,11 +446,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadSubjects() {
+    async function loadSubjects(forceRefresh = false) {
         try {
-            const res = await fetch('/subjects');
+            const url = forceRefresh ? `/subjects?_t=${Date.now()}` : `/subjects?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
             if (res.ok) {
                 subjects = await res.json();
+                console.log('✅ Loaded subjects:', subjects.length, 'subjects');
             }
         } catch (error) {
             console.error('Error loading subjects:', error);
@@ -436,11 +468,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadTeachers() {
+    async function loadTeachers(forceRefresh = false) {
         try {
-            const res = await fetch('/teachers');
+            const url = forceRefresh ? `/teachers?_t=${Date.now()}` : `/teachers?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
             if (res.ok) {
                 teachers = await res.json();
+                console.log('✅ Loaded teachers:', teachers.length, 'teachers');
             }
         } catch (error) {
             console.error('Error loading teachers:', error);
@@ -448,11 +490,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadSections() {
+    async function loadSections(forceRefresh = false) {
         try {
-            const res = await fetch('/sections');
+            const url = forceRefresh ? `/sections?_t=${Date.now()}` : `/sections?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
             if (res.ok) {
                 sections = await res.json();
+                console.log('✅ Loaded sections:', sections.length, 'sections');
             }
         } catch (error) {
             console.error('Error loading sections:', error);
@@ -460,11 +512,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function loadRooms() {
+    async function loadRooms(forceRefresh = false) {
         try {
-            const res = await fetch('/rooms');
+            const url = forceRefresh ? `/rooms?_t=${Date.now()}` : `/rooms?_=${Date.now()}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
             if (res.ok) {
                 rooms = await res.json();
+                console.log('✅ Loaded rooms:', rooms.length, 'rooms');
             }
         } catch (error) {
             console.error('Error loading rooms:', error);
@@ -1295,7 +1357,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     showBubbleMessage(editMode ? 'Schedule updated successfully!' : 'Schedule created successfully!', 'success');
                     if (scheduleModal) scheduleModal.style.display = 'none';
                     document.body.style.overflow = 'auto';
-                    await loadAllData(); // Reload data to update views
+                    
+                    console.log('🔄 Forcing data refresh after schedule creation/update...');
+                    
+                    // Wait for database to sync
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with aggressive cache busting
+                    await loadAllData(true);
+                    
+                    console.log('✅ Data refresh complete. Total schedules now:', schedules.length);
                 } else {
                     showBubbleMessage(result.error || 'Failed to save schedule.', 'error');
                 }
@@ -1445,7 +1516,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Delete schedule - FIXED: Reload and re-render properly
+    // Delete schedule - UPDATED WITH FIXES
     async function handleDeleteSchedule(scheduleId) {
         if (!confirm('Are you sure you want to delete this schedule?')) return;
 
@@ -1456,11 +1527,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (res.ok) {
                 showBubbleMessage('Schedule deleted successfully!', 'success');
-                // CRITICAL FIX: Reload schedules first, then re-render everything
-                await loadSchedules();
-                updateStatistics();
-                renderCalendar();
-                renderSubjectAssignments();
+                
+                console.log('🔄 Forcing data refresh after schedule deletion...');
+                
+                // Wait for database to sync
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Force reload with aggressive cache busting
+                await loadAllData(true);
+                
+                console.log('✅ Data refresh complete. Total schedules now:', schedules.length);
             } else {
                 showBubbleMessage('Failed to delete schedule.', 'error');
             }
@@ -1693,7 +1769,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initial load
-    loadAllData();
+    // Initial load - check if we need to force refresh
+    const forceInitialRefresh = sessionStorage.getItem('forceRefreshSchedules') === 'true';
+    if (forceInitialRefresh) {
+        sessionStorage.removeItem('forceRefreshSchedules');
+        console.log('Forcing initial refresh due to page reload');
+        loadAllData(true);
+    } else {
+        loadAllData();
+    }
     setupExportButton();
 });

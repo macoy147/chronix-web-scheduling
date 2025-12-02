@@ -966,6 +966,17 @@
     <script type="module">
     import AuthGuard from '/js/auth-guard.js';
 
+    // Prevent browser caching for mobile page
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+
+    // Check if page was reloaded
+    if (performance.navigation.type === 1) {
+        console.log('Mobile page was reloaded, will force fresh data fetch');
+        sessionStorage.setItem('forceRefreshSchedulesMobile', 'true');
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Mobile Admin Schedules loaded');
         
@@ -1131,13 +1142,34 @@
         let allMobileTeachers = [];
         
         // Load all data for statistics
-        async function loadAllMobileData() {
+        async function loadAllMobileData(forceRefresh = false) {
             try {
+                console.log('🔄 Loading all mobile schedule data...');
+                
+                // Use cache-busting URLs
+                const timestamp = Date.now();
+                const schedulesUrl = forceRefresh ? `/schedules?_t=${timestamp}` : `/schedules?_=${timestamp}`;
+                const subjectsUrl = forceRefresh ? `/subjects?_t=${timestamp}` : `/subjects?_=${timestamp}`;
+                const roomsUrl = forceRefresh ? `/rooms?_t=${timestamp}` : `/rooms?_=${timestamp}`;
+                const teachersUrl = forceRefresh ? `/teachers?_t=${timestamp}` : `/teachers?_=${timestamp}`;
+                
+                const cacheHeaders = {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    cache: 'no-store',
+                    credentials: 'same-origin'
+                };
+                
                 const [schedulesRes, subjectsRes, roomsRes, teachersRes] = await Promise.all([
-                    fetch('/schedules'),
-                    fetch('/subjects'),
-                    fetch('/rooms'),
-                    fetch('/teachers')
+                    fetch(schedulesUrl, cacheHeaders),
+                    fetch(subjectsUrl, cacheHeaders),
+                    fetch(roomsUrl, cacheHeaders),
+                    fetch(teachersUrl, cacheHeaders)
                 ]);
                 
                 if (schedulesRes.ok) {
@@ -1172,7 +1204,7 @@
                     allMobileTeachers = [];
                 }
                 
-                console.log('Mobile data loaded:', {
+                console.log('✅ Mobile data loaded:', {
                     schedules: allMobileSchedules.length,
                     subjects: allMobileSubjects.length,
                     rooms: allMobileRooms.length,
@@ -1191,8 +1223,15 @@
             }
         }
         
-        // Load data on page load
-        loadAllMobileData();
+        // Load data on page load - check if we need to force refresh
+        const forceInitialRefresh = sessionStorage.getItem('forceRefreshSchedulesMobile') === 'true';
+        if (forceInitialRefresh) {
+            sessionStorage.removeItem('forceRefreshSchedulesMobile');
+            console.log('Forcing initial mobile refresh due to page reload');
+            loadAllMobileData(true);
+        } else {
+            loadAllMobileData();
+        }
         
         function displayMobileSchedules(schedules) {
             const mobileSchedulesList = document.getElementById('mobileSchedulesList');
@@ -1302,7 +1341,11 @@
                             
                             if (res.ok) {
                                 showBubbleMessage('Schedule deleted successfully!', 'success');
-                                loadMobileSchedules();
+                                
+                                console.log('🔄 Forcing mobile data refresh after schedule deletion...');
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                                await loadMobileSchedules(true);
+                                console.log('✅ Mobile data refresh complete. Total schedules now:', allMobileSchedules.length);
                             } else {
                                 const result = await res.json();
                                 showBubbleMessage(result.error || 'Failed to delete schedule', 'error');
@@ -1487,7 +1530,7 @@
         }
         
         // Load schedules for mobile
-        async function loadMobileSchedules() {
+        async function loadMobileSchedules(forceRefresh = false) {
             if (!currentYearLevel) {
                 const mobileSchedulesList = document.getElementById('mobileSchedulesList');
                 if (mobileSchedulesList) {
@@ -1518,7 +1561,7 @@
             
             try {
                 // Reload all data to ensure statistics are up to date
-                await loadAllMobileData();
+                await loadAllMobileData(forceRefresh);
                 
                 console.log('Fetched schedules:', allMobileSchedules);
                 console.log('Filtering by section:', currentSection);

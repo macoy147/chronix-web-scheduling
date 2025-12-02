@@ -1110,6 +1110,7 @@ app.get('/subjects', async (req, res) => {
         }
         
         const subjects = await Subject.find(query).sort({ descriptiveTitle: 1 });
+        logger.info(`✅ Fetched ${subjects.length} subjects from database`);
         res.json(subjects);
     } catch (error) {
         logger.error('Error fetching subjects:', error);
@@ -1154,9 +1155,11 @@ app.post('/subjects', async (req, res) => {
             remarks: remarks?.trim() || '',
             description: description?.trim() || ''
         });
-        await newSubject.save();
-        logger.info('✅ Subject created successfully:', newSubject);
-        res.json({ message: 'Subject created successfully', subject: newSubject });
+        const savedSubject = await newSubject.save();
+        logger.info('✅ Subject created successfully:', savedSubject);
+        logger.info('✅ Subject ID:', savedSubject._id);
+        logger.info('✅ Total subjects in DB:', await Subject.countDocuments());
+        res.json({ message: 'Subject created successfully', subject: savedSubject });
     } catch (error) {
         logger.error('Error creating subject:', error);
         res.status(500).json({ error: `Error creating subject: ${error.message}` });

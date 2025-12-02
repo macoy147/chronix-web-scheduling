@@ -916,6 +916,17 @@
     <script type="module">
     import AuthGuard from '/js/auth-guard.js';
 
+    // Prevent browser caching for mobile page
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+
+    // Check if page was reloaded
+    if (performance.navigation.type === 1) {
+        console.log('Mobile page was reloaded, will force fresh data fetch');
+        sessionStorage.setItem('forceRefreshSectionsMobile', 'true');
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Mobile Admin Sections loaded');
         
@@ -1191,11 +1202,36 @@
         }
 
         // Load sections and teachers for mobile
-        async function loadMobileSections() {
+        async function loadMobileSections(forceRefresh = false) {
             try {
+                console.log('🔄 Loading mobile sections data...');
+                
+                // Use cache-busting URLs
+                const timestamp = Date.now();
+                const sectionsUrl = forceRefresh ? `/sections?_t=${timestamp}` : `/sections?_=${timestamp}`;
+                const teachersUrl = forceRefresh ? `/teachers?_t=${timestamp}` : `/teachers?_=${timestamp}`;
+                
                 const [sectionsRes, teachersRes] = await Promise.all([
-                    fetch('/sections'),
-                    fetch('/teachers')
+                    fetch(sectionsUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        cache: 'no-store',
+                        credentials: 'same-origin'
+                    }),
+                    fetch(teachersUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        },
+                        cache: 'no-store'
+                    })
                 ]);
                 
                 const sectionsData = await sectionsRes.json();
@@ -1203,6 +1239,9 @@
                 
                 allMobileSections = Array.isArray(sectionsData) ? sectionsData : [];
                 allTeachers = Array.isArray(teachersData) ? teachersData : [];
+                
+                console.log('✅ Mobile sections data loaded:', allMobileSections.length, 'sections');
+                console.log('✅ Mobile teachers data loaded:', allTeachers.length, 'teachers');
                 
                 displayMobileSections(allMobileSections);
                 populateAcademicYearDropdown();
@@ -1285,7 +1324,15 @@
             displayMobileSections(filtered);
         }
         
-        loadMobileSections();
+        // Initial load - check if we need to force refresh
+        const forceInitialRefresh = sessionStorage.getItem('forceRefreshSectionsMobile') === 'true';
+        if (forceInitialRefresh) {
+            sessionStorage.removeItem('forceRefreshSectionsMobile');
+            console.log('Forcing initial mobile refresh due to page reload');
+            loadMobileSections(true);
+        } else {
+            loadMobileSections();
+        }
         
         // Mobile create button
         const mobileOpenSectionModal = document.getElementById('mobileOpenSectionModal');
@@ -1464,7 +1511,16 @@
                         
                         if (sectionModal) sectionModal.style.display = 'none';
                         if (sectionForm) sectionForm.reset();
-                        loadMobileSections();
+                        
+                        console.log('🔄 Forcing mobile data refresh after section creation/update...');
+                        
+                        // Wait for database to sync
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Force reload with aggressive cache busting
+                        await loadMobileSections(true);
+                        
+                        console.log('✅ Mobile data refresh complete. Total sections now:', allMobileSections.length);
                     } else {
                         const error = await res.json();
                         showBubbleMessage(error.error || 'Failed to save section', 'error');
@@ -1499,7 +1555,11 @@
                     
                     if (res.ok) {
                         showBubbleMessage('Section deleted successfully!', 'success');
-                        loadMobileSections();
+                        
+                        console.log('🔄 Forcing mobile data refresh after section deletion...');
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        await loadMobileSections(true);
+                        console.log('✅ Mobile data refresh complete. Total sections now:', allMobileSections.length);
                     } else {
                         const error = await res.json();
                         showBubbleMessage(error.error || 'Failed to delete section', 'error');

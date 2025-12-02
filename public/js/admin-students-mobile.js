@@ -1,9 +1,20 @@
 /**
- * Admin Students Mobile JavaScript
+ * Admin Students Mobile JavaScript - ENHANCED WITH FIXES
  * Status is automatically determined by whether student has schedules
  */
 
 import AuthGuard from './auth-guard.js';
+
+// Prevent browser caching for this page
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
+
+// Check if page was reloaded
+if (performance.navigation.type === 1) {
+    console.log('Page was reloaded, will force fresh data fetch');
+    sessionStorage.setItem('forceRefreshStudentsMobile', 'true');
+}
 
 // State management
 let allStudents = [];
@@ -25,7 +36,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     initializeMobileMenu();
     initializeEventListeners();
     updateMobileProfileInfo();
-    await loadAllData();
+    
+    // Initial load - check if we need to force refresh
+    const forceInitialRefresh = sessionStorage.getItem('forceRefreshStudentsMobile') === 'true';
+    if (forceInitialRefresh) {
+        sessionStorage.removeItem('forceRefreshStudentsMobile');
+        console.log('Forcing initial refresh due to page reload (mobile)');
+        await loadAllData(true);
+    } else {
+        await loadAllData();
+    }
 });
 
 function initializeMobileMenu() {
@@ -119,12 +139,18 @@ function initializeEventListeners() {
     });
 }
 
-// ==================== DATA LOADING ====================
+// ==================== DATA LOADING - UPDATED WITH FIXES ====================
 
-async function loadAllData() {
+async function loadAllData(forceRefresh = false) {
     showLoading(true);
     try {
-        await Promise.all([loadStudents(), loadSections(), loadSchedules()]);
+        console.log('🔄 Loading all student data (mobile)...');
+        await Promise.all([
+            loadStudents(forceRefresh), 
+            loadSections(forceRefresh), 
+            loadSchedules(forceRefresh)
+        ]);
+        console.log('✅ All data loaded successfully (mobile)');
         populateSectionFilter();
         displayStudents();
         updateStatistics();
@@ -136,21 +162,27 @@ async function loadAllData() {
     }
 }
 
-async function loadStudents() {
+async function loadStudents(forceRefresh = false) {
     try {
-        // Add cache-busting parameter to ensure fresh data
-        const res = await fetch(`/users/students?_t=${Date.now()}`, {
-            cache: 'no-cache',
+        console.log('Fetching students from server (mobile)...');
+        const url = forceRefresh ? `/users/students?_t=${Date.now()}` : `/users/students?_=${Date.now()}`;
+        
+        const res = await fetch(url, {
+            method: 'GET',
             headers: {
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-            }
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store',
+            credentials: 'same-origin'
         });
+        
         if (res.ok) {
             const fetchedStudents = await res.json();
-            // Filter out any null or invalid entries
             allStudents = fetchedStudents.filter(s => s && s._id);
-            console.log(`✅ Loaded ${allStudents.length} students from server`);
+            console.log(`✅ Students data received from server (mobile): ${allStudents.length} students`);
         } else {
             console.error('Failed to load students:', res.status);
             allStudents = [];
@@ -161,19 +193,43 @@ async function loadStudents() {
     }
 }
 
-async function loadSections() {
+async function loadSections(forceRefresh = false) {
     try {
-        const res = await fetch('/sections');
-        if (res.ok) allSections = await res.json();
+        const url = forceRefresh ? `/sections?_t=${Date.now()}` : `/sections?_=${Date.now()}`;
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            },
+            cache: 'no-store'
+        });
+        if (res.ok) {
+            allSections = await res.json();
+            console.log('✅ Loaded sections (mobile):', allSections.length);
+        }
     } catch (error) {
         allSections = [];
     }
 }
 
-async function loadSchedules() {
+async function loadSchedules(forceRefresh = false) {
     try {
-        const res = await fetch('/schedules');
-        if (res.ok) allSchedules = await res.json();
+        const url = forceRefresh ? `/schedules?_t=${Date.now()}` : `/schedules?_=${Date.now()}`;
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            },
+            cache: 'no-store'
+        });
+        if (res.ok) {
+            allSchedules = await res.json();
+            console.log('✅ Loaded schedules (mobile):', allSchedules.length);
+        }
     } catch (error) {
         allSchedules = [];
     }
@@ -568,9 +624,11 @@ async function handleAddStudent(e) {
             
             showToast('Student added successfully!', 'success');
             closeAddStudentModal();
-            await loadStudents();
-            await loadSchedules();
-            displayStudents();
+            
+            console.log('🔄 Forcing data refresh after student creation (mobile)...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await loadAllData(true);
+            console.log('✅ Data refresh complete (mobile). Total students now:', allStudents.length);
         } else {
             showToast(result.error || 'Failed to add student', 'error');
         }
@@ -689,15 +747,10 @@ async function handleEditStudent(e) {
             showToast('Student updated successfully!', 'success');
             closeEditStudentModal();
             
-            // Update the student in the local array immediately
-            const studentIndex = allStudents.findIndex(s => s._id === currentStudentId);
-            if (studentIndex !== -1) {
-                allStudents[studentIndex] = { ...allStudents[studentIndex], ...updatedData.user };
-            }
-            
-            // Reload schedules and refresh display
-            await loadSchedules();
-            displayStudents();
+            console.log('🔄 Forcing data refresh after student update (mobile)...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await loadAllData(true);
+            console.log('✅ Data refresh complete (mobile). Total students now:', allStudents.length);
         } else {
             const error = await res.json();
             showToast(error.error || 'Failed to update student', 'error');

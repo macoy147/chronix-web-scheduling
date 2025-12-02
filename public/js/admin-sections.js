@@ -1,9 +1,18 @@
- import API_BASE_URL from './api-config.js';
+// admin-sections.js - ENHANCED VERSION WITH FIXES
+import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
 
+// Prevent browser caching for this page
+if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+}
 
-
+// Check if page was reloaded
+if (performance.navigation.type === 1) {
+    console.log('Page was reloaded, will force fresh data fetch');
+    sessionStorage.setItem('forceRefreshSections', 'true');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     // Check authentication first
@@ -126,13 +135,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    // Load all data
-    async function loadAllData() {
+    // Load all data - UPDATED WITH FIXES
+    async function loadAllData(forceRefresh = false) {
         try {
+            console.log('🔄 Loading all section data...');
+            
+            // Show loading state
+            const tbody = document.getElementById('sectionsTableBody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="loading-state" style="text-align: center; padding: 48px 24px;">
+                            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                            <div style="margin-top: 16px; color: #6c757d;">Loading sections...</div>
+                        </td>
+                    </tr>
+                `;
+            }
+            
             await Promise.all([
-                loadSections(),
-                loadTeachers()
+                loadSections(forceRefresh),
+                loadTeachers(forceRefresh)
             ]);
+            
+            console.log('✅ All data loaded. Sections:', sections.length, 'Teachers:', teachers.length);
+            
             updateStatistics();
             renderSectionsTable();
             populateAcademicYearDropdown();
@@ -237,13 +264,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Load sections
-    async function loadSections() {
+    // Load sections - UPDATED WITH FIXES
+    async function loadSections(forceRefresh = false) {
         try {
-            const res = await fetch('/sections');
+            console.log('Fetching sections from server...');
+            
+            // Use cache-busting URL
+            const url = forceRefresh ? `/sections?_t=${Date.now()}` : `/sections?_=${Date.now()}`;
+            
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                cache: 'no-store',
+                credentials: 'same-origin'
+            });
+            
             if (res.ok) {
-                sections = await res.json();
-                console.log('Loaded sections:', sections);
+                const data = await res.json();
+                sections = Array.isArray(data) ? data : [];
+                console.log('✅ Sections data received from server:', sections.length, 'sections');
+                console.log('📊 First 3 sections:', sections.slice(0, 3));
             } else {
                 console.error('Failed to load sections');
                 sections = [];
@@ -254,13 +299,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Load teachers to find advisers
-    async function loadTeachers() {
+    // Load teachers to find advisers - UPDATED WITH FIXES
+    async function loadTeachers(forceRefresh = false) {
         try {
-            const res = await fetch('/teachers');
+            // Use cache-busting URL
+            const url = forceRefresh ? `/teachers?_t=${Date.now()}` : `/teachers?_=${Date.now()}`;
+            
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                cache: 'no-store'
+            });
+            
             if (res.ok) {
                 teachers = await res.json();
-                console.log('Loaded teachers for adviser lookup:', teachers);
+                console.log('✅ Loaded teachers for adviser lookup:', teachers.length, 'teachers');
             } else {
                 console.error('Failed to load teachers');
                 teachers = [];
@@ -916,13 +973,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.body.style.position = '';
                     document.body.style.width = '';
                     
+                    console.log('🔄 Forcing data refresh after section creation/update...');
+                    
                     // If adviser was assigned, sync with teacher
                     if (formData.adviserTeacher) {
                         await syncAdviserWithTeacher(formData.adviserTeacher, formData.sectionName);
                     }
                     
-                    // Reload all data to refresh statistics and table
-                    await loadAllData();
+                    // Wait for database to sync
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with aggressive cache busting
+                    await loadAllData(true);
+                    
+                    // Scroll to top to see the new section
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    console.log('✅ Data refresh complete. Total sections now:', sections.length);
                 } else {
                     const error = await res.json();
                     showModalError(error.error || 'Failed to save section. Please check your input.');
@@ -1050,8 +1117,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.body.style.position = '';
                     document.body.style.width = '';
                     
-                    // Reload all data to refresh statistics and table
-                    await loadAllData();
+                    console.log('🔄 Forcing data refresh after section deletion...');
+                    
+                    // Wait for database to sync
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with aggressive cache busting
+                    await loadAllData(true);
+                    
+                    console.log('✅ Data refresh complete. Total sections now:', sections.length);
                 } else {
                     const error = await res.json();
                     showBubbleMessage(error.error || 'Failed to delete section', 'error');
@@ -1079,6 +1153,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // Initial load
-    loadAllData();
+    // Initial load - check if we need to force refresh
+    const forceInitialRefresh = sessionStorage.getItem('forceRefreshSections') === 'true';
+    if (forceInitialRefresh) {
+        sessionStorage.removeItem('forceRefreshSections');
+        console.log('Forcing initial refresh due to page reload');
+        loadAllData(true);
+    } else {
+        loadAllData();
+    }
 });
