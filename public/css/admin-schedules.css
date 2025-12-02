@@ -221,59 +221,105 @@ body {
 }
 
 .stat-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px 16px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     transition: all 0.3s ease;
-    border: 2px solid transparent;
+    border-left: 3px solid var(--ctu-light-blue);
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .stat-card.stat-conflict {
     cursor: pointer;
+    border-left-color: #d32f2f;
 }
 
 .stat-card.stat-conflict:hover {
-    border-color: #d32f2f;
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+}
+
+.stat-card:nth-child(1) {
+    border-left-color: var(--ctu-light-blue);
+}
+
+.stat-card:nth-child(2) {
+    border-left-color: #4BB543;
+}
+
+.stat-card:nth-child(3) {
+    border-left-color: #ef6c00;
+}
+
+.stat-card:nth-child(4) {
+    border-left-color: #d32f2f;
 }
 
 .stat-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 1.3em;
+    background: var(--tint-blue-bg);
+    color: var(--ctu-light-blue);
     flex-shrink: 0;
+}
+
+.stat-icon.blue {
+    background: var(--tint-blue-bg);
+    color: var(--ctu-light-blue);
+}
+
+.stat-icon.green {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.stat-icon.orange {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.stat-icon.red {
+    background: #ffebee;
+    color: #d32f2f;
 }
 
 .stat-info {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .stat-value {
-    font-size: 28px;
+    font-size: 1.5em;
     font-weight: 800;
     color: var(--ctu-deep-blue);
     line-height: 1;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .stat-label {
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 0.8em;
     color: var(--ctu-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* View Toggle */
@@ -1091,17 +1137,17 @@ body {
     }
     
     .stat-card {
-        padding: 16px;
+        padding: 14px 16px;
     }
     
     .stat-icon {
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
+        width: 40px;
+        height: 40px;
+        font-size: 1.3em;
     }
     
     .stat-value {
-        font-size: 24px;
+        font-size: 1.5em;
     }
     
     .calendar-day {
@@ -1126,22 +1172,22 @@ body {
     }
     
     .stat-card {
-        padding: 14px;
+        padding: 14px 16px;
         gap: 12px;
     }
     
     .stat-icon {
-        width: 44px;
-        height: 44px;
-        font-size: 18px;
+        width: 40px;
+        height: 40px;
+        font-size: 1.3em;
     }
     
     .stat-value {
-        font-size: 22px;
+        font-size: 1.5em;
     }
     
     .stat-label {
-        font-size: 12px;
+        font-size: 0.8em;
     }
     
     .calendar-header {
