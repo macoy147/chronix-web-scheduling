@@ -85,26 +85,64 @@
                 </div>
             </div>
 
-            <!-- View Toggle -->
-            <div class="view-toggle-container">
-                <!-- Year and Section Selector -->
+            <!-- Controls Container -->
+            <div class="controls-container">
+                <!-- Left Side: Section Selector -->
                 <div class="section-selector">
-                    <label for="sectionFilterSelect">Year and Section: *</label>
-                    <select id="sectionFilterSelect" class="section-filter-dropdown">
+                    <label>Year and Section: *</label>
+                    <div class="custom-dropdown" id="customSectionDropdown">
+                        <div class="dropdown-trigger" id="dropdownTrigger">
+                            <span id="selectedSection">Select Year and Section</span>
+                            <button class="clear-selection-btn" id="clearSelectionBtn" style="display: none;" title="Clear selection">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <div class="dropdown-columns">
+                                <div class="dropdown-column">
+                                    <div class="column-header">Year 1</div>
+                                    <div class="column-items" id="year1Items">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                                <div class="dropdown-column">
+                                    <div class="column-header">Year 2</div>
+                                    <div class="column-items" id="year2Items">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                                <div class="dropdown-column">
+                                    <div class="column-header">Year 3</div>
+                                    <div class="column-items" id="year3Items">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                                <div class="dropdown-column">
+                                    <div class="column-header">Year 4</div>
+                                    <div class="column-items" id="year4Items">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Hidden select for form compatibility -->
+                    <select id="sectionFilterSelect" style="display: none;">
                         <option value="">Select Year and Section</option>
                         <!-- Populated by JS with all sections -->
                     </select>
                 </div>
-            </div>
-
-            <!-- Create Schedule Button -->
-            <div class="create-schedule-container">
-                <button class="schedule-create-btn" id="openScheduleModal">
-                    <i class="bi bi-plus-circle"></i> Create New Schedule
-                </button>
-                <button class="export-schedule-btn" id="exportScheduleBtn">
-                    <i class="bi bi-download"></i> Export Schedules
-                </button>
+                
+                <!-- Right Side: Action Buttons -->
+                <div class="action-buttons">
+                    <button class="schedule-create-btn" id="openScheduleModal">
+                        <i class="bi bi-plus-circle"></i> Create New Schedule
+                    </button>
+                    <button class="export-schedule-btn" id="exportScheduleBtn">
+                        <i class="bi bi-download"></i> Export Schedules
+                    </button>
+                </div>
             </div>
 
             <!-- Calendar Header -->
@@ -276,6 +314,198 @@
 <script type="module" src="/js/error-handler.js"></script>
 <script type="module" src="/js/auth-guard.js"></script>
 <script type="module" src="/js/admin-schedules.js"></script>
+
+<!-- Custom Dropdown Handler -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdownTrigger = document.getElementById('dropdownTrigger');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const selectedSection = document.getElementById('selectedSection');
+    const hiddenSelect = document.getElementById('sectionFilterSelect');
+    
+    // Toggle dropdown
+    if (dropdownTrigger) {
+        dropdownTrigger.addEventListener('click', function(e) {
+            // Don't toggle if clicking the clear button
+            if (e.target.closest('.clear-selection-btn')) {
+                return;
+            }
+            e.stopPropagation();
+            dropdownTrigger.classList.toggle('active');
+            dropdownMenu.classList.toggle('show');
+        });
+    }
+    
+    // Clear button handler
+    const clearBtn = document.getElementById('clearSelectionBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearSelection();
+        });
+    }
+    
+    // Export All option handler
+    const exportAllOption = document.getElementById('exportAllOption');
+    if (exportAllOption) {
+        exportAllOption.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearSelection(); // Clear selection to export all
+        });
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.custom-dropdown')) {
+            dropdownTrigger?.classList.remove('active');
+            dropdownMenu?.classList.remove('show');
+        }
+    });
+    
+    // Handle item selection
+    function handleItemClick(item) {
+        const value = item.dataset.value;
+        const text = item.textContent;
+        const wasSelected = item.classList.contains('selected');
+        
+        // If clicking the already selected item, deselect it
+        if (wasSelected) {
+            clearSelection();
+            return;
+        }
+        
+        // Update display
+        selectedSection.textContent = text;
+        
+        // Update hidden select
+        hiddenSelect.value = value;
+        
+        // Trigger change event on hidden select
+        const event = new Event('change', { bubbles: true });
+        hiddenSelect.dispatchEvent(event);
+        
+        // Update selected state
+        document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('selected'));
+        item.classList.add('selected');
+        
+        // Show clear button
+        showClearButton();
+        
+        // Close dropdown
+        dropdownTrigger.classList.remove('active');
+        dropdownMenu.classList.remove('show');
+    }
+    
+    // Clear selection function
+    function clearSelection() {
+        // Reset display
+        selectedSection.textContent = 'Select Year and Section';
+        
+        // Clear hidden select
+        hiddenSelect.value = '';
+        
+        // Trigger change event
+        const event = new Event('change', { bubbles: true });
+        hiddenSelect.dispatchEvent(event);
+        
+        // Remove selected state from all items
+        document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('selected'));
+        
+        // Hide clear button
+        hideClearButton();
+        
+        // Close dropdown
+        dropdownTrigger.classList.remove('active');
+        dropdownMenu.classList.remove('show');
+    }
+    
+    // Show/hide clear button
+    function showClearButton() {
+        const clearBtn = document.getElementById('clearSelectionBtn');
+        if (clearBtn) {
+            clearBtn.style.display = 'flex';
+        }
+    }
+    
+    function hideClearButton() {
+        const clearBtn = document.getElementById('clearSelectionBtn');
+        if (clearBtn) {
+            clearBtn.style.display = 'none';
+        }
+    }
+    
+    // Populate dropdown from hidden select (when sections are loaded)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && hiddenSelect.options.length > 1) {
+                populateCustomDropdown();
+                observer.disconnect();
+            }
+        });
+    });
+    
+    if (hiddenSelect) {
+        observer.observe(hiddenSelect, { childList: true, subtree: true });
+    }
+    
+    function populateCustomDropdown() {
+        const year1Items = document.getElementById('year1Items');
+        const year2Items = document.getElementById('year2Items');
+        const year3Items = document.getElementById('year3Items');
+        const year4Items = document.getElementById('year4Items');
+        
+        if (!year1Items || !year2Items || !year3Items || !year4Items) return;
+        
+        year1Items.innerHTML = '';
+        year2Items.innerHTML = '';
+        year3Items.innerHTML = '';
+        year4Items.innerHTML = '';
+        
+        Array.from(hiddenSelect.options).forEach(option => {
+            if (!option.value) return; // Skip empty option
+            
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.dataset.value = option.value;
+            item.textContent = option.text;
+            
+            item.addEventListener('click', function() {
+                handleItemClick(this);
+            });
+            
+            // Determine which column based on year level
+            const yearMatch = option.text.match(/Year (\d)/i) || option.text.match(/(\d)[A-Z]/);
+            if (yearMatch) {
+                const year = parseInt(yearMatch[1]);
+                switch(year) {
+                    case 1:
+                        year1Items.appendChild(item);
+                        break;
+                    case 2:
+                        year2Items.appendChild(item);
+                        break;
+                    case 3:
+                        year3Items.appendChild(item);
+                        break;
+                    case 4:
+                        year4Items.appendChild(item);
+                        break;
+                    default:
+                        year1Items.appendChild(item);
+                }
+            } else {
+                // Default to first column if year can't be determined
+                year1Items.appendChild(item);
+            }
+        });
+    }
+    
+    // Initial population if options already exist
+    if (hiddenSelect && hiddenSelect.options.length > 1) {
+        populateCustomDropdown();
+    }
+});
+</script>
 
 <!-- Mobile detection and redirection -->
 <script>

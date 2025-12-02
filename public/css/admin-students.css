@@ -188,20 +188,40 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start;
+    transform: scale(0.90);
+    transform-origin: top center;
+    padding-bottom: 50px;
+    position: relative;
+}
+
+.admin-students-main::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(242, 210, 131, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(0, 45, 98, 0.1) 0%, transparent 50%);
+    z-index: -1;
 }
 
 .admin-center-container {
-    max-width: 1400px;
-    width: 97%;
+    max-width: 1350px;
+    width: 99vw;
     margin: 0 auto;
     background: transparent;
-    padding: 18px 0 0 0;
+    padding: 24px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 /* Header Section - Dashboard Title */
 .dashboard-title {
     text-align: left;
-    padding-left: 0;
+    padding-left: 24px;
     margin-bottom: 24px;
     font-size: 1.5em;
     font-weight: 800;
@@ -216,8 +236,8 @@ body {
 .dashboard-title::after {
     content: '';
     position: absolute;
-    bottom: -8px;
-    left: 0;
+    bottom: -4px;
+    left: 24px;
     width: 60px;
     height: 3px;
     background: var(--ctu-soft-gold);
@@ -230,7 +250,9 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 14px;
     width: 100%;
+    max-width: 1300px;
     margin-bottom: 20px;
+    padding: 0 24px;
 }
 
 .stat-card {
@@ -243,11 +265,41 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     transition: all 0.3s ease;
     border-left: 3px solid var(--ctu-light-blue);
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.6s ease forwards;
+}
+
+.stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    transform: translate(20px, -20px);
+    border-radius: 50%;
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .stat-icon {
@@ -322,6 +374,9 @@ body {
     margin-bottom: 20px;
     flex-wrap: wrap;
     gap: 15px;
+    width: 100%;
+    max-width: 1300px;
+    padding: 0 24px;
 }
 
 .search-box {
@@ -332,6 +387,7 @@ body {
     padding: 12px 16px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
     flex: 1;
     min-width: 300px;
 }
@@ -357,6 +413,7 @@ body {
     padding: 12px 16px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .filter-controls select {
@@ -377,9 +434,33 @@ body {
 /* Students Table Container */
 .students-table-container {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 16px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
     overflow: hidden;
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 24px;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.6s ease forwards;
+    animation-delay: 0.4s;
+    opacity: 0;
+}
+
+.students-table-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .students-table {
@@ -669,68 +750,170 @@ body {
     margin-bottom: 20px;
 }
 
-/* Weekly Calendar */
+/* Weekly Calendar - Modern 6-Grid Design (matching admin-schedules) */
 .weekly-calendar {
     background: white;
-    border-radius: 8px;
-    border: 1px solid #e5e8eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     overflow: hidden;
+    border: 1px solid #e5e8eb;
 }
 
 .calendar-header-small {
-    padding: 12px 16px;
-    border-bottom: 1px solid #e5e8eb;
-    background: var(--tint-blue-bg);
+    padding: 14px 18px;
+    border-bottom: 2px solid #e5e8eb;
+    background: var(--ctu-deep-blue);
 }
 
 .calendar-header-small h4 {
     margin: 0;
-    color: var(--ctu-deep-blue);
+    color: white;
     font-size: 1.1em;
+    font-weight: 600;
 }
 
 .weekly-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 1px;
-    background: #e5e8eb;
+    background: #f0f2f5;
 }
 
 .weekly-day {
     background: white;
-    padding: 12px;
-    min-height: 150px;
+    padding: 14px;
+    min-height: 160px;
+    position: relative;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.weekly-day:hover {
+    background: #fafbfc;
+    border-left-color: var(--ctu-light-blue);
+}
+
+.weekly-day.has-conflict {
+    background: #fff5f5;
+    border-left-color: #d32f2f;
+}
+
+.weekly-day.is-today {
+    background: #f8f9fb;
+    border-left-color: var(--ctu-deep-blue);
+}
+
+.weekly-day.is-today::after {
+    content: 'TODAY';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--ctu-deep-blue);
+    color: white;
+    font-size: 0.65em;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
 }
 
 .weekly-day h5 {
-    margin: 0 0 10px 0;
-    color: var(--ctu-deep-blue);
-    font-size: 1em;
+    margin: 0 0 12px 0;
+    color: var(--ctu-text-primary);
+    font-size: 0.95em;
+    font-weight: 600;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e8eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.conflict-badge {
+    background: #d32f2f;
+    color: white;
+    font-size: 0.7em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .schedule-item-small {
-    background: var(--schedule-lecture);
+    background: var(--ctu-light-blue);
     color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    margin-bottom: 4px;
-    font-size: 0.75em;
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 0.85em;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    border-left: 3px solid var(--ctu-deep-blue);
+    position: relative;
+}
+
+.schedule-item-small.lecture {
+    background: var(--ctu-light-blue);
+    border-left-color: var(--ctu-deep-blue);
 }
 
 .schedule-item-small.lab {
-    background: var(--schedule-lab);
+    background: #ef6c00;
+    border-left-color: #d84315;
+}
+
+.schedule-item-small.has-conflict {
+    border: 2px solid #d32f2f;
+    padding-right: 24px;
+}
+
+.schedule-item-small.has-conflict::after {
+    content: '!';
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    background: #d32f2f;
+    color: white;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.schedule-item-small.conflict {
+    background: #d32f2f;
+    border-left-color: #b71c1c;
 }
 
 .schedule-item-small:hover {
-    transform: translateX(4px);
+    opacity: 0.9;
+    transform: translateX(2px);
 }
 
-/* Daily Calendar */
+.schedule-item-small:active {
+    transform: translateX(0);
+}
+
+.schedule-item-small .time-badge {
+    display: block;
+    font-size: 0.75em;
+    opacity: 0.95;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* Daily Calendar - Modern Design */
 .daily-calendar {
     background: white;
-    border-radius: 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     border: 1px solid #e5e8eb;
     overflow: hidden;
 }
@@ -739,29 +922,31 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #e5e8eb;
-    background: var(--tint-blue-bg);
+    padding: 14px 18px;
+    border-bottom: 2px solid #e5e8eb;
+    background: var(--ctu-deep-blue);
 }
 
 .daily-header h4 {
     margin: 0;
-    color: var(--ctu-deep-blue);
+    color: white;
     font-size: 1.1em;
+    font-weight: 600;
 }
 
 .nav-btn-small {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     font-size: 1em;
     cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 4px;
-    transition: all 0.3s ease;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    color: white;
 }
 
 .nav-btn-small:hover {
-    background: #f0f0f0;
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .daily-schedule {
@@ -771,26 +956,26 @@ body {
 .daily-schedule-item {
     background: white;
     border: 1px solid #e5e8eb;
-    border-radius: 6px;
-    padding: 12px;
-    margin-bottom: 8px;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .daily-schedule-item.lecture {
-    border-left: 4px solid var(--schedule-lecture);
+    border-left: 4px solid var(--ctu-light-blue);
 }
 
 .daily-schedule-item.lab {
-    border-left: 4px solid var(--schedule-lab);
+    border-left: 4px solid #ef6c00;
 }
 
 .daily-schedule-item:hover {
+    background: #fafbfc;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
 }
 
 .schedule-time {
@@ -975,22 +1160,46 @@ body {
 /* Empty Schedule State */
 .empty-schedule {
     text-align: center;
-    padding: 40px 20px;
+    padding: 20px 10px;
     color: var(--ctu-text-secondary);
 }
 
 .empty-schedule i {
-    font-size: 3em;
-    margin-bottom: 16px;
-    opacity: 0.5;
+    font-size: 2em;
+    margin-bottom: 8px;
+    opacity: 0.4;
+    display: block;
 }
 
 .empty-schedule p {
     margin: 0;
-    font-size: 1.1em;
+    font-size: 0.85em;
+}
+
+.empty-schedule small {
+    font-size: 0.85em;
+    color: var(--ctu-text-secondary);
 }
 
 /* Responsive Design */
+@media (max-width: 1400px) {
+    .admin-center-container {
+        max-width: 99vw;
+        width: 99vw;
+    }
+    
+    .students-table-container,
+    .pagination-controls {
+        margin: 0 16px;
+    }
+    
+    .stats-grid,
+    .students-controls,
+    .pagination-info {
+        padding: 0 16px;
+    }
+}
+
 @media (max-width: 1024px) {
     .weekly-day {
         min-height: 120px;
@@ -1003,9 +1212,27 @@ body {
     .stats-grid {
         grid-template-columns: 1fr;
     }
+    
+    .weekly-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
 @media (max-width: 768px) {
+    .admin-students-main {
+        transform: scale(1);
+        padding-bottom: 30px;
+    }
+    
+    .dashboard-title {
+        padding-left: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .dashboard-title::after {
+        left: 16px;
+    }
+    
     .students-controls {
         flex-direction: column;
         align-items: stretch;
@@ -1021,8 +1248,19 @@ body {
         flex-wrap: wrap;
     }
     
+    .students-table-container,
+    .pagination-controls {
+        margin: 0 12px;
+    }
+    
+    .stats-grid,
+    .students-controls,
+    .pagination-info {
+        padding: 0 12px;
+    }
+    
     .weekly-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .schedule-stats {
@@ -1107,6 +1345,20 @@ body {
     .modal-cancel, .modal-submit, .modal-delete {
         width: 100%;
     }
+    
+    .weekly-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .weekly-day {
+        min-height: 100px;
+        padding: 10px;
+    }
+    
+    .schedule-item-small {
+        font-size: 0.75em;
+        padding: 6px 8px;
+    }
 }
 
 
@@ -1174,9 +1426,11 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
-    padding: 0 4px;
+    padding: 0 28px;
     color: var(--ctu-text-secondary);
     font-size: 0.9em;
+    width: 100%;
+    max-width: 1300px;
 }
 
 .pagination-controls {
@@ -1189,6 +1443,11 @@ body {
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 1300px;
+    margin-left: 24px;
+    margin-right: 24px;
 }
 
 .pagination-btn {
@@ -1369,6 +1628,17 @@ body {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+    
+    .stat-card,
+    .students-table-container {
+        animation: none !important;
+        opacity: 1 !important;
+    }
+    
+    .stat-card:hover,
+    .students-table-container:hover {
+        transform: none;
     }
 }
 

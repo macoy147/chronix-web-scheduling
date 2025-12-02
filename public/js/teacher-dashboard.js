@@ -1244,9 +1244,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         
+        // Get current day for highlighting
+        const today = new Date();
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const currentDay = dayNames[today.getDay()];
+        
         days.forEach(day => {
             const dayDiv = document.createElement('div');
             dayDiv.className = 'weekly-day';
+            
+            // Add 'is-today' class if this is the current day
+            if (day === currentDay) {
+                dayDiv.classList.add('is-today');
+            }
+            
             dayDiv.innerHTML = `<h5>${day}</h5>`;
 
             const daySchedules = teacherSchedules.filter(schedule => {
@@ -1259,12 +1270,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (daySchedules.length === 0) {
                 const emptyMsg = document.createElement('div');
                 emptyMsg.className = 'empty-schedule-day';
-                emptyMsg.innerHTML = '<small>No classes</small>';
+                emptyMsg.innerHTML = '<i class="bi bi-calendar-x"></i><p>No classes</p>';
                 dayDiv.appendChild(emptyMsg);
             } else {
                 daySchedules.forEach(schedule => {
                     const item = document.createElement('div');
-                    item.className = `schedule-item-small ${schedule.scheduleType}`;
+                    item.className = `schedule-item-small ${schedule.scheduleType || 'lecture'}`;
                     
                     const subjectCode = schedule.subject?.courseCode || schedule.subject || 'No subject';
                     const sectionName = schedule.section?.sectionName || schedule.section || 'No section';
@@ -1273,9 +1284,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     item.innerHTML = `
                         <div><strong>${subjectCode}</strong></div>
-                        <div>${sectionName}</div>
-                        <div>${roomName}</div>
-                        <div><small>${timeDisplay}</small></div>
+                        <div class="time-badge">${timeDisplay}</div>
+                        <div style="font-size: 0.85em; margin-top: 4px;">${sectionName}</div>
+                        <div style="font-size: 0.85em;">${roomName}</div>
                     `;
                     
                     dayDiv.appendChild(item);

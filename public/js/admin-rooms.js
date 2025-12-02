@@ -36,6 +36,22 @@ document.addEventListener('DOMContentLoaded', function() {
         capacity: null
     };
 
+    // ==================== BUBBLE NOTIFICATION SYSTEM ====================
+    function showBubbleMessage(msg, type = "success") {
+        const bubble = document.getElementById('roomBubbleMessage');
+        if (!bubble) return;
+        
+        bubble.textContent = msg;
+        bubble.className = "section-bubble-message";
+        bubble.classList.add(type);
+        void bubble.offsetWidth;
+        bubble.classList.add("show");
+        
+        setTimeout(() => {
+            bubble.classList.remove("show");
+        }, 3000);
+    }
+
     // Profile dropdown
     const profileDropdown = document.querySelector('.admin-profile-dropdown');
     if (profileDropdown) {
@@ -119,20 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Bubble Notification
-    function showBubbleMessage(msg, type = "success") {
-        const bubble = document.getElementById('roomBubbleMessage');
-        if (!bubble) return;
-        
-        bubble.textContent = msg;
-        bubble.classList.remove("show", "success", "error");
-        bubble.classList.add(type);
-        void bubble.offsetWidth;
-        bubble.classList.add("show");
-        setTimeout(() => {
-            bubble.classList.remove("show");
-        }, 2700);
-    }
+
 
     // Load all data - UPDATED WITH FIXES
     async function loadAllData(forceRefresh = false) {
@@ -220,8 +223,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!daySelect || !nightSelect) return;
         
         // Clear existing options except "None"
-        daySelect.innerHTML = '<option value="None">None</option>';
-        nightSelect.innerHTML = '<option value="None">None</option>';
+        daySelect.innerHTML = '<option value="None">None (No day section assigned)</option>';
+        nightSelect.innerHTML = '<option value="None">None (No night section assigned)</option>';
         
         // Get sections already assigned to rooms (excluding current room if editing)
         const assignedDaySections = rooms
@@ -232,50 +235,88 @@ document.addEventListener('DOMContentLoaded', function() {
             .filter(r => (!editMode || r._id !== editingId) && r.nightSection && r.nightSection !== 'None')
             .map(r => r.nightSection);
         
-        // Populate day sections (filter out already assigned day sections)
-        sections.forEach(section => {
+        // Filter sections by shift
+        const daySections = sections.filter(s => s.shift && s.shift.toLowerCase() === 'day');
+        const nightSections = sections.filter(s => s.shift && s.shift.toLowerCase() === 'night');
+        
+        // Populate day sections (only show day shift sections)
+        daySections.forEach(section => {
             const dayOption = document.createElement('option');
             dayOption.value = section.sectionName;
-            dayOption.textContent = section.sectionName;
             
-            if (section.sectionName === selectedDay) {
+            const isAssigned = assignedDaySections.includes(section.sectionName);
+            const isSelected = section.sectionName === selectedDay;
+            
+            if (isSelected) {
                 dayOption.selected = true;
-            } else if (assignedDaySections.includes(section.sectionName)) {
+                dayOption.textContent = section.sectionName;
+            } else if (isAssigned) {
                 dayOption.disabled = true;
-                dayOption.textContent += ' (Already assigned)';
+                dayOption.textContent = `${section.sectionName} (Already assigned)`;
+                dayOption.style.color = '#999';
+            } else {
+                dayOption.textContent = section.sectionName;
             }
             
             daySelect.appendChild(dayOption);
         });
         
-        // Populate night sections (filter out already assigned night sections)
-        sections.forEach(section => {
+        // Populate night sections (only show night shift sections)
+        nightSections.forEach(section => {
             const nightOption = document.createElement('option');
             nightOption.value = section.sectionName;
-            nightOption.textContent = section.sectionName;
             
-            if (section.sectionName === selectedNight) {
+            const isAssigned = assignedNightSections.includes(section.sectionName);
+            const isSelected = section.sectionName === selectedNight;
+            
+            if (isSelected) {
                 nightOption.selected = true;
-            } else if (assignedNightSections.includes(section.sectionName)) {
+                nightOption.textContent = section.sectionName;
+            } else if (isAssigned) {
                 nightOption.disabled = true;
-                nightOption.textContent += ' (Already assigned)';
+                nightOption.textContent = `${section.sectionName} (Already assigned)`;
+                nightOption.style.color = '#999';
+            } else {
+                nightOption.textContent = section.sectionName;
             }
             
             nightSelect.appendChild(nightOption);
         });
         
-        // Show helper text
-        const dayHelperText = daySelect.nextElementSibling;
-        const nightHelperText = nightSelect.nextElementSibling;
+        // Update helper text with more detailed information
+        const dayHelperSpan = document.getElementById('dayShiftHelp');
+        const nightHelperSpan = document.getElementById('nightShiftHelp');
         
-        if (dayHelperText) {
-            const availableDay = sections.length - assignedDaySections.length;
-            dayHelperText.innerHTML = `<i class="bi bi-info-circle"></i> ${availableDay} section(s) available for day shift`;
+        if (dayHelperSpan) {
+            const availableDay = daySections.length - assignedDaySections.length;
+            const totalDay = daySections.length;
+            
+            if (availableDay === 0) {
+                dayHelperSpan.innerHTML = `<strong>No day sections available</strong> - All ${totalDay} day shift sections are assigned`;
+                dayHelperSpan.style.color = '#d32f2f';
+            } else if (availableDay === totalDay) {
+                dayHelperSpan.innerHTML = `<strong>${availableDay} day sections available</strong> - None assigned yet`;
+                dayHelperSpan.style.color = '#4BB543';
+            } else {
+                dayHelperSpan.innerHTML = `<strong>${availableDay} of ${totalDay} day sections available</strong>`;
+                dayHelperSpan.style.color = '#ffa726';
+            }
         }
         
-        if (nightHelperText) {
-            const availableNight = sections.length - assignedNightSections.length;
-            nightHelperText.innerHTML = `<i class="bi bi-info-circle"></i> ${availableNight} section(s) available for night shift`;
+        if (nightHelperSpan) {
+            const availableNight = nightSections.length - assignedNightSections.length;
+            const totalNight = nightSections.length;
+            
+            if (availableNight === 0) {
+                nightHelperSpan.innerHTML = `<strong>No night sections available</strong> - All ${totalNight} night shift sections are assigned`;
+                nightHelperSpan.style.color = '#d32f2f';
+            } else if (availableNight === totalNight) {
+                nightHelperSpan.innerHTML = `<strong>${availableNight} night sections available</strong> - None assigned yet`;
+                nightHelperSpan.style.color = '#4BB543';
+            } else {
+                nightHelperSpan.innerHTML = `<strong>${availableNight} of ${totalNight} night sections available</strong>`;
+                nightHelperSpan.style.color = '#5c6bc0';
+            }
         }
     }
 
@@ -609,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const result = await res.json();
                 if (res.ok) {
-                    showBubbleMessage(editMode ? "Room updated successfully!" : "Room created successfully!", "success");
+                    showBubbleMessage(editMode ? 'Room updated successfully!' : 'Room created successfully!', 'success');
                     if (modal) modal.style.display = 'none';
                     if (form) form.reset();
                     hideModalError();
@@ -627,11 +668,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     console.log('✅ Data refresh complete. Total rooms now:', rooms.length);
                 } else {
-                    showModalError(result.error || (editMode ? "Failed to update room." : "Failed to create room."));
+                    const errorMsg = result.error || (editMode ? "Failed to update room." : "Failed to create room.");
+                    showModalError(errorMsg);
+                    showBubbleMessage(errorMsg, 'error');
                 }
             } catch (error) {
                 console.error('Error saving room:', error);
-                showModalError("Network error. Please check your connection and try again.");
+                const errorMsg = "Network error. Please check your connection and try again.";
+                showModalError(errorMsg);
+                showBubbleMessage(errorMsg, 'error');
             }
         };
     }
@@ -713,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const result = await res.json();
                 if (res.ok) {
-                    showBubbleMessage("Room deleted successfully!", "success");
+                    showBubbleMessage('Room deleted successfully!', 'success');
                     if (deleteModal) deleteModal.style.display = 'none';
                     deleteRoomId = null;
                     
@@ -727,11 +772,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     console.log('✅ Data refresh complete. Total rooms now:', rooms.length);
                 } else {
-                    showBubbleMessage(result.error || "Failed to delete room.", "error");
+                    showBubbleMessage(result.error || 'Failed to delete room', 'error');
                 }
             } catch (error) {
                 console.error('Error deleting room:', error);
-                showBubbleMessage("Failed to delete room.", "error");
+                showBubbleMessage('Failed to delete room', 'error');
             }
         };
     }

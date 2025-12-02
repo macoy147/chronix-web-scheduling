@@ -12,11 +12,14 @@
 <body>
     <!-- Navigation Bar -->
     <nav class="admin-nav">
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
+            <i class="bi bi-list"></i>
+        </button>
+        
         <div class="nav-left">
             <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
             <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="admin-logo">
             <span class="admin-app-title">CHRONIX</span>
-        </div>
         </div>
         
         <ul class="nav-links">
@@ -38,6 +41,19 @@
                 </div>
             </div>
         </div>
+    </nav>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <ul>
+            <li><a href="admin-dashboard.html"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+            <li><a href="admin-subjects.html"><i class="bi bi-book"></i><span>Subjects</span></a></li>
+            <li class="active"><a href="admin-sections.html"><i class="bi bi-layers"></i><span>Sections</span></a></li>
+            <li><a href="admin-rooms.html"><i class="bi bi-door-open"></i><span>Rooms</span></a></li>
+            <li><a href="admin-schedules.html"><i class="bi bi-calendar-event"></i><span>Schedules</span></a></li>
+            <li><a href="admin-students.html"><i class="bi bi-mortarboard"></i><span>Students</span></a></li>
+            <li><a href="admin-teachers.html"><i class="bi bi-person-badge"></i><span>Teachers</span></a></li>
+        </ul>
     </nav>
 
     <!-- Main Content -->
@@ -269,6 +285,27 @@
 <script type="module" src="/js/error-handler.js"></script>
 <script type="module" src="/js/auth-guard.js"></script>
 <script type="module" src="/js/admin-sections.js"></script>
+
+<script>
+// Mobile menu toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileBottomNav = document.getElementById('mobileBottomNav');
+    
+    if (mobileMenuToggle && mobileBottomNav) {
+        mobileMenuToggle.addEventListener('click', function() {
+            const isVisible = mobileBottomNav.style.display === 'block';
+            mobileBottomNav.style.display = isVisible ? 'none' : 'block';
+            
+            // Change icon
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.className = isVisible ? 'bi bi-list' : 'bi bi-x-lg';
+            }
+        });
+    }
+});
+</script>
 
 <!-- Mobile detection and redirection -->
 <script>

@@ -1123,9 +1123,20 @@ document.addEventListener('DOMContentLoaded', function() {
         weeklyGrid.innerHTML = '';
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         
+        // Get current day for highlighting
+        const today = new Date();
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const currentDay = dayNames[today.getDay()];
+        
         days.forEach(day => {
             const dayDiv = document.createElement('div');
             dayDiv.className = 'weekly-day';
+            
+            // Add 'is-today' class if this is the current day
+            if (day === currentDay) {
+                dayDiv.classList.add('is-today');
+            }
+            
             dayDiv.innerHTML = `<h5>${day}</h5>`;
 
             const daySchedules = studentSchedules
@@ -1139,16 +1150,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
             if (daySchedules.length === 0) {
-                dayDiv.innerHTML += '<div class="empty-schedule"><small>No classes</small></div>';
+                dayDiv.innerHTML += '<div class="empty-schedule"><i class="bi bi-calendar-x"></i><p>No classes</p></div>';
             } else {
                 daySchedules.forEach(schedule => {
                     const item = document.createElement('div');
-                    item.className = `schedule-item-small ${schedule.scheduleType}`;
+                    item.className = `schedule-item-small ${schedule.scheduleType || 'lecture'}`;
                     item.innerHTML = `
                         <div><strong>${escapeHtml(schedule.subject?.courseCode || 'N/A')}</strong></div>
-                        <div>${escapeHtml(schedule.teacher?.fullname || 'TBA')}</div>
-                        <div>${escapeHtml(schedule.room?.roomName || 'TBA')}</div>
-                        <div><small>${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}</small></div>
+                        <div class="time-badge">${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}</div>
+                        <div style="font-size: 0.85em; margin-top: 4px;">${escapeHtml(schedule.teacher?.fullname || 'TBA')}</div>
+                        <div style="font-size: 0.85em;">${escapeHtml(schedule.room?.roomName || 'TBA')}</div>
                     `;
                     dayDiv.appendChild(item);
                 });

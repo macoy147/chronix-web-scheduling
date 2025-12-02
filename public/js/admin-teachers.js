@@ -1023,9 +1023,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         
+        // Get current day for highlighting
+        const today = new Date();
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const currentDay = dayNames[today.getDay()];
+        
         days.forEach(day => {
             const dayDiv = document.createElement('div');
             dayDiv.className = 'weekly-day';
+            
+            // Add 'is-today' class if this is the current day
+            if (day === currentDay) {
+                dayDiv.classList.add('is-today');
+            }
+            
             dayDiv.innerHTML = `<h5>${day}</h5>`;
 
             const daySchedules = teacherSchedules.filter(schedule => 
@@ -1042,21 +1053,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 return aStart - bStart;
             });
 
-            daySchedules.forEach(schedule => {
-                const item = document.createElement('div');
-                item.className = `schedule-item-small ${schedule.scheduleType}`;
-                
-                const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
-                item.innerHTML = `
-                    <div><strong>${safeDisplay(schedule.subject.courseCode)}</strong></div>
-                    <div>${safeDisplay(schedule.section.sectionName)}</div>
-                    <div>${safeDisplay(schedule.room.roomName)}</div>
-                    <div><small>${timeDisplay}</small></div>
-                `;
-                
-                item.title = `${safeDisplay(schedule.subject.courseCode)} - ${safeDisplay(schedule.section.sectionName)} (${safeDisplay(schedule.room.roomName)})`;
-                dayDiv.appendChild(item);
-            });
+            if (daySchedules.length === 0) {
+                dayDiv.innerHTML += '<div class="empty-schedule"><i class="bi bi-calendar-x"></i><p>No classes</p></div>';
+            } else {
+                daySchedules.forEach(schedule => {
+                    const item = document.createElement('div');
+                    item.className = `schedule-item-small ${schedule.scheduleType || 'lecture'}`;
+                    
+                    const timeDisplay = `${schedule.startTime} ${schedule.startPeriod} - ${schedule.endTime} ${schedule.endPeriod}`;
+                    item.innerHTML = `
+                        <div><strong>${safeDisplay(schedule.subject.courseCode)}</strong></div>
+                        <div class="time-badge">${timeDisplay}</div>
+                        <div style="font-size: 0.85em; margin-top: 4px;">${safeDisplay(schedule.section.sectionName)}</div>
+                        <div style="font-size: 0.85em;">${safeDisplay(schedule.room.roomName)}</div>
+                    `;
+                    
+                    item.title = `${safeDisplay(schedule.subject.courseCode)} - ${safeDisplay(schedule.section.sectionName)} (${safeDisplay(schedule.room.roomName)})`;
+                    dayDiv.appendChild(item);
+                });
+            }
 
             weeklyGrid.appendChild(dayDiv);
         });
