@@ -91,8 +91,8 @@
             margin-bottom: 4px;
         }
         
-        /* Mobile Header */
-        .mobile-header {
+        /* Mobile Top Bar */
+        .mobile-top-bar {
             display: none;
             position: sticky;
             top: 0;
@@ -103,22 +103,18 @@
             z-index: 1000;
             padding: 0 var(--mobile-padding);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .mobile-header-content {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 100%;
         }
         
-        .mobile-logo-container {
+        .logo-section {
             display: flex;
             align-items: center;
             gap: 6px;
         }
         
-        .mobile-logo {
+        .admin-logo {
             width: 28px;
             height: 28px;
             object-fit: contain;
@@ -127,26 +123,72 @@
             border: 2px solid var(--ctu-soft-gold);
         }
         
-        .mobile-app-title {
+        .admin-app-title {
             color: var(--ctu-soft-gold);
             font-weight: 700;
             font-size: 1rem;
             margin-left: 4px;
+            letter-spacing: 0.5px;
         }
         
-        .mobile-menu-btn {
-            background: none;
-            border: none;
-            color: var(--ctu-white);
-            font-size: 1.5rem;
+        /* Facebook-style Profile Menu Toggle */
+        .mobile-top-bar .profile-menu-toggle {
+            position: relative;
             cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: background var(--transition-fast) ease;
+            padding: 4px;
+            transition: transform 0.2s ease;
         }
         
-        .mobile-menu-btn:active {
-            background: rgba(255, 255, 255, 0.1);
+        .mobile-top-bar .profile-menu-toggle:active {
+            transform: scale(0.95);
+        }
+        
+        .mobile-top-bar .profile-img {
+            width: 42px;
+            height: 42px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--ctu-soft-gold);
+            background: #fff;
+            display: block;
+        }
+        
+        .mobile-top-bar .menu-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 18px;
+            height: 18px;
+            background: var(--ctu-deep-blue);
+            border: 2px solid var(--ctu-deep-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .mobile-top-bar .menu-badge::before {
+            content: '';
+            width: 14px;
+            height: 14px;
+            background: var(--ctu-soft-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .mobile-top-bar .menu-badge i {
+            position: absolute;
+            font-size: 0.6em;
+            color: var(--ctu-deep-blue);
+            font-weight: 900;
+        }
+        
+        /* Legacy support */
+        .mobile-header {
+            display: none !important;
         }
         
         /* Mobile Side Menu - Same as other mobile pages */
@@ -597,34 +639,39 @@
                 display: none;
             }
             
-            .mobile-header, .mobile-main-content, .mobile-nav {
-                display: block;
+            .mobile-top-bar, .mobile-main-content, .mobile-nav {
+                display: flex !important;
+            }
+            
+            .mobile-main-content {
+                display: block !important;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Mobile Header -->
-    <header class="mobile-header">
-        <div class="mobile-header-content">
-            <div class="mobile-logo-container">
-                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
-                <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
-                <span class="mobile-app-title">CHRONIX</span>
-            </div>
-            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
-                <i class="bi bi-list"></i>
-            </button>
+    <!-- Mobile Top Bar -->
+    <div class="mobile-top-bar">
+        <div class="logo-section">
+            <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
+            <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="admin-logo">
+            <span class="admin-app-title">CHRONIX</span>
         </div>
-    </header>
+        <div class="profile-menu-toggle" id="mobileMenuBtn">
+            <img id="mobileHeaderProfileAvatar" src="/img/default_admin_avatar.png" alt="Admin Avatar" class="profile-img">
+            <div class="menu-badge">
+                <i class="bi bi-list"></i>
+            </div>
+        </div>
+    </div>
 
     <!-- Mobile Side Menu -->
     <div class="mobile-side-menu" id="mobileSideMenu">
         <div class="mobile-side-menu-header">
-            <div class="mobile-logo-container">
-                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
-                <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
-                <span class="mobile-app-title">CHRONIX</span>
+            <div class="logo-section">
+                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
+                <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="admin-logo">
+                <span class="admin-app-title">CHRONIX</span>
             </div>
             <button class="mobile-side-menu-close" id="mobileSideMenuClose" aria-label="Close menu">
                 <i class="bi bi-x-lg"></i>
@@ -1033,6 +1080,7 @@
                     mobileProfileName.textContent = currentUser.fullname;
                 }
 
+                // Update profile avatar in side menu
                 const mobileProfileAvatar = document.getElementById('mobileProfileAvatar');
                 if (mobileProfileAvatar) {
                     if (currentUser.profilePicture) {
@@ -1041,6 +1089,18 @@
                             : currentUser.profilePicture;
                     } else {
                         mobileProfileAvatar.src = '/img/default_admin_avatar.png';
+                    }
+                }
+
+                // Update profile avatar in header (top bar)
+                const mobileHeaderProfileAvatar = document.getElementById('mobileHeaderProfileAvatar');
+                if (mobileHeaderProfileAvatar) {
+                    if (currentUser.profilePicture) {
+                        mobileHeaderProfileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                            ? currentUser.profilePicture 
+                            : currentUser.profilePicture;
+                    } else {
+                        mobileHeaderProfileAvatar.src = '/img/default_admin_avatar.png';
                     }
                 }
             }

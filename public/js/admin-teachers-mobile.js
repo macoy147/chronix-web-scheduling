@@ -55,8 +55,26 @@ function updateMobileProfileInfo() {
     if (currentUser) {
         const mobileProfileName = document.getElementById('mobileProfileName');
         if (mobileProfileName) mobileProfileName.textContent = currentUser.fullname;
+        
+        // Update profile avatar in side menu
         const mobileProfileAvatar = document.getElementById('mobileProfileAvatar');
-        if (mobileProfileAvatar && currentUser.profilePicture) mobileProfileAvatar.src = currentUser.profilePicture;
+        if (mobileProfileAvatar && currentUser.profilePicture) {
+            mobileProfileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                ? currentUser.profilePicture 
+                : currentUser.profilePicture;
+        } else if (mobileProfileAvatar) {
+            mobileProfileAvatar.src = '/img/default_admin_avatar.png';
+        }
+        
+        // Update profile avatar in header (top bar)
+        const mobileHeaderProfileAvatar = document.getElementById('mobileHeaderProfileAvatar');
+        if (mobileHeaderProfileAvatar && currentUser.profilePicture) {
+            mobileHeaderProfileAvatar.src = currentUser.profilePicture.startsWith('http') 
+                ? currentUser.profilePicture 
+                : currentUser.profilePicture;
+        } else if (mobileHeaderProfileAvatar) {
+            mobileHeaderProfileAvatar.src = '/img/default_admin_avatar.png';
+        }
     }
 }
 

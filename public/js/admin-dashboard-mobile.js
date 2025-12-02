@@ -536,9 +536,16 @@ function updateMobileProfileInfo() {
             profileName.textContent = firstName;
         }
 
+        // Update profile avatar in side menu
         const profileAvatar = document.getElementById('mobileProfileAvatar');
         if (profileAvatar) {
             profileAvatar.src = currentUser.profilePicture || '/img/default_admin_avatar.png';
+        }
+
+        // Update profile avatar in header (new Facebook-style menu toggle)
+        const headerProfileAvatar = document.getElementById('mobileHeaderProfileAvatar');
+        if (headerProfileAvatar) {
+            headerProfileAvatar.src = currentUser.profilePicture || '/img/default_admin_avatar.png';
         }
     }
 }

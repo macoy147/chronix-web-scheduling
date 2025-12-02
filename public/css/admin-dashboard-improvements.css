@@ -436,3 +436,262 @@ html {
         scroll-behavior: auto;
     }
 }
+
+
+/* Export Button Styles */
+.export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+    background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+}
+
+.export-btn:active {
+    transform: translateY(0);
+}
+
+.export-btn i {
+    font-size: 1.1em;
+}
+
+/* Export Dialog Overlay */
+.export-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.export-dialog-overlay.show {
+    opacity: 1;
+}
+
+.export-dialog {
+    background: white;
+    border-radius: 20px;
+    padding: 0;
+    min-width: 500px;
+    max-width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+}
+
+.export-dialog-overlay.show .export-dialog {
+    transform: scale(1);
+}
+
+.export-dialog-header {
+    background: linear-gradient(135deg, var(--ctu-deep-blue) 0%, var(--ctu-light-blue) 100%);
+    color: white;
+    padding: 24px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.export-dialog-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.export-dialog-header i {
+    font-size: 1.3em;
+}
+
+.export-dialog-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.export-dialog-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.export-dialog-body {
+    padding: 30px;
+}
+
+.export-dialog-body > p {
+    margin: 0 0 20px 0;
+    color: var(--ctu-text-secondary);
+    font-size: 1rem;
+}
+
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.export-option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--ctu-lightest-gray);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.export-option:hover {
+    background: white;
+    border-color: var(--ctu-light-blue);
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(62, 142, 222, 0.2);
+}
+
+.export-option i {
+    font-size: 2em;
+    color: var(--ctu-light-blue);
+    min-width: 40px;
+    text-align: center;
+}
+
+.export-option div {
+    flex: 1;
+}
+
+.export-option strong {
+    display: block;
+    color: var(--ctu-deep-blue);
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+}
+
+.export-option span {
+    display: block;
+    color: var(--ctu-text-secondary);
+    font-size: 0.9rem;
+}
+
+/* PDF Loading Overlay */
+.pdf-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.pdf-loading-overlay.show {
+    opacity: 1;
+}
+
+.pdf-loading-content {
+    text-align: center;
+    color: white;
+}
+
+.pdf-loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--ctu-soft-gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.pdf-loading-content p {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+.pdf-loading-content small {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .export-dialog {
+        min-width: 90%;
+        max-width: 95%;
+    }
+    
+    .export-dialog-header {
+        padding: 20px;
+    }
+    
+    .export-dialog-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .export-dialog-body {
+        padding: 20px;
+    }
+    
+    .export-option {
+        padding: 14px 16px;
+    }
+    
+    .export-option i {
+        font-size: 1.5em;
+        min-width: 30px;
+    }
+    
+    .export-option strong {
+        font-size: 0.95rem;
+    }
+    
+    .export-option span {
+        font-size: 0.85rem;
+    }
+}

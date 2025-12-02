@@ -2,6 +2,7 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
+import pdfExporter from './dashboard-pdf-export.js';
 
 // Data caching with TTL
 const cache = {
@@ -137,6 +138,15 @@ document.addEventListener('DOMContentLoaded', function() {
         refreshBtn.addEventListener('click', function(e) {
             createRipple(e, this);
             refreshDashboardData();
+        });
+    }
+
+    // Export data button functionality
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    if (exportDataBtn) {
+        exportDataBtn.addEventListener('click', async function(e) {
+            createRipple(e, this);
+            await exportDashboardData();
         });
     }
 
@@ -1393,6 +1403,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(animationStyles);
+
+    /**
+     * Export Dashboard Data as PDF
+     */
+    async function exportDashboardData() {
+        try {
+            // Show notification
+            showNotification('Preparing export options...', 'info');
+            
+            // Show export dialog and get user choice
+            const exportType = await pdfExporter.showExportDialog(dashboardState.data);
+            
+            if (exportType) {
+                showNotification(`${exportType.charAt(0).toUpperCase() + exportType.slice(1)} report generated successfully!`, 'success');
+                trackUserInteraction('export_data', 'dashboard', exportType);
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            showNotification('Failed to export data. Please try again.', 'error');
+            trackUserInteraction('export_data', 'dashboard', 'error');
+        }
+    }
 });
 
 

@@ -17,6 +17,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- ApexCharts Library -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- jsPDF Library for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#002D62">
@@ -121,6 +124,10 @@
                     <p class="dashboard-subtitle">Comprehensive overview of academic operations</p>
                 </div>
                 <div class="dashboard-controls">
+                    <button id="exportDataBtn" class="export-btn" aria-label="Export dashboard data">
+                        <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> 
+                        <span>Export Data</span>
+                    </button>
                     <button id="refreshBtn" class="refresh-btn" aria-label="Refresh dashboard data">
                         <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> 
                         <span>Refresh Data</span>

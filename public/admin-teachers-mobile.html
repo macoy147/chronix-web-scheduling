@@ -33,8 +33,8 @@
             overflow-x: hidden;
         }
         
-        /* Mobile Header */
-        .mobile-header {
+        /* Mobile Top Bar */
+        .mobile-top-bar {
             position: sticky;
             top: 0;
             left: 0;
@@ -47,6 +47,89 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .admin-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--ctu-soft-gold);
+        }
+        
+        .admin-app-title {
+            color: var(--ctu-soft-gold);
+            font-weight: 700;
+            font-size: 1rem;
+            margin-left: 4px;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Facebook-style Profile Menu Toggle */
+        .mobile-top-bar .profile-menu-toggle {
+            position: relative;
+            cursor: pointer;
+            padding: 4px;
+            transition: transform 0.2s ease;
+        }
+        
+        .mobile-top-bar .profile-menu-toggle:active {
+            transform: scale(0.95);
+        }
+        
+        .mobile-top-bar .profile-img {
+            width: 42px;
+            height: 42px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--ctu-soft-gold);
+            background: #fff;
+            display: block;
+        }
+        
+        .mobile-top-bar .menu-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 18px;
+            height: 18px;
+            background: var(--ctu-deep-blue);
+            border: 2px solid var(--ctu-deep-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .mobile-top-bar .menu-badge::before {
+            content: '';
+            width: 14px;
+            height: 14px;
+            background: var(--ctu-soft-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .mobile-top-bar .menu-badge i {
+            position: absolute;
+            font-size: 0.6em;
+            color: var(--ctu-deep-blue);
+            font-weight: 900;
+        }
+        
+        /* Legacy support */
+        .mobile-header {
+            display: none !important;
         }
         
         .mobile-logo-container {
@@ -69,15 +152,6 @@
             font-weight: 700;
             font-size: 1rem;
             margin-left: 4px;
-        }
-        
-        .mobile-menu-btn {
-            background: none;
-            border: none;
-            color: var(--ctu-white);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 8px;
         }
         
         /* Mobile Main Content */
@@ -907,25 +981,28 @@
     </style>
 </head>
 <body>
-    <!-- Mobile Header -->
-    <header class="mobile-header">
-        <div class="mobile-logo-container">
-            <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
-            <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
-            <span class="mobile-app-title">CHRONIX</span>
+    <!-- Mobile Top Bar -->
+    <div class="mobile-top-bar">
+        <div class="logo-section">
+            <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
+            <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="admin-logo">
+            <span class="admin-app-title">CHRONIX</span>
         </div>
-        <button class="mobile-menu-btn" id="mobileMenuBtn">
-            <i class="bi bi-list"></i>
-        </button>
-    </header>
+        <div class="profile-menu-toggle" id="mobileMenuBtn">
+            <img id="mobileHeaderProfileAvatar" src="/img/default_admin_avatar.png" alt="Admin Avatar" class="profile-img">
+            <div class="menu-badge">
+                <i class="bi bi-list"></i>
+            </div>
+        </div>
+    </div>
 
     <!-- Mobile Side Menu -->
     <div class="mobile-side-menu" id="mobileSideMenu">
         <div class="mobile-side-menu-header">
-            <div class="mobile-logo-container">
-                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="mobile-logo">
-                <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="mobile-logo">
-                <span class="mobile-app-title">CHRONIX</span>
+            <div class="logo-section">
+                <img src="/img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="admin-logo">
+                <img src="/img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="admin-logo">
+                <span class="admin-app-title">CHRONIX</span>
             </div>
             <button class="mobile-side-menu-close" id="mobileSideMenuClose">
                 <i class="bi bi-x-lg"></i>

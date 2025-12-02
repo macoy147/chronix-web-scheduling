@@ -3,7 +3,8 @@
 
 import AuthGuard from './auth-guard.js';
 import { cache } from './dashboard-cache.js';
-import { loadDashboardData, exportToCSV, rateLimiter } from './dashboard-api.js';
+import { loadDashboardData, rateLimiter } from './dashboard-api.js';
+import pdfExporter from './dashboard-pdf-export.js';
 import { chartManager, aggregateStudentsBySection, aggregateStudentsByYear, aggregateStudentsByProgram,
          aggregateRoomsByStatus, aggregateRoomsByBuilding, aggregateRoomsByType,
          aggregateSchedulesByDay, aggregateSchedulesByType, getBarChartConfig, getDonutChartConfig, getRadialBarChartConfig } from './dashboard-charts-apex.js';
@@ -489,6 +490,15 @@ function setupEventListeners() {
         });
     }
 
+    // Export Data button - PDF Export
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    if (exportDataBtn) {
+        exportDataBtn.addEventListener('click', async function(e) {
+            createRipple(e, this);
+            await exportDashboardData();
+        });
+    }
+
     // Chart filters - removed debouncing for immediate response
     const studentDistributionType = document.getElementById('studentDistributionType');
     if (studentDistributionType) {
@@ -553,94 +563,31 @@ function setupEventListeners() {
         });
     }
 
-    // Export buttons (Improvement #9: Data export feature)
-    setupExportButtons();
+    // Export button is now in HTML, no need to create it dynamically
 }
 
 /**
- * Setup export buttons
- * Improvement #9: Missing feature - Data export
+ * Old export functions removed - now using PDF export dialog
  */
-function setupExportButtons() {
-    // Add export buttons to dashboard header
-    const dashboardControls = document.querySelector('.dashboard-controls');
-    if (dashboardControls && !document.getElementById('exportBtn')) {
-        const exportBtn = document.createElement('button');
-        exportBtn.id = 'exportBtn';
-        exportBtn.className = 'refresh-btn';
-        exportBtn.innerHTML = '<i class="bi bi-download"></i> <span>Export Data</span>';
-        exportBtn.setAttribute('aria-label', 'Export dashboard data');
-        
-        dashboardControls.insertBefore(exportBtn, dashboardControls.firstChild);
-        
-        exportBtn.addEventListener('click', function(e) {
-            createRipple(e, this);
-            showExportMenu();
-        });
-    }
-}
 
 /**
- * Show export menu
+ * Export Dashboard Data as PDF - New function for export button
  */
-function showExportMenu() {
-    const menu = document.createElement('div');
-    menu.className = 'export-menu';
-    menu.innerHTML = `
-        <div class="export-menu-content">
-            <h4>Export Data</h4>
-            <button class="export-option" data-export="students">
-                <i class="bi bi-mortarboard"></i> Students Data
-            </button>
-            <button class="export-option" data-export="teachers">
-                <i class="bi bi-person-badge"></i> Teachers Data
-            </button>
-            <button class="export-option" data-export="rooms">
-                <i class="bi bi-door-open"></i> Rooms Data
-            </button>
-            <button class="export-option" data-export="schedules">
-                <i class="bi bi-calendar-event"></i> Schedules Data
-            </button>
-            <button class="export-close">Cancel</button>
-        </div>
-    `;
-    
-    document.body.appendChild(menu);
-    setTimeout(() => menu.classList.add('show'), 10);
-    
-    // Handle export options
-    menu.querySelectorAll('.export-option').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const type = this.getAttribute('data-export');
-            handleExport(type);
-            menu.remove();
-        });
-    });
-    
-    // Handle close
-    menu.querySelector('.export-close').addEventListener('click', () => {
-        menu.classList.remove('show');
-        setTimeout(() => menu.remove(), 300);
-    });
-}
-
-/**
- * Handle data export
- */
-function handleExport(type) {
+async function exportDashboardData() {
     try {
-        const data = dashboardState.data[type];
-        if (!data || data.length === 0) {
-            showNotification(`No ${type} data to export`, 'warning');
-            return;
-        }
+        showNotification('Preparing export options...', 'info');
         
-        exportToCSV(data, type);
-        showNotification(`${type} data exported successfully`, 'success');
-        trackUserInteraction('export', 'dashboard', type);
+        // Show export dialog and get user choice
+        const exportType = await pdfExporter.showExportDialog(dashboardState.data);
+        
+        if (exportType) {
+            showNotification(`${exportType.charAt(0).toUpperCase() + exportType.slice(1)} report generated successfully!`, 'success');
+            trackUserInteraction('export_data', 'dashboard', exportType);
+        }
     } catch (error) {
-        console.error('Export failed:', error);
-        showNotification('Export failed. Please try again.', 'error');
+        console.error('Export error:', error);
+        showNotification('Failed to export data. Please try again.', 'error');
+        trackUserInteraction('export_data', 'dashboard', 'error');
     }
 }
 
