@@ -42,19 +42,56 @@
     <main class="admin-teachers-main">
         <div class="admin-center-container">
             <!-- Header Section -->
-            <div class="teachers-header">
-                <h1>Teacher Management</h1>
-                <p>View and manage all teachers and their schedules</p>
+            <h2 class="dashboard-title">Teacher Management</h2>
+
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalTeachers">0</span>
+                        <span class="stat-label">Total Teachers</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="activeTeachers">0</span>
+                        <span class="stat-label">Active Teachers</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="inactiveTeachers">0</span>
+                        <span class="stat-label">Inactive Teachers</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple">
+                        <i class="bi bi-clock-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalTeachingHours">0</span>
+                        <span class="stat-label">Total Teaching Hours</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Search and Filters -->
             <div class="teachers-controls">
                 <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="teacherSearch" placeholder="Search teachers by name...">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" id="teacherSearch" placeholder="Search teachers by name, email, or ID..." aria-label="Search teachers">
                 </div>
                 <div class="filter-controls">
-                    <select id="statusFilter">
+                    <select id="statusFilter" aria-label="Filter by status">
                         <option value="">All Status</option>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
@@ -70,6 +107,7 @@
                             <th>Teacher Name</th>
                             <th>Email</th>
                             <th>CTU ID</th>
+                            <th>Advisory Section</th>
                             <th>Total Schedules</th>
                             <th>Status</th>
                             <th>Actions</th>

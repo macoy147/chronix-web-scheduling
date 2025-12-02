@@ -236,6 +236,51 @@ document.addEventListener('DOMContentLoaded', function() {
         return data && data !== '' ? data : fallback;
     }
 
+    // Update statistics cards
+    function updateStatistics() {
+        const totalTeachersEl = document.getElementById('totalTeachers');
+        const activeTeachersEl = document.getElementById('activeTeachers');
+        const inactiveTeachersEl = document.getElementById('inactiveTeachers');
+        const totalTeachingHoursEl = document.getElementById('totalTeachingHours');
+
+        if (!totalTeachersEl || !activeTeachersEl || !inactiveTeachersEl || !totalTeachingHoursEl) return;
+
+        // Calculate statistics
+        const totalTeachers = teachers.length;
+        let activeCount = 0;
+        let inactiveCount = 0;
+        let totalHours = 0;
+
+        teachers.forEach(teacher => {
+            const status = getTeacherStatus(teacher._id);
+            if (status === 'active') {
+                activeCount++;
+            } else {
+                inactiveCount++;
+            }
+
+            // Calculate total teaching hours for this teacher
+            const teacherSchedules = schedules.filter(schedule => 
+                (schedule.teacher._id || schedule.teacher) === teacher._id
+            );
+            
+            teacherSchedules.forEach(schedule => {
+                if (schedule.startTime && schedule.endTime) {
+                    const start = new Date(`2000-01-01 ${schedule.startTime}`);
+                    const end = new Date(`2000-01-01 ${schedule.endTime}`);
+                    const hours = (end - start) / (1000 * 60 * 60);
+                    totalHours += hours;
+                }
+            });
+        });
+
+        // Update the DOM
+        totalTeachersEl.textContent = totalTeachers;
+        activeTeachersEl.textContent = activeCount;
+        inactiveTeachersEl.textContent = inactiveCount;
+        totalTeachingHoursEl.textContent = Math.round(totalHours);
+    }
+
     // Render teachers table
     function renderTeachersTable() {
         const tbody = document.getElementById('teachersTableBody');
@@ -245,6 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (teachers.length === 0) {
             showEmptyState(true);
+            updateStatistics();
             return;
         }
 
@@ -253,12 +299,14 @@ document.addEventListener('DOMContentLoaded', function() {
         teachers.forEach(teacher => {
             const scheduleCount = getTeacherSchedulesCount(teacher._id);
             const status = getTeacherStatus(teacher._id);
+            const advisorySection = teacher.advisorySection || teacher.section || '-';
 
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${safeDisplay(teacher.fullname)}</td>
                 <td>${safeDisplay(teacher.email)}</td>
                 <td>${safeDisplay(teacher.ctuid)}</td>
+                <td>${safeDisplay(advisorySection)}</td>
                 <td>${scheduleCount}</td>
                 <td><span class="status-badge status-${status}">${status}</span></td>
                 <td>
@@ -277,6 +325,9 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             tbody.appendChild(row);
         });
+
+        // Update statistics
+        updateStatistics();
 
         // Apply current filters after rendering
         applyFilters();
@@ -555,6 +606,174 @@ document.addEventListener('DOMContentLoaded', function() {
         if (deleteModal) deleteModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
+
+    // ==================== ADD TEACHER ====================
+    
+    // Open Add Teacher Modal
+    const addTeacherBtn = document.getElementById('addTeacherBtn');
+    if (addTeacherBtn) {
+        addTeacherBtn.addEventListener('click', function() {
+            const addTeacherModal = document.getElementById('addTeacherModal');
+            if (addTeacherModal) {
+                addTeacherModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                
+                // Populate sections and rooms dropdowns
+                populateAddTeacherSections();
+                populateAddTeacherRooms();
+            }
+        });
+    }
+    
+    // Close Add Teacher Modal
+    const closeAddTeacherModal = document.getElementById('closeAddTeacherModal');
+    const cancelAddTeacher = document.getElementById('cancelAddTeacher');
+    
+    if (closeAddTeacherModal) {
+        closeAddTeacherModal.addEventListener('click', closeAddTeacherModalFunc);
+    }
+    if (cancelAddTeacher) {
+        cancelAddTeacher.addEventListener('click', closeAddTeacherModalFunc);
+    }
+    
+    function closeAddTeacherModalFunc() {
+        const addTeacherModal = document.getElementById('addTeacherModal');
+        if (addTeacherModal) {
+            addTeacherModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            
+            // Reset form
+            const addTeacherForm = document.getElementById('addTeacherForm');
+            if (addTeacherForm) addTeacherForm.reset();
+            
+            // Reset profile preview
+            const preview = document.getElementById('addTeacherProfilePreview');
+            if (preview) preview.src = './img/default_teacher_avatar.png';
+        }
+    }
+    
+    // Populate sections dropdown for Add Teacher
+    function populateAddTeacherSections() {
+        const select = document.getElementById('addTeacherSection');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">No Advisory Section</option>';
+        sections.forEach(section => {
+            const option = document.createElement('option');
+            option.value = section.sectionName;
+            option.textContent = `${section.sectionName} (${section.shift})`;
+            select.appendChild(option);
+        });
+    }
+    
+    // Populate rooms dropdown for Add Teacher
+    function populateAddTeacherRooms() {
+        const select = document.getElementById('addTeacherRoom');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">No Room Assigned</option>';
+        rooms.forEach(room => {
+            const option = document.createElement('option');
+            option.value = room.roomName;
+            option.textContent = `${room.roomName} - ${room.building}`;
+            select.appendChild(option);
+        });
+    }
+    
+    // Profile picture preview for Add Teacher
+    const addTeacherProfilePicture = document.getElementById('addTeacherProfilePicture');
+    if (addTeacherProfilePicture) {
+        addTeacherProfilePicture.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('addTeacherProfilePreview');
+                    if (preview) preview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Add Teacher Form Submission
+    const addTeacherForm = document.getElementById('addTeacherForm');
+    if (addTeacherForm) {
+        addTeacherForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fullname = document.getElementById('addTeacherFullName')?.value.trim();
+            const email = document.getElementById('addTeacherEmail')?.value.trim();
+            const ctuid = document.getElementById('addTeacherCtuid')?.value.trim();
+            const birthdate = document.getElementById('addTeacherBirthdate')?.value;
+            const gender = document.getElementById('addTeacherGender')?.value;
+            const section = document.getElementById('addTeacherSection')?.value;
+            const room = document.getElementById('addTeacherRoom')?.value;
+            const profilePictureInput = document.getElementById('addTeacherProfilePicture');
+            
+            // Basic validation
+            if (!fullname || !email || !ctuid) {
+                showBubbleMessage('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            const registerData = {
+                fullname,
+                email,
+                ctuid,
+                userrole: 'teacher',
+                password: ctuid, // Default password is CTU ID
+                birthdate: birthdate || '',
+                gender: gender || '',
+                section: section || '',
+                room: room || ''
+            };
+            
+            try {
+                const res = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registerData)
+                });
+                
+                const result = await res.json();
+                
+                if (res.ok) {
+                    // Upload profile picture if selected
+                    if (profilePictureInput?.files[0] && result.user?._id) {
+                        const formData = new FormData();
+                        formData.append('profilePicture', profilePictureInput.files[0]);
+                        try {
+                            await fetch(`/upload-profile-picture/${result.user._id}`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                        } catch (uploadError) {
+                            console.warn('Profile picture upload failed:', uploadError);
+                        }
+                    }
+                    
+                    showBubbleMessage('Teacher added successfully!', 'success');
+                    closeAddTeacherModalFunc();
+                    
+                    console.log('🔄 Forcing data refresh after teacher creation...');
+                    
+                    // Wait for database to sync
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Force reload with aggressive cache busting
+                    await loadAllData(true);
+                    
+                    console.log('✅ Data refresh complete. Total teachers now:', teachers.length);
+                } else {
+                    showBubbleMessage(result.error || 'Failed to add teacher', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding teacher:', error);
+                showBubbleMessage('Failed to add teacher. Please try again.', 'error');
+            }
+        });
+    }
 
     // Edit teacher form submission - FIXED VERSION
     const editTeacherForm = document.getElementById('editTeacherForm');
@@ -959,9 +1178,48 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Search and status filter listeners (both call applyFilters)
+    // Populate filter dropdowns
+    function populateFilterDropdowns() {
+        // Populate section filter
+        const sectionFilter = document.getElementById('sectionFilter');
+        if (sectionFilter) {
+            sectionFilter.innerHTML = '<option value="">All Advisory Sections</option>';
+            const uniqueSections = [...new Set(teachers.map(t => t.section).filter(s => s))];
+            uniqueSections.sort().forEach(sectionName => {
+                const option = document.createElement('option');
+                option.value = sectionName;
+                option.textContent = sectionName;
+                sectionFilter.appendChild(option);
+            });
+        }
+        
+        // Populate room filter
+        const roomFilter = document.getElementById('roomFilter');
+        if (roomFilter) {
+            roomFilter.innerHTML = '<option value="">All Rooms</option>';
+            const uniqueRooms = [...new Set(teachers.map(t => t.room).filter(r => r))];
+            uniqueRooms.sort().forEach(roomName => {
+                const option = document.createElement('option');
+                option.value = roomName;
+                option.textContent = roomName;
+                roomFilter.appendChild(option);
+            });
+        }
+    }
+
     const teacherSearch = document.getElementById('teacherSearch');
     if (teacherSearch) {
         teacherSearch.addEventListener('input', applyFilters);
+    }
+
+    const sectionFilter = document.getElementById('sectionFilter');
+    if (sectionFilter) {
+        sectionFilter.addEventListener('change', applyFilters);
+    }
+
+    const roomFilter = document.getElementById('roomFilter');
+    if (roomFilter) {
+        roomFilter.addEventListener('change', applyFilters);
     }
 
     const statusFilter = document.getElementById('statusFilter');

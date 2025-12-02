@@ -42,9 +42,37 @@
     <main class="admin-students-main">
         <div class="admin-center-container">
             <!-- Header Section -->
-            <div class="students-header">
-                <h1>Student Management</h1>
-                <p>View and manage all students and their class schedules</p>
+            <h2 class="dashboard-title">Student Management</h2>
+
+            <!-- Student Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalStudents">0</span>
+                        <span class="stat-label">Total Students</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="activeStudents">0</span>
+                        <span class="stat-label">Active Students</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">
+                        <i class="bi bi-calendar-week"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="enrolledSections">0</span>
+                        <span class="stat-label">Enrolled Sections</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Search and Filters -->
@@ -78,37 +106,6 @@
             <!-- Pagination Info -->
             <div class="pagination-info" role="status" aria-live="polite">
                 <span id="paginationText">Showing 0 of 0 students</span>
-            </div>
-
-            <!-- Student Statistics Cards -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="totalStudents">0</span>
-                        <span class="stat-label">Total Students</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon green">
-                        <i class="bi bi-check-circle-fill"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="activeStudents">0</span>
-                        <span class="stat-label">Active Students</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon orange">
-                        <i class="bi bi-calendar-week"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-value" id="enrolledSections">0</span>
-                        <span class="stat-label">Enrolled Sections</span>
-                    </div>
-                </div>
             </div>
 
             <!-- Students Table -->

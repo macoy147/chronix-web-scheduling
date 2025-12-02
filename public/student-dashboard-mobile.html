@@ -130,18 +130,18 @@
         .mobile-side-menu {
             position: fixed;
             top: 0;
-            left: -280px;
+            right: -280px;
             width: 280px;
             height: 100vh;
             background: white;
             z-index: 1001;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            transition: left 0.3s ease;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
             overflow-y: auto;
         }
         
         .mobile-side-menu.show {
-            left: 0;
+            right: 0;
         }
         
         .mobile-menu-header {
@@ -603,15 +603,16 @@
 <body>
     <!-- Mobile Top Bar -->
     <div class="mobile-top-bar">
-        <div class="menu-icon" id="mobileMenuToggle">
-            <i class="bi bi-list"></i>
-        </div>
         <div class="logo-section">
             <img src="img/img/CTU_new_logo-removebg-preview.png" alt="CTU Logo" class="student-logo">
+            <img src="img/img/CHRONIX_LOGO.png" alt="CHRONIX Logo" class="student-logo">
             <span class="student-app-title">CHRONIX</span>
         </div>
         <div class="profile-section" id="mobileProfileToggle">
             <img id="mobileProfileAvatar" src="./img/default_student_avatar.png" alt="student Avatar" class="profile-img">
+        </div>
+        <div class="menu-icon" id="mobileMenuToggle">
+            <i class="bi bi-list"></i>
         </div>
     </div>
 

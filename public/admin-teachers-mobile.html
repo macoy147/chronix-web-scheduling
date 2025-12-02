@@ -238,20 +238,20 @@
         .mobile-side-menu {
             position: fixed;
             top: 0;
-            left: -100%;
+            right: -100%;
             width: 85%;
             max-width: 320px;
             height: 100%;
             background: var(--ctu-deep-blue);
             z-index: 2000;
-            transition: left 0.3s ease;
+            transition: right 0.3s ease;
             overflow-y: auto;
             overflow-x: hidden;
             padding: 20px 0;
         }
         
         .mobile-side-menu.open {
-            left: 0;
+            right: 0;
         }
         
         .mobile-side-menu-header {
@@ -464,22 +464,86 @@
         .mobile-stat-card {
             background: white;
             border-radius: 10px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            text-align: center;
+            padding: 14px 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 3px solid #e5e8eb;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mobile-stat-card:nth-child(1) {
+            border-left-color: var(--ctu-light-blue);
+        }
+        
+        .mobile-stat-card:nth-child(2) {
+            border-left-color: #4BB543;
+        }
+        
+        .mobile-stat-card:nth-child(3) {
+            border-left-color: #ef6c00;
+        }
+        
+        .mobile-stat-card:nth-child(4) {
+            border-left-color: #9c27b0;
+        }
+        
+        .mobile-stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .mobile-stat-card:nth-child(1) .mobile-stat-icon {
+            background: #EAF3FF;
+            color: var(--ctu-light-blue);
+        }
+        
+        .mobile-stat-card:nth-child(2) .mobile-stat-icon {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .mobile-stat-card:nth-child(3) .mobile-stat-icon {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .mobile-stat-card:nth-child(4) .mobile-stat-icon {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+        
+        .mobile-stat-info {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
         }
         
         .mobile-stat-value {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 800;
             color: var(--ctu-deep-blue);
             display: block;
+            line-height: 1;
             margin-bottom: 4px;
         }
         
         .mobile-stat-label {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--ctu-text-secondary);
+            font-weight: 500;
         }
         
         /* Schedule Modal Styles */
@@ -905,12 +969,40 @@
         <!-- Stats Grid -->
         <div class="mobile-stats-grid">
             <div class="mobile-stat-card">
-                <span class="mobile-stat-value" id="totalTeachers">0</span>
-                <span class="mobile-stat-label">Total Teachers</span>
+                <div class="mobile-stat-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="mobile-stat-info">
+                    <span class="mobile-stat-value" id="totalTeachers">0</span>
+                    <span class="mobile-stat-label">Total Teachers</span>
+                </div>
             </div>
             <div class="mobile-stat-card">
-                <span class="mobile-stat-value" id="activeTeachers">0</span>
-                <span class="mobile-stat-label">Active</span>
+                <div class="mobile-stat-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="mobile-stat-info">
+                    <span class="mobile-stat-value" id="activeTeachers">0</span>
+                    <span class="mobile-stat-label">Active</span>
+                </div>
+            </div>
+            <div class="mobile-stat-card">
+                <div class="mobile-stat-icon">
+                    <i class="bi bi-x-circle-fill"></i>
+                </div>
+                <div class="mobile-stat-info">
+                    <span class="mobile-stat-value" id="inactiveTeachers">0</span>
+                    <span class="mobile-stat-label">Inactive</span>
+                </div>
+            </div>
+            <div class="mobile-stat-card">
+                <div class="mobile-stat-icon">
+                    <i class="bi bi-clock-fill"></i>
+                </div>
+                <div class="mobile-stat-info">
+                    <span class="mobile-stat-value" id="totalTeachingHours">0</span>
+                    <span class="mobile-stat-label">Teaching Hours</span>
+                </div>
             </div>
         </div>
         

@@ -198,102 +198,120 @@ body {
     padding: 18px 0 0 0;
 }
 
-/* Header Section */
-.students-header {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-}
-
-.students-header h1 {
-    margin: 0 0 8px 0;
+/* Header Section - Dashboard Title */
+.dashboard-title {
+    text-align: left;
+    padding-left: 0;
+    margin-bottom: 24px;
+    font-size: 1.5em;
+    font-weight: 800;
+    letter-spacing: 0.02em;
     color: var(--ctu-deep-blue);
-    font-size: 1.8em;
+    width: 100%;
+    justify-content: left;
+    position: relative;
+    display: inline-block;
 }
 
-.students-header p {
-    margin: 0;
-    color: var(--ctu-text-secondary);
-    font-size: 1em;
+.dashboard-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: var(--ctu-soft-gold);
+    border-radius: 2px;
 }
 
-/* Statistics Cards */
+/* Statistics Cards - Matching admin-rooms design */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    width: 100%;
     margin-bottom: 20px;
 }
 
 .stat-card {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px 16px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: all 0.3s ease;
+    border-left: 3px solid var(--ctu-light-blue);
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .stat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 1.5em;
+    font-size: 1.3em;
+    background: var(--tint-blue-bg);
+    color: var(--ctu-light-blue);
+    flex-shrink: 0;
 }
 
 .stat-icon.blue {
-    background: var(--ctu-light-blue);
+    background: var(--tint-blue-bg);
+    color: var(--ctu-light-blue);
 }
 
 .stat-icon.green {
-    background: var(--schedule-lecture);
+    background: #e8f5e8;
+    color: #2e7d32;
 }
 
 .stat-icon.orange {
-    background: var(--schedule-lab);
+    background: #fff3e0;
+    color: #ef6c00;
 }
 
-.stat-icon.lecture {
-    background: var(--schedule-lecture);
+.stat-card:nth-child(1) {
+    border-left-color: var(--ctu-light-blue);
 }
 
-.stat-icon.lab {
-    background: var(--schedule-lab);
+.stat-card:nth-child(2) {
+    border-left-color: #4BB543;
 }
 
-.stat-icon.total {
-    background: var(--ctu-light-blue);
+.stat-card:nth-child(3) {
+    border-left-color: #ef6c00;
 }
 
 .stat-info {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
 }
 
 .stat-value {
-    font-size: 1.8em;
-    font-weight: 700;
+    font-size: 1.5em;
+    font-weight: 800;
     color: var(--ctu-deep-blue);
     line-height: 1;
+    margin-bottom: 2px;
 }
 
 .stat-label {
-    font-size: 0.9em;
+    font-size: 0.8em;
     color: var(--ctu-text-secondary);
-    margin-top: 4px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Controls */

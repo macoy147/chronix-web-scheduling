@@ -124,13 +124,44 @@ async function loadTeachers() {
 }
 
 function updateStats() {
-    document.getElementById('totalTeachers').textContent = allTeachers.length;
-    const activeCount = allTeachers.filter(teacher => {
-        return allSchedules.some(schedule => 
+    const totalTeachers = allTeachers.length;
+    let activeCount = 0;
+    let inactiveCount = 0;
+    let totalHours = 0;
+
+    allTeachers.forEach(teacher => {
+        const hasSchedules = allSchedules.some(schedule => 
             (schedule.teacher._id || schedule.teacher) === teacher._id
         );
-    }).length;
+        
+        if (hasSchedules) {
+            activeCount++;
+        } else {
+            inactiveCount++;
+        }
+
+        // Calculate total teaching hours for this teacher
+        const teacherSchedules = allSchedules.filter(schedule => 
+            (schedule.teacher._id || schedule.teacher) === teacher._id
+        );
+        
+        teacherSchedules.forEach(schedule => {
+            if (schedule.startTime && schedule.endTime) {
+                const duration = calculateDuration(
+                    schedule.startTime, 
+                    schedule.startPeriod, 
+                    schedule.endTime, 
+                    schedule.endPeriod
+                );
+                totalHours += duration;
+            }
+        });
+    });
+
+    document.getElementById('totalTeachers').textContent = totalTeachers;
     document.getElementById('activeTeachers').textContent = activeCount;
+    document.getElementById('inactiveTeachers').textContent = inactiveCount;
+    document.getElementById('totalTeachingHours').textContent = Math.round(totalHours);
 }
 
 function displayTeachers(teachers) {
@@ -147,6 +178,7 @@ function displayTeachers(teachers) {
 
     list.innerHTML = '';
     teachers.forEach(teacher => {
+        const advisorySection = teacher.advisorySection || teacher.section || 'No advisory section';
         const card = document.createElement('div');
         card.className = 'mobile-teacher-card';
         card.innerHTML = `
@@ -163,6 +195,10 @@ function displayTeachers(teachers) {
                 <div class="mobile-teacher-detail">
                     <i class="bi bi-envelope"></i>
                     <span>${teacher.email}</span>
+                </div>
+                <div class="mobile-teacher-detail">
+                    <i class="bi bi-people"></i>
+                    <span>${advisorySection}</span>
                 </div>
                 <div class="mobile-teacher-detail">
                     <i class="bi bi-telephone"></i>
