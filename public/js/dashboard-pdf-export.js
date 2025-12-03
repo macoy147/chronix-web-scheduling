@@ -1,8 +1,6 @@
 // dashboard-pdf-export.js
 // Professional PDF Export System for Admin Dashboard
-// Uses jsPDF and jsPDF-AutoTable for beautiful, branded PDF reports
-
-// jsPDF will be loaded from CDN in HTML
+// Clean, Minimal, Modern Design - No Emojis
 
 /**
  * PDF Export Manager
@@ -11,29 +9,27 @@
 class DashboardPDFExporter {
     constructor() {
         this.colors = {
-            primary: [0, 45, 98],      // CTU Deep Blue
-            secondary: [242, 210, 131], // CTU Soft Gold
-            accent: [62, 142, 222],     // CTU Light Blue
+            primary: [0, 45, 98],        // CTU Deep Blue
+            secondary: [242, 210, 131],   // CTU Soft Gold
+            accent: [62, 142, 222],       // CTU Light Blue
             success: [75, 181, 67],
             warning: [255, 152, 0],
             danger: [216, 0, 12],
             text: [51, 51, 51],
-            textLight: [85, 85, 85],
-            background: [244, 247, 249]
+            textLight: [100, 100, 100],
+            background: [248, 250, 252],
+            purple: [139, 92, 246],
+            orange: [255, 104, 53],
+            white: [255, 255, 255],
+            lightGray: [240, 240, 240]
         };
         
-        // Add triangle helper to jsPDF
         this.initializeHelpers();
     }
     
-    /**
-     * Initialize custom PDF helpers
-     */
     initializeHelpers() {
         if (typeof window.jspdf !== 'undefined') {
             const { jsPDF } = window.jspdf;
-            
-            // Add triangle drawing method
             jsPDF.API.triangle = function(x1, y1, x2, y2, x3, y3, style) {
                 this.lines([[x2 - x1, y2 - y1], [x3 - x2, y3 - y2], [x1 - x3, y1 - y3]], x1, y1, [1, 1], style || 'F');
                 return this;
@@ -42,7 +38,7 @@ class DashboardPDFExporter {
     }
 
     /**
-     * Show export dialog to choose what to export
+     * Show export dialog
      */
     async showExportDialog(dashboardData) {
         return new Promise((resolve) => {
@@ -63,14 +59,14 @@ class DashboardPDFExporter {
                                 <i class="bi bi-file-earmark-text"></i>
                                 <div>
                                     <strong>Complete Dashboard Report</strong>
-                                    <span>All data with charts and statistics</span>
+                                    <span>All data with statistics</span>
                                 </div>
                             </button>
                             <button class="export-option" data-type="students">
                                 <i class="bi bi-mortarboard"></i>
                                 <div>
                                     <strong>Students Report</strong>
-                                    <span>Student list with details and analytics</span>
+                                    <span>Student list with details</span>
                                 </div>
                             </button>
                             <button class="export-option" data-type="teachers">
@@ -84,7 +80,7 @@ class DashboardPDFExporter {
                                 <i class="bi bi-door-open"></i>
                                 <div>
                                     <strong>Rooms Report</strong>
-                                    <span>Room inventory and utilization</span>
+                                    <span>Room inventory and status</span>
                                 </div>
                             </button>
                             <button class="export-option" data-type="schedules">
@@ -102,14 +98,12 @@ class DashboardPDFExporter {
             document.body.appendChild(dialog);
             setTimeout(() => dialog.classList.add('show'), 10);
 
-            // Handle option selection
             dialog.querySelectorAll('.export-option').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const type = btn.dataset.type;
                     dialog.classList.remove('show');
                     setTimeout(() => dialog.remove(), 300);
                     
-                    // Show loading
                     this.showLoadingOverlay();
                     
                     try {
@@ -125,7 +119,6 @@ class DashboardPDFExporter {
                 });
             });
 
-            // Handle close
             const closeBtn = dialog.querySelector('.export-dialog-close');
             closeBtn.addEventListener('click', () => {
                 dialog.classList.remove('show');
@@ -143,9 +136,6 @@ class DashboardPDFExporter {
         });
     }
 
-    /**
-     * Generate PDF based on type
-     */
     async generatePDF(type, data) {
         switch (type) {
             case 'complete':
@@ -169,74 +159,374 @@ class DashboardPDFExporter {
     async generateCompleteDashboardPDF(data) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
-        let yPos = 20;
 
-        // Cover Page
-        this.addCoverPage(doc, 'Complete Dashboard Report');
-        doc.addPage();
+        // Page 1: Clean Cover Page
+        this.addCoverPage(doc, 'Dashboard Report', data);
         
-        // Executive Summary - REDESIGNED FIRST PAGE
+        // Page 2: Executive Summary with Stats
+        doc.addPage();
         this.addExecutiveSummaryPage(doc, data);
-        yPos = 20;
 
-        // Students Overview
-        if (yPos > 250) {
-            doc.addPage();
-            yPos = 20;
-        }
+        // Page 3: Students Overview
+        doc.addPage();
+        let yPos = 20;
         this.addSectionHeader(doc, 'Students Overview', yPos);
-        yPos += 10;
+        yPos += 15;
         this.addStudentsSection(doc, data.students, data.sections, yPos);
 
-        // Teachers Overview
+        // Page 4: Teachers Overview
         doc.addPage();
         yPos = 20;
         this.addSectionHeader(doc, 'Teachers Overview', yPos);
-        yPos += 10;
-        this.addTeachersSection(doc, data.teachers, yPos);
+        yPos += 15;
+        this.addTeachersSection(doc, data.teachers, data.schedules, data.subjects, yPos);
 
-        // Rooms Overview
+        // Page 5: Rooms Overview
         doc.addPage();
         yPos = 20;
         this.addSectionHeader(doc, 'Rooms Overview', yPos);
-        yPos += 10;
+        yPos += 15;
         this.addRoomsSection(doc, data.rooms, yPos);
 
-        // Footer on all pages
-        this.addFooterToAllPages(doc);
+        // Page 6: Schedules Overview
+        doc.addPage();
+        yPos = 20;
+        this.addSectionHeader(doc, 'Schedules Overview', yPos);
+        yPos += 15;
+        this.addSchedulesSection(doc, data, yPos);
 
-        // Save
-        doc.save(`CHRONIX_Complete_Dashboard_${this.getDateString()}.pdf`);
+        this.addFooterToAllPages(doc);
+        doc.save(`CHRONIX_Dashboard_Report_${this.getDateString()}.pdf`);
+    }
+
+
+    /**
+     * CLEAN MINIMAL COVER PAGE
+     * Professional, simple design without emojis
+     */
+    addCoverPage(doc, title, data) {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const centerX = pageWidth / 2;
+
+        // Clean white background
+        doc.setFillColor(255, 255, 255);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+
+        // Top accent bar - Deep Blue
+        doc.setFillColor(...this.colors.primary);
+        doc.rect(0, 0, pageWidth, 50, 'F');
+
+        // Gold accent line below blue bar
+        doc.setFillColor(...this.colors.secondary);
+        doc.rect(0, 50, pageWidth, 3, 'F');
+
+        // University name in header
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Cebu Technological University', centerX, 20, { align: 'center' });
+
+        // CHRONIX title
+        doc.setFontSize(32);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CHRONIX', centerX, 38, { align: 'center' });
+
+        // Main Report Title
+        doc.setTextColor(...this.colors.primary);
+        doc.setFontSize(28);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title.toUpperCase(), centerX, 90, { align: 'center' });
+
+        // Decorative line under title
+        doc.setDrawColor(...this.colors.secondary);
+        doc.setLineWidth(1.5);
+        doc.line(centerX - 40, 98, centerX + 40, 98);
+
+        // Academic Year
+        const currentDate = new Date();
+        const academicYear = `Academic Year ${currentDate.getFullYear()}-${currentDate.getFullYear() + 1}`;
+        doc.setTextColor(...this.colors.textLight);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(academicYear, centerX, 115, { align: 'center' });
+
+        // Quick Stats Box (if data provided)
+        if (data) {
+            const boxY = 140;
+            const boxWidth = 140;
+            const boxHeight = 70;
+            const boxX = centerX - boxWidth / 2;
+
+            // Stats box background
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 4, 4, 'F');
+
+            // Stats box border
+            doc.setDrawColor(...this.colors.accent);
+            doc.setLineWidth(0.5);
+            doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 4, 4, 'S');
+
+            // Stats title
+            doc.setTextColor(...this.colors.primary);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('QUICK OVERVIEW', centerX, boxY + 12, { align: 'center' });
+
+            // Stats grid
+            const stats = [
+                { label: 'Students', value: data.students?.length || 0 },
+                { label: 'Teachers', value: data.teachers?.length || 0 },
+                { label: 'Rooms', value: data.rooms?.length || 0 },
+                { label: 'Schedules', value: data.schedules?.length || 0 }
+            ];
+
+            const statWidth = boxWidth / 2;
+            stats.forEach((stat, index) => {
+                const col = index % 2;
+                const row = Math.floor(index / 2);
+                const statX = boxX + col * statWidth + statWidth / 2;
+                const statY = boxY + 28 + row * 22;
+
+                // Value
+                doc.setTextColor(...this.colors.primary);
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.text(stat.value.toString(), statX, statY, { align: 'center' });
+
+                // Label
+                doc.setTextColor(...this.colors.textLight);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text(stat.label, statX, statY + 8, { align: 'center' });
+            });
+        }
+
+        // Bottom section
+        // Gold bar at bottom
+        doc.setFillColor(...this.colors.secondary);
+        doc.rect(0, pageHeight - 30, pageWidth, 30, 'F');
+
+        // Generation date
+        doc.setTextColor(...this.colors.primary);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const generatedDate = currentDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        doc.text(`Generated: ${generatedDate}`, centerX, pageHeight - 18, { align: 'center' });
+
+        // System name
+        doc.setFontSize(8);
+        doc.text('Academic Management System', centerX, pageHeight - 10, { align: 'center' });
     }
 
     /**
-     * Generate Students PDF
+     * EXECUTIVE SUMMARY PAGE
+     * Clean stats and data overview
      */
-    async generateStudentsPDF(data) {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
+    addExecutiveSummaryPage(doc, data) {
+        const pageWidth = doc.internal.pageSize.getWidth();
         
-        // Cover Page
-        this.addCoverPage(doc, 'Students Report');
-        doc.addPage();
+        // Page header
+        doc.setFillColor(...this.colors.primary);
+        doc.rect(0, 0, pageWidth, 25, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Executive Summary', 20, 16);
 
-        let yPos = 20;
-        this.addSectionHeader(doc, 'Student Statistics', yPos);
-        yPos += 15;
+        // Date on right
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const currentDate = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+        doc.text(currentDate, pageWidth - 20, 16, { align: 'right' });
 
-        // Statistics
+        // Calculate metrics
+        const totalStudents = data.students?.length || 0;
+        const totalTeachers = data.teachers?.length || 0;
+        const totalRooms = data.rooms?.length || 0;
+        const availableRooms = data.rooms?.filter(r => r.status === 'Available').length || 0;
+        const occupiedRooms = data.rooms?.filter(r => r.status === 'Occupied').length || 0;
+        const activeSchedules = data.schedules?.length || 0;
+
+        // KPI Cards
+        let yPos = 40;
+        const cardWidth = 82;
+        const cardHeight = 35;
+        const cardSpacing = 8;
+
+        const kpis = [
+            { label: 'Total Students', value: totalStudents, color: this.colors.accent },
+            { label: 'Total Teachers', value: totalTeachers, color: this.colors.orange },
+            { label: 'Total Rooms', value: totalRooms, color: this.colors.success },
+            { label: 'Active Schedules', value: activeSchedules, color: this.colors.purple }
+        ];
+
+        kpis.forEach((kpi, index) => {
+            const col = index % 2;
+            const row = Math.floor(index / 2);
+            const x = 20 + col * (cardWidth + cardSpacing);
+            const y = yPos + row * (cardHeight + cardSpacing);
+
+            // Card background
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'F');
+
+            // Card border
+            doc.setDrawColor(230, 230, 230);
+            doc.setLineWidth(0.3);
+            doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'S');
+
+            // Left accent bar
+            doc.setFillColor(...kpi.color);
+            doc.rect(x, y, 3, cardHeight, 'F');
+
+            // Value
+            doc.setTextColor(...kpi.color);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text(kpi.value.toString(), x + 12, y + 18);
+
+            // Label
+            doc.setTextColor(...this.colors.text);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(kpi.label, x + 12, y + 28);
+        });
+
+        yPos += (cardHeight + cardSpacing) * 2 + 15;
+
+        // Key Insights Section
+        doc.setTextColor(...this.colors.primary);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Key Insights', 20, yPos);
+        yPos += 8;
+
+        // Insights box
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(20, yPos, pageWidth - 40, 45, 3, 3, 'F');
+
+        const roomUtilization = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : 0;
+        const avgLoad = totalTeachers > 0 ? (activeSchedules / totalTeachers).toFixed(1) : 0;
+        const ratio = totalTeachers > 0 ? (totalStudents / totalTeachers).toFixed(1) : 0;
+
+        const insights = [
+            `Room Utilization: ${roomUtilization}% (${occupiedRooms} of ${totalRooms} rooms in use)`,
+            `Average Teaching Load: ${avgLoad} classes per teacher`,
+            `Student-Teacher Ratio: ${ratio}:1`,
+            `Available Rooms: ${availableRooms} rooms ready for scheduling`
+        ];
+
+        doc.setTextColor(...this.colors.text);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        insights.forEach((insight, index) => {
+            doc.text('•  ' + insight, 28, yPos + 10 + index * 10);
+        });
+
+        yPos += 60;
+
+        // Detailed Statistics Table
+        doc.setTextColor(...this.colors.primary);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detailed Statistics', 20, yPos);
+        yPos += 8;
+
+        // Year level breakdown
+        const yearLevels = { '1': 0, '2': 0, '3': 0, '4': 0 };
+        data.students?.forEach(student => {
+            const section = data.sections?.find(s => s._id === student.section);
+            if (section && yearLevels.hasOwnProperty(section.yearLevel)) {
+                yearLevels[section.yearLevel]++;
+            }
+        });
+
+        const tableData = [
+            ['Students - Year 1', yearLevels['1'].toString(), totalStudents > 0 ? ((yearLevels['1'] / totalStudents) * 100).toFixed(1) + '%' : '0%'],
+            ['Students - Year 2', yearLevels['2'].toString(), totalStudents > 0 ? ((yearLevels['2'] / totalStudents) * 100).toFixed(1) + '%' : '0%'],
+            ['Students - Year 3', yearLevels['3'].toString(), totalStudents > 0 ? ((yearLevels['3'] / totalStudents) * 100).toFixed(1) + '%' : '0%'],
+            ['Students - Year 4', yearLevels['4'].toString(), totalStudents > 0 ? ((yearLevels['4'] / totalStudents) * 100).toFixed(1) + '%' : '0%'],
+            ['Rooms - Available', availableRooms.toString(), totalRooms > 0 ? ((availableRooms / totalRooms) * 100).toFixed(1) + '%' : '0%'],
+            ['Rooms - Occupied', occupiedRooms.toString(), totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) + '%' : '0%']
+        ];
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Category', 'Count', 'Percentage']],
+            body: tableData,
+            theme: 'striped',
+            headStyles: {
+                fillColor: this.colors.primary,
+                textColor: 255,
+                fontSize: 9,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 4
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            columnStyles: {
+                0: { fontStyle: 'bold' },
+                1: { halign: 'center' },
+                2: { halign: 'center' }
+            },
+            margin: { left: 20, right: 20 }
+        });
+    }
+
+
+    /**
+     * Section Header - Clean Design
+     */
+    addSectionHeader(doc, title, yPos) {
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // Header background
+        doc.setFillColor(...this.colors.primary);
+        doc.roundedRect(15, yPos - 5, pageWidth - 30, 12, 2, 2, 'F');
+
+        // Gold accent on left
+        doc.setFillColor(...this.colors.secondary);
+        doc.rect(15, yPos - 5, 4, 12, 'F');
+
+        // Title text
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, 24, yPos + 3);
+
+        doc.setTextColor(...this.colors.text);
+        doc.setFont('helvetica', 'normal');
+    }
+
+    /**
+     * Students Section
+     */
+    addStudentsSection(doc, students, sections, yPos) {
         const yearLevels = {};
-        const sections = {};
-        data.students.forEach(student => {
-            const section = data.sections.find(s => s._id === student.section);
+        students?.forEach(student => {
+            const section = sections?.find(s => s._id === student.section);
             if (section) {
                 yearLevels[section.yearLevel] = (yearLevels[section.yearLevel] || 0) + 1;
-                sections[section.name] = (sections[section.name] || 0) + 1;
             }
         });
 
         const stats = [
-            ['Total Students', data.students.length.toString()],
+            ['Total Students', (students?.length || 0).toString()],
             ['Year 1 Students', (yearLevels['1'] || 0).toString()],
             ['Year 2 Students', (yearLevels['2'] || 0).toString()],
             ['Year 3 Students', (yearLevels['3'] || 0).toString()],
@@ -248,46 +538,322 @@ class DashboardPDFExporter {
             head: [['Category', 'Count']],
             body: stats,
             theme: 'striped',
-            headStyles: { fillColor: this.colors.primary },
-            styles: { fontSize: 10 },
+            headStyles: {
+                fillColor: this.colors.accent,
+                textColor: 255,
+                fontSize: 10,
+                fontStyle: 'bold'
+            },
+            styles: { fontSize: 9, cellPadding: 4 },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: {
+                0: { fontStyle: 'bold' },
+                1: { halign: 'center', textColor: this.colors.accent }
+            },
             margin: { left: 20, right: 20 }
         });
 
         yPos = doc.lastAutoTable.finalY + 15;
 
-        // Student List
-        if (yPos > 250) {
-            doc.addPage();
-            yPos = 20;
-        }
-        this.addSectionHeader(doc, 'Complete Student List', yPos);
-        yPos += 10;
+        // Student list (first 20)
+        if (students && students.length > 0) {
+            doc.setTextColor(...this.colors.primary);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Student List (Sample)', 20, yPos);
+            yPos += 8;
 
-        const studentData = data.students.map(student => {
-            const section = data.sections.find(s => s._id === student.section);
-            return [
-                student.ctuid || 'N/A',
-                student.fullname || 'N/A',
-                student.email || 'N/A',
-                section ? `${section.name} (Year ${section.yearLevel})` : 'N/A'
-            ];
-        });
+            const studentData = students.slice(0, 20).map(student => {
+                const section = sections?.find(s => s._id === student.section);
+                return [
+                    student.ctuid || 'N/A',
+                    student.fullname || 'N/A',
+                    student.email || 'N/A',
+                    section ? section.name : 'N/A'
+                ];
+            });
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['CTU ID', 'Full Name', 'Email', 'Section']],
+                body: studentData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: this.colors.accent,
+                    textColor: 255,
+                    fontSize: 8,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                styles: { fontSize: 7, cellPadding: 3 },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { left: 15, right: 15 }
+            });
+        }
+    }
+
+    /**
+     * Teachers Section
+     */
+    addTeachersSection(doc, teachers, schedules, subjects, yPos) {
+        const stats = [
+            ['Total Faculty Members', (teachers?.length || 0).toString()],
+            ['Active Schedules', (schedules?.length || 0).toString()],
+            ['Average Load', ((schedules?.length || 0) / Math.max(teachers?.length || 1, 1)).toFixed(1) + ' classes/teacher']
+        ];
 
         doc.autoTable({
             startY: yPos,
-            head: [['CTU ID', 'Full Name', 'Email', 'Section']],
-            body: studentData,
-            theme: 'grid',
-            headStyles: { fillColor: this.colors.accent, fontSize: 9 },
-            styles: { fontSize: 8, cellPadding: 3 },
-            margin: { left: 15, right: 15 },
+            head: [['Metric', 'Value']],
+            body: stats,
+            theme: 'striped',
+            headStyles: {
+                fillColor: this.colors.orange,
+                textColor: 255,
+                fontSize: 10,
+                fontStyle: 'bold'
+            },
+            styles: { fontSize: 9, cellPadding: 4 },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
             columnStyles: {
-                0: { cellWidth: 30 },
-                1: { cellWidth: 50 },
-                2: { cellWidth: 60 },
-                3: { cellWidth: 45 }
-            }
+                0: { fontStyle: 'bold' },
+                1: { halign: 'center', textColor: this.colors.orange }
+            },
+            margin: { left: 20, right: 20 }
         });
+
+        yPos = doc.lastAutoTable.finalY + 15;
+
+        // Teacher list
+        if (teachers && teachers.length > 0) {
+            doc.setTextColor(...this.colors.primary);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Faculty Directory', 20, yPos);
+            yPos += 8;
+
+            const teacherData = teachers.slice(0, 15).map(teacher => {
+                const teacherSchedules = schedules?.filter(s => s.teacher === teacher._id) || [];
+                return [
+                    teacher.fullname || 'N/A',
+                    teacher.email || 'N/A',
+                    teacherSchedules.length.toString()
+                ];
+            });
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['Full Name', 'Email', 'Classes']],
+                body: teacherData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: this.colors.orange,
+                    textColor: 255,
+                    fontSize: 8,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                styles: { fontSize: 7, cellPadding: 3 },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                columnStyles: {
+                    2: { halign: 'center', fontStyle: 'bold' }
+                },
+                margin: { left: 15, right: 15 }
+            });
+        }
+    }
+
+    /**
+     * Rooms Section
+     */
+    addRoomsSection(doc, rooms, yPos) {
+        const available = rooms?.filter(r => r.status === 'Available').length || 0;
+        const occupied = rooms?.filter(r => r.status === 'Occupied').length || 0;
+        const maintenance = rooms?.filter(r => r.status === 'Maintenance').length || 0;
+        const total = rooms?.length || 0;
+
+        const stats = [
+            ['Total Rooms', total.toString()],
+            ['Available', available.toString()],
+            ['Occupied', occupied.toString()],
+            ['Under Maintenance', maintenance.toString()],
+            ['Utilization Rate', total > 0 ? ((occupied / total) * 100).toFixed(1) + '%' : '0%']
+        ];
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Category', 'Count']],
+            body: stats,
+            theme: 'striped',
+            headStyles: {
+                fillColor: this.colors.success,
+                textColor: 255,
+                fontSize: 10,
+                fontStyle: 'bold'
+            },
+            styles: { fontSize: 9, cellPadding: 4 },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: {
+                0: { fontStyle: 'bold' },
+                1: { halign: 'center', textColor: this.colors.success }
+            },
+            margin: { left: 20, right: 20 }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 15;
+
+        // Room list
+        if (rooms && rooms.length > 0) {
+            doc.setTextColor(...this.colors.primary);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Room Inventory', 20, yPos);
+            yPos += 8;
+
+            const roomData = rooms.slice(0, 15).map(room => [
+                room.name || 'N/A',
+                room.building || 'N/A',
+                room.type || 'N/A',
+                room.capacity?.toString() || 'N/A',
+                room.status || 'N/A'
+            ]);
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['Room', 'Building', 'Type', 'Capacity', 'Status']],
+                body: roomData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: this.colors.success,
+                    textColor: 255,
+                    fontSize: 8,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                styles: { fontSize: 7, cellPadding: 3 },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                columnStyles: {
+                    3: { halign: 'center' },
+                    4: { halign: 'center' }
+                },
+                margin: { left: 15, right: 15 },
+                didParseCell: (data) => {
+                    if (data.column.index === 4 && data.cell.section === 'body') {
+                        const status = data.cell.raw;
+                        if (status === 'Available') {
+                            data.cell.styles.textColor = this.colors.success;
+                            data.cell.styles.fontStyle = 'bold';
+                        } else if (status === 'Occupied') {
+                            data.cell.styles.textColor = this.colors.warning;
+                            data.cell.styles.fontStyle = 'bold';
+                        } else if (status === 'Maintenance') {
+                            data.cell.styles.textColor = this.colors.danger;
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Schedules Section
+     */
+    addSchedulesSection(doc, data, yPos) {
+        const schedules = data.schedules || [];
+        const days = {};
+        schedules.forEach(schedule => {
+            days[schedule.day] = (days[schedule.day] || 0) + 1;
+        });
+
+        const busiestDay = Object.keys(days).reduce((a, b) => (days[a] > days[b] ? a : b), 'N/A');
+
+        const stats = [
+            ['Total Schedules', schedules.length.toString()],
+            ['Busiest Day', busiestDay],
+            ['Unique Days', Object.keys(days).length.toString()]
+        ];
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Metric', 'Value']],
+            body: stats,
+            theme: 'striped',
+            headStyles: {
+                fillColor: this.colors.purple,
+                textColor: 255,
+                fontSize: 10,
+                fontStyle: 'bold'
+            },
+            styles: { fontSize: 9, cellPadding: 4 },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: {
+                0: { fontStyle: 'bold' },
+                1: { halign: 'center', textColor: this.colors.purple }
+            },
+            margin: { left: 20, right: 20 }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 15;
+
+        // Schedule list
+        if (schedules.length > 0) {
+            doc.setTextColor(...this.colors.primary);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Schedule List (Sample)', 20, yPos);
+            yPos += 8;
+
+            const scheduleData = schedules.slice(0, 15).map(schedule => {
+                const subject = data.subjects?.find(s => s._id === schedule.subject);
+                const teacher = data.teachers?.find(t => t._id === schedule.teacher);
+                const section = data.sections?.find(s => s._id === schedule.section);
+                const room = data.rooms?.find(r => r._id === schedule.room);
+
+                return [
+                    subject?.code || 'N/A',
+                    teacher?.fullname || 'N/A',
+                    section?.name || 'N/A',
+                    room?.name || 'N/A',
+                    schedule.day || 'N/A',
+                    `${schedule.startTime || ''} - ${schedule.endTime || ''}`
+                ];
+            });
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['Subject', 'Teacher', 'Section', 'Room', 'Day', 'Time']],
+                body: scheduleData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: this.colors.purple,
+                    textColor: 255,
+                    fontSize: 7,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                styles: { fontSize: 6.5, cellPadding: 2 },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { left: 15, right: 15 }
+            });
+        }
+    }
+
+
+    /**
+     * Generate Students PDF
+     */
+    async generateStudentsPDF(data) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+
+        this.addCoverPage(doc, 'Students Report', data);
+        doc.addPage();
+
+        let yPos = 20;
+        this.addSectionHeader(doc, 'Student Statistics', yPos);
+        yPos += 15;
+        this.addStudentsSection(doc, data.students, data.sections, yPos);
 
         this.addFooterToAllPages(doc);
         doc.save(`CHRONIX_Students_Report_${this.getDateString()}.pdf`);
@@ -299,71 +865,14 @@ class DashboardPDFExporter {
     async generateTeachersPDF(data) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
-        
-        // Cover Page
-        this.addCoverPage(doc, 'Teachers Report');
+
+        this.addCoverPage(doc, 'Teachers Report', data);
         doc.addPage();
 
         let yPos = 20;
         this.addSectionHeader(doc, 'Faculty Overview', yPos);
         yPos += 15;
-
-        // Statistics
-        const stats = [
-            ['Total Faculty Members', data.teachers.length.toString()],
-            ['Active Schedules', data.schedules.length.toString()],
-            ['Average Load', (data.schedules.length / Math.max(data.teachers.length, 1)).toFixed(1) + ' classes/teacher']
-        ];
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Metric', 'Value']],
-            body: stats,
-            theme: 'striped',
-            headStyles: { fillColor: this.colors.primary },
-            margin: { left: 20, right: 20 }
-        });
-
-        yPos = doc.lastAutoTable.finalY + 15;
-
-        // Teacher List with Assignments
-        if (yPos > 250) {
-            doc.addPage();
-            yPos = 20;
-        }
-        this.addSectionHeader(doc, 'Faculty Directory', yPos);
-        yPos += 10;
-
-        const teacherData = data.teachers.map(teacher => {
-            const teacherSchedules = data.schedules.filter(s => s.teacher === teacher._id);
-            const subjects = [...new Set(teacherSchedules.map(s => {
-                const subject = data.subjects?.find(sub => sub._id === s.subject);
-                return subject ? subject.code : 'N/A';
-            }))].join(', ');
-
-            return [
-                teacher.fullname || 'N/A',
-                teacher.email || 'N/A',
-                teacherSchedules.length.toString(),
-                subjects || 'No assignments'
-            ];
-        });
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Full Name', 'Email', 'Classes', 'Subjects']],
-            body: teacherData,
-            theme: 'grid',
-            headStyles: { fillColor: [255, 104, 53], fontSize: 9 },
-            styles: { fontSize: 8, cellPadding: 3 },
-            margin: { left: 15, right: 15 },
-            columnStyles: {
-                0: { cellWidth: 45 },
-                1: { cellWidth: 55 },
-                2: { cellWidth: 20 },
-                3: { cellWidth: 65 }
-            }
-        });
+        this.addTeachersSection(doc, data.teachers, data.schedules, data.subjects, yPos);
 
         this.addFooterToAllPages(doc);
         doc.save(`CHRONIX_Teachers_Report_${this.getDateString()}.pdf`);
@@ -375,86 +884,14 @@ class DashboardPDFExporter {
     async generateRoomsPDF(data) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
-        
-        // Cover Page
-        this.addCoverPage(doc, 'Rooms & Facilities Report');
+
+        this.addCoverPage(doc, 'Rooms Report', data);
         doc.addPage();
 
         let yPos = 20;
         this.addSectionHeader(doc, 'Room Inventory', yPos);
         yPos += 15;
-
-        // Statistics
-        const available = data.rooms.filter(r => r.status === 'Available').length;
-        const occupied = data.rooms.filter(r => r.status === 'Occupied').length;
-        const maintenance = data.rooms.filter(r => r.status === 'Maintenance').length;
-
-        const stats = [
-            ['Total Rooms', data.rooms.length.toString()],
-            ['Available', available.toString()],
-            ['Occupied', occupied.toString()],
-            ['Under Maintenance', maintenance.toString()],
-            ['Utilization Rate', ((occupied / data.rooms.length) * 100).toFixed(1) + '%']
-        ];
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Category', 'Count']],
-            body: stats,
-            theme: 'striped',
-            headStyles: { fillColor: this.colors.success },
-            margin: { left: 20, right: 20 }
-        });
-
-        yPos = doc.lastAutoTable.finalY + 15;
-
-        // Room List
-        if (yPos > 250) {
-            doc.addPage();
-            yPos = 20;
-        }
-        this.addSectionHeader(doc, 'Complete Room List', yPos);
-        yPos += 10;
-
-        const roomData = data.rooms.map(room => [
-            room.name || 'N/A',
-            room.building || 'N/A',
-            room.type || 'N/A',
-            room.capacity?.toString() || 'N/A',
-            room.status || 'N/A'
-        ]);
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Room Name', 'Building', 'Type', 'Capacity', 'Status']],
-            body: roomData,
-            theme: 'grid',
-            headStyles: { fillColor: this.colors.success, fontSize: 9 },
-            styles: { fontSize: 8, cellPadding: 3 },
-            margin: { left: 15, right: 15 },
-            columnStyles: {
-                0: { cellWidth: 35 },
-                1: { cellWidth: 40 },
-                2: { cellWidth: 35 },
-                3: { cellWidth: 25 },
-                4: { cellWidth: 30 }
-            },
-            didParseCell: (data) => {
-                if (data.column.index === 4 && data.cell.section === 'body') {
-                    const status = data.cell.raw;
-                    if (status === 'Available') {
-                        data.cell.styles.textColor = this.colors.success;
-                        data.cell.styles.fontStyle = 'bold';
-                    } else if (status === 'Occupied') {
-                        data.cell.styles.textColor = this.colors.warning;
-                        data.cell.styles.fontStyle = 'bold';
-                    } else if (status === 'Maintenance') {
-                        data.cell.styles.textColor = this.colors.danger;
-                        data.cell.styles.fontStyle = 'bold';
-                    }
-                }
-            }
-        });
+        this.addRoomsSection(doc, data.rooms, yPos);
 
         this.addFooterToAllPages(doc);
         doc.save(`CHRONIX_Rooms_Report_${this.getDateString()}.pdf`);
@@ -465,578 +902,51 @@ class DashboardPDFExporter {
      */
     async generateSchedulesPDF(data) {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for schedules
-        
-        // Cover Page
-        this.addCoverPage(doc, 'Schedules Report');
+        const doc = new jsPDF('l', 'mm', 'a4'); // Landscape
+
+        this.addCoverPage(doc, 'Schedules Report', data);
         doc.addPage();
 
         let yPos = 20;
         this.addSectionHeader(doc, 'Schedule Overview', yPos);
         yPos += 15;
-
-        // Statistics
-        const days = {};
-        const shifts = {};
-        data.schedules.forEach(schedule => {
-            days[schedule.day] = (days[schedule.day] || 0) + 1;
-            const section = data.sections?.find(s => s._id === schedule.section);
-            if (section) {
-                shifts[section.shift] = (shifts[section.shift] || 0) + 1;
-            }
-        });
-
-        const stats = [
-            ['Total Schedules', data.schedules.length.toString()],
-            ['Day Shift Classes', (shifts['Day'] || 0).toString()],
-            ['Night Shift Classes', (shifts['Night'] || 0).toString()],
-            ['Busiest Day', Object.keys(days).reduce((a, b) => days[a] > days[b] ? a : b, 'N/A')]
-        ];
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Metric', 'Value']],
-            body: stats,
-            theme: 'striped',
-            headStyles: { fillColor: [139, 92, 246] },
-            margin: { left: 20, right: 20 }
-        });
-
-        yPos = doc.lastAutoTable.finalY + 15;
-
-        // Schedule List
-        if (yPos > 180) {
-            doc.addPage();
-            yPos = 20;
-        }
-        this.addSectionHeader(doc, 'Complete Schedule List', yPos);
-        yPos += 10;
-
-        const scheduleData = data.schedules.map(schedule => {
-            const subject = data.subjects?.find(s => s._id === schedule.subject);
-            const teacher = data.teachers?.find(t => t._id === schedule.teacher);
-            const section = data.sections?.find(s => s._id === schedule.section);
-            const room = data.rooms?.find(r => r._id === schedule.room);
-
-            return [
-                subject?.code || 'N/A',
-                subject?.title || 'N/A',
-                teacher?.fullname || 'N/A',
-                section?.name || 'N/A',
-                room?.name || 'N/A',
-                schedule.day || 'N/A',
-                `${schedule.startTime || 'N/A'} - ${schedule.endTime || 'N/A'}`,
-                schedule.type || 'N/A'
-            ];
-        });
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Code', 'Subject', 'Teacher', 'Section', 'Room', 'Day', 'Time', 'Type']],
-            body: scheduleData,
-            theme: 'grid',
-            headStyles: { fillColor: [139, 92, 246], fontSize: 8 },
-            styles: { fontSize: 7, cellPadding: 2 },
-            margin: { left: 15, right: 15 },
-            columnStyles: {
-                0: { cellWidth: 20 },
-                1: { cellWidth: 50 },
-                2: { cellWidth: 40 },
-                3: { cellWidth: 30 },
-                4: { cellWidth: 25 },
-                5: { cellWidth: 25 },
-                6: { cellWidth: 35 },
-                7: { cellWidth: 20 }
-            }
-        });
+        this.addSchedulesSection(doc, data, yPos);
 
         this.addFooterToAllPages(doc);
         doc.save(`CHRONIX_Schedules_Report_${this.getDateString()}.pdf`);
     }
 
     /**
-     * Add stunning Executive Summary page with modern design
-     */
-    addExecutiveSummaryPage(doc, data) {
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        
-        // Modern gradient background
-        doc.setFillColor(248, 250, 252);
-        doc.rect(0, 0, pageWidth, pageHeight, 'F');
-        
-        // Top accent bar with gradient effect
-        doc.setFillColor(0, 45, 98);
-        doc.rect(0, 0, pageWidth, 35, 'F');
-        
-        // Decorative geometric elements
-        doc.setFillColor(62, 142, 222, 0.2);
-        doc.circle(pageWidth - 30, 20, 25, 'F');
-        doc.setFillColor(242, 210, 131, 0.3);
-        doc.circle(30, 20, 20, 'F');
-        
-        // Page title with icon
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(24);
-        doc.setFont('helvetica', 'bold');
-        doc.text('📊 EXECUTIVE SUMMARY', 20, 22);
-        
-        // Subtitle
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(242, 210, 131);
-        const currentDate = new Date().toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-        doc.text(`Report Generated: ${currentDate}`, 20, 30);
-        
-        // Calculate metrics
-        const totalStudents = data.students.length;
-        const totalTeachers = data.teachers.length;
-        const totalRooms = data.rooms.length;
-        const availableRooms = data.rooms.filter(r => r.status === 'Available').length;
-        const occupiedRooms = data.rooms.filter(r => r.status === 'Occupied').length;
-        const activeSchedules = data.schedules.length;
-        
-        // Key Metrics Cards - Modern Card Design
-        let yPos = 50;
-        const cardWidth = 85;
-        const cardHeight = 45;
-        const cardSpacing = 10;
-        const cardsPerRow = 2;
-        
-        const metrics = [
-            { 
-                icon: '👨‍🎓', 
-                label: 'Total Students', 
-                value: totalStudents, 
-                color: [62, 142, 222],
-                subtext: 'Enrolled'
-            },
-            { 
-                icon: '👨‍🏫', 
-                label: 'Total Teachers', 
-                value: totalTeachers, 
-                color: [255, 104, 53],
-                subtext: 'Faculty Members'
-            },
-            { 
-                icon: '🏫', 
-                label: 'Total Rooms', 
-                value: totalRooms, 
-                color: [75, 181, 67],
-                subtext: `${availableRooms} Available`
-            },
-            { 
-                icon: '📅', 
-                label: 'Active Schedules', 
-                value: activeSchedules, 
-                color: [139, 92, 246],
-                subtext: 'Class Sessions'
-            }
-        ];
-        
-        metrics.forEach((metric, index) => {
-            const row = Math.floor(index / cardsPerRow);
-            const col = index % cardsPerRow;
-            const x = 20 + col * (cardWidth + cardSpacing);
-            const y = yPos + row * (cardHeight + cardSpacing);
-            
-            // Card shadow
-            doc.setFillColor(0, 0, 0, 0.05);
-            doc.roundedRect(x + 1, y + 1, cardWidth, cardHeight, 5, 5, 'F');
-            
-            // Card background
-            doc.setFillColor(255, 255, 255);
-            doc.roundedRect(x, y, cardWidth, cardHeight, 5, 5, 'F');
-            
-            // Card border with accent color
-            doc.setDrawColor(...metric.color);
-            doc.setLineWidth(0.5);
-            doc.roundedRect(x, y, cardWidth, cardHeight, 5, 5, 'S');
-            
-            // Colored accent bar at top
-            doc.setFillColor(...metric.color);
-            doc.roundedRect(x, y, cardWidth, 3, 5, 5, 'F');
-            
-            // Icon circle background
-            doc.setFillColor(...metric.color, 0.1);
-            doc.circle(x + 15, y + 15, 8, 'F');
-            
-            // Icon
-            doc.setFontSize(16);
-            doc.text(metric.icon, x + 15, y + 18, { align: 'center' });
-            
-            // Value
-            doc.setFontSize(22);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...metric.color);
-            doc.text(metric.value.toString(), x + cardWidth - 10, y + 18, { align: 'right' });
-            
-            // Label
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(60, 60, 60);
-            doc.text(metric.label, x + 8, y + 30);
-            
-            // Subtext
-            doc.setFontSize(7);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(120, 120, 120);
-            doc.text(metric.subtext, x + 8, y + 37);
-        });
-        
-        yPos += (Math.ceil(metrics.length / cardsPerRow) * (cardHeight + cardSpacing)) + 15;
-        
-        // Quick Insights Section
-        doc.setFillColor(0, 45, 98, 0.05);
-        doc.roundedRect(20, yPos, pageWidth - 40, 50, 5, 5, 'F');
-        
-        // Section title
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 45, 98);
-        doc.text('📈 Quick Insights', 28, yPos + 10);
-        
-        // Insights content
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(60, 60, 60);
-        
-        const roomUtilization = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : 0;
-        const avgSchedulesPerTeacher = totalTeachers > 0 ? (activeSchedules / totalTeachers).toFixed(1) : 0;
-        const studentTeacherRatio = totalTeachers > 0 ? (totalStudents / totalTeachers).toFixed(1) : 0;
-        
-        const insights = [
-            `• Room Utilization: ${roomUtilization}% (${occupiedRooms} of ${totalRooms} rooms occupied)`,
-            `• Average Teaching Load: ${avgSchedulesPerTeacher} classes per teacher`,
-            `• Student-Teacher Ratio: ${studentTeacherRatio}:1`,
-            `• Available Capacity: ${availableRooms} rooms ready for scheduling`
-        ];
-        
-        insights.forEach((insight, index) => {
-            doc.text(insight, 28, yPos + 22 + (index * 8));
-        });
-        
-        yPos += 65;
-        
-        // Detailed Statistics Table
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 45, 98);
-        doc.text('📋 Detailed Statistics', 20, yPos);
-        
-        yPos += 8;
-        
-        // Year level breakdown
-        const yearLevels = {};
-        data.students.forEach(student => {
-            const section = data.sections.find(s => s._id === student.section);
-            if (section) {
-                const year = section.yearLevel || 'Unknown';
-                yearLevels[year] = (yearLevels[year] || 0) + 1;
-            }
-        });
-        
-        // Room status breakdown
-        const roomStatus = {
-            'Available': availableRooms,
-            'Occupied': occupiedRooms,
-            'Maintenance': data.rooms.filter(r => r.status === 'Maintenance').length
-        };
-        
-        // Create detailed table
-        const tableData = [
-            ['Category', 'Metric', 'Count', 'Percentage'],
-            ['Students', 'Year 1', yearLevels['1'] || 0, `${((yearLevels['1'] || 0) / totalStudents * 100).toFixed(1)}%`],
-            ['Students', 'Year 2', yearLevels['2'] || 0, `${((yearLevels['2'] || 0) / totalStudents * 100).toFixed(1)}%`],
-            ['Students', 'Year 3', yearLevels['3'] || 0, `${((yearLevels['3'] || 0) / totalStudents * 100).toFixed(1)}%`],
-            ['Students', 'Year 4', yearLevels['4'] || 0, `${((yearLevels['4'] || 0) / totalStudents * 100).toFixed(1)}%`],
-            ['Rooms', 'Available', roomStatus.Available, `${(roomStatus.Available / totalRooms * 100).toFixed(1)}%`],
-            ['Rooms', 'Occupied', roomStatus.Occupied, `${(roomStatus.Occupied / totalRooms * 100).toFixed(1)}%`],
-            ['Rooms', 'Maintenance', roomStatus.Maintenance, `${(roomStatus.Maintenance / totalRooms * 100).toFixed(1)}%`]
-        ];
-        
-        doc.autoTable({
-            startY: yPos,
-            head: [tableData[0]],
-            body: tableData.slice(1),
-            theme: 'striped',
-            headStyles: { 
-                fillColor: [0, 45, 98],
-                textColor: 255,
-                fontSize: 9,
-                fontStyle: 'bold',
-                halign: 'center'
-            },
-            bodyStyles: {
-                fontSize: 8,
-                textColor: [60, 60, 60]
-            },
-            alternateRowStyles: {
-                fillColor: [248, 250, 252]
-            },
-            columnStyles: {
-                0: { fontStyle: 'bold', fillColor: [242, 210, 131, 0.2] },
-                2: { halign: 'center', fontStyle: 'bold' },
-                3: { halign: 'center' }
-            },
-            margin: { left: 20, right: 20 }
-        });
-        
-        // Footer note
-        const finalY = doc.lastAutoTable.finalY + 10;
-        doc.setFillColor(62, 142, 222, 0.1);
-        doc.roundedRect(20, finalY, pageWidth - 40, 15, 3, 3, 'F');
-        
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'italic');
-        doc.setTextColor(60, 60, 60);
-        doc.text('💡 This summary provides a comprehensive overview of the current academic status.', 25, finalY + 6);
-        doc.text('For detailed breakdowns, please refer to the following sections.', 25, finalY + 11);
-    }
-    
-    /**
-     * Add cover page with creative CHRONIX branding
-     */
-    addCoverPage(doc, title) {
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-
-        // Modern gradient background with geometric shapes
-        // Deep blue top section
-        doc.setFillColor(0, 45, 98);
-        doc.rect(0, 0, pageWidth, pageHeight, 'F');
-        
-        // Accent geometric shapes for visual interest
-        doc.setFillColor(62, 142, 222, 0.3);
-        doc.circle(pageWidth * 0.15, pageHeight * 0.2, 40, 'F');
-        doc.circle(pageWidth * 0.85, pageHeight * 0.7, 50, 'F');
-        
-        // Diagonal accent stripe
-        doc.setFillColor(242, 210, 131, 0.15);
-        doc.triangle(0, pageHeight * 0.6, pageWidth, pageHeight * 0.4, pageWidth, pageHeight * 0.7, 'F');
-        
-        // Gold accent bar at bottom
-        doc.setFillColor(242, 210, 131);
-        doc.rect(0, pageHeight - 25, pageWidth, 25, 'F');
-        
-        // Decorative top border
-        doc.setFillColor(62, 142, 222);
-        doc.rect(0, 0, pageWidth, 8, 'F');
-        
-        // Add CHRONIX logo (centered at top)
-        try {
-            const logoImg = new Image();
-            logoImg.src = '/img/img/CHRONIX_LOGO.png';
-            // Logo will be added if image loads, otherwise continue with text
-            doc.addImage(logoImg, 'PNG', pageWidth / 2 - 30, 35, 60, 60);
-        } catch (error) {
-            console.log('Logo not loaded, using text fallback');
-            // Fallback: Modern circular logo design
-            doc.setFillColor(255, 255, 255);
-            doc.circle(pageWidth / 2, 60, 25, 'F');
-            doc.setFillColor(0, 45, 98);
-            doc.setFontSize(20);
-            doc.setFont('helvetica', 'bold');
-            doc.text('CX', pageWidth / 2, 65, { align: 'center' });
-        }
-        
-        // Main title with modern typography
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(48);
-        doc.setFont('helvetica', 'bold');
-        doc.text('CHRONIX', pageWidth / 2, 120, { align: 'center' });
-        
-        // Subtitle line
-        doc.setDrawColor(242, 210, 131);
-        doc.setLineWidth(2);
-        doc.line(pageWidth / 2 - 40, 128, pageWidth / 2 + 40, 128);
-        
-        // Report title with elegant styling
-        doc.setFontSize(24);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(242, 210, 131);
-        doc.text(title, pageWidth / 2, 145, { align: 'center' });
-        
-        // Decorative elements
-        doc.setFillColor(62, 142, 222);
-        doc.circle(pageWidth / 2 - 50, 145, 2, 'F');
-        doc.circle(pageWidth / 2 + 50, 145, 2, 'F');
-        
-        // Academic year / semester info box
-        doc.setFillColor(255, 255, 255, 0.1);
-        doc.roundedRect(pageWidth / 2 - 60, 160, 120, 30, 5, 5, 'F');
-        doc.setFontSize(12);
-        doc.setTextColor(255, 255, 255);
-        doc.setFont('helvetica', 'normal');
-        const currentDate = new Date();
-        const academicYear = `A.Y. ${currentDate.getFullYear()}-${currentDate.getFullYear() + 1}`;
-        doc.text(academicYear, pageWidth / 2, 172, { align: 'center' });
-        doc.setFontSize(10);
-        doc.text('Academic Management System', pageWidth / 2, 182, { align: 'center' });
-        
-        // Key metrics preview (mini dashboard)
-        const metricsY = 210;
-        doc.setFontSize(9);
-        doc.setTextColor(242, 210, 131);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DASHBOARD OVERVIEW', pageWidth / 2, metricsY, { align: 'center' });
-        
-        // Metric boxes
-        const boxWidth = 35;
-        const boxHeight = 25;
-        const spacing = 10;
-        const startX = pageWidth / 2 - (boxWidth * 2 + spacing * 1.5);
-        
-        const metrics = [
-            { icon: '👨‍🎓', label: 'Students', value: '---' },
-            { icon: '👨‍🏫', label: 'Teachers', value: '---' },
-            { icon: '🏫', label: 'Rooms', value: '---' },
-            { icon: '📅', label: 'Schedules', value: '---' }
-        ];
-        
-        metrics.forEach((metric, index) => {
-            const x = startX + (boxWidth + spacing) * index;
-            const y = metricsY + 8;
-            
-            // Box background
-            doc.setFillColor(255, 255, 255, 0.1);
-            doc.roundedRect(x, y, boxWidth, boxHeight, 3, 3, 'F');
-            
-            // Icon (using text as fallback)
-            doc.setFontSize(14);
-            doc.setTextColor(242, 210, 131);
-            doc.text(metric.icon, x + boxWidth / 2, y + 10, { align: 'center' });
-            
-            // Label
-            doc.setFontSize(7);
-            doc.setTextColor(255, 255, 255);
-            doc.setFont('helvetica', 'normal');
-            doc.text(metric.label, x + boxWidth / 2, y + 20, { align: 'center' });
-        });
-        
-        // Footer section with generation info
-        doc.setFontSize(10);
-        doc.setTextColor(0, 45, 98);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Cebu Technological University', pageWidth / 2, pageHeight - 15, { align: 'center' });
-        
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        const generatedText = `Generated: ${currentDate.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        })}`;
-        doc.text(generatedText, pageWidth / 2, pageHeight - 9, { align: 'center' });
-        
-        // Decorative corner elements
-        doc.setFillColor(62, 142, 222);
-        doc.triangle(0, 0, 15, 0, 0, 15, 'F');
-        doc.triangle(pageWidth, 0, pageWidth - 15, 0, pageWidth, 15, 'F');
-    }
-
-    /**
-     * Add section header
-     */
-    addSectionHeader(doc, title, yPos) {
-        doc.setFillColor(...this.colors.primary);
-        doc.rect(15, yPos - 5, doc.internal.pageSize.getWidth() - 30, 10, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text(title, 20, yPos + 2);
-        doc.setTextColor(...this.colors.text);
-        doc.setFont('helvetica', 'normal');
-    }
-
-    /**
-     * Add students section
-     */
-    addStudentsSection(doc, students, sections, yPos) {
-        const yearLevels = {};
-        students.forEach(student => {
-            const section = sections.find(s => s._id === student.section);
-            if (section) {
-                yearLevels[section.yearLevel] = (yearLevels[section.yearLevel] || 0) + 1;
-            }
-        });
-
-        const data = Object.entries(yearLevels).map(([year, count]) => [
-            `Year ${year}`,
-            count.toString(),
-            ((count / students.length) * 100).toFixed(1) + '%'
-        ]);
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Year Level', 'Students', 'Percentage']],
-            body: data,
-            theme: 'striped',
-            headStyles: { fillColor: this.colors.accent },
-            margin: { left: 20, right: 20 }
-        });
-    }
-
-    /**
-     * Add teachers section
-     */
-    addTeachersSection(doc, teachers, yPos) {
-        doc.setFontSize(11);
-        doc.text(`Total Faculty Members: ${teachers.length}`, 20, yPos);
-    }
-
-    /**
-     * Add rooms section
-     */
-    addRoomsSection(doc, rooms, yPos) {
-        const statusCount = {};
-        rooms.forEach(room => {
-            statusCount[room.status] = (statusCount[room.status] || 0) + 1;
-        });
-
-        const data = Object.entries(statusCount).map(([status, count]) => [
-            status,
-            count.toString(),
-            ((count / rooms.length) * 100).toFixed(1) + '%'
-        ]);
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Status', 'Count', 'Percentage']],
-            body: data,
-            theme: 'striped',
-            headStyles: { fillColor: this.colors.success },
-            margin: { left: 20, right: 20 }
-        });
-    }
-
-    /**
-     * Add footer to all pages
+     * Footer for all pages
      */
     addFooterToAllPages(doc) {
         const pageCount = doc.internal.getNumberOfPages();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
-            doc.setFontSize(8);
+
+            // Footer line
+            doc.setDrawColor(...this.colors.lightGray);
+            doc.setLineWidth(0.5);
+            doc.line(15, pageHeight - 15, pageWidth - 15, pageHeight - 15);
+
+            // Page number
             doc.setTextColor(...this.colors.textLight);
-            doc.text(
-                `Page ${i} of ${pageCount}`,
-                doc.internal.pageSize.getWidth() / 2,
-                doc.internal.pageSize.getHeight() - 10,
-                { align: 'center' }
-            );
-            doc.text(
-                'CHRONIX - CTU Academic Management System',
-                doc.internal.pageSize.getWidth() - 15,
-                doc.internal.pageSize.getHeight() - 10,
-                { align: 'right' }
-            );
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+
+            // CHRONIX branding
+            doc.setTextColor(...this.colors.primary);
+            doc.setFont('helvetica', 'bold');
+            doc.text('CHRONIX', 15, pageHeight - 8);
+
+            // System name
+            doc.setTextColor(...this.colors.textLight);
+            doc.setFont('helvetica', 'normal');
+            doc.text('CTU Academic Management System', pageWidth - 15, pageHeight - 8, { align: 'right' });
         }
     }
 
@@ -1059,7 +969,7 @@ class DashboardPDFExporter {
             <div class="pdf-loading-content">
                 <div class="pdf-loading-spinner"></div>
                 <p>Generating PDF...</p>
-                <small>This may take a few moments</small>
+                <small>This may take a moment</small>
             </div>
         `;
         document.body.appendChild(overlay);
