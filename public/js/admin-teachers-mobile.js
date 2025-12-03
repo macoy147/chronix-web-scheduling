@@ -87,11 +87,9 @@ function initializeEventListeners() {
         searchTimeout = setTimeout(() => applyFilters(), 300);
     });
 
-    // Filters
-    document.getElementById('mobileDepartmentFilter')?.addEventListener('change', applyFilters);
-
-    // Schedule modal close
+    // Modal close buttons
     document.getElementById('closeScheduleModal')?.addEventListener('click', closeScheduleModal);
+    document.getElementById('closeTeacherDetailsModal')?.addEventListener('click', closeTeacherDetailsModal);
 
     // Schedule view toggle
     document.querySelectorAll('.schedule-view-btn').forEach(btn => {
@@ -105,6 +103,20 @@ function initializeEventListeners() {
     // Keyboard - close modals on Escape
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
+            closeScheduleModal();
+            closeTeacherDetailsModal();
+        }
+    });
+
+    // Close modals when clicking outside
+    document.getElementById('teacherDetailsModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeTeacherDetailsModal();
+        }
+    });
+
+    document.getElementById('scheduleModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
             closeScheduleModal();
         }
     });
@@ -242,13 +254,8 @@ function displayTeachers(teachers) {
 
 function applyFilters() {
     const searchTerm = document.getElementById('mobileTeacherSearch')?.value.toLowerCase() || '';
-    const selectedDepartment = document.getElementById('mobileDepartmentFilter')?.value || '';
 
     let filtered = allTeachers;
-
-    if (selectedDepartment) {
-        filtered = filtered.filter(t => t.department === selectedDepartment);
-    }
 
     if (searchTerm) {
         filtered = filtered.filter(t => 
@@ -263,11 +270,30 @@ function applyFilters() {
 
 // ==================== TEACHER ACTIONS ====================
 
-window.viewTeacher = function(id) {
+window.viewTeacher = async function(id) {
     const teacher = allTeachers.find(t => t._id === id);
-    if (teacher) {
-        alert(`Teacher: ${teacher.fullname}\nEmail: ${teacher.email}\nID: ${teacher.ctuid}\nDepartment: ${teacher.department || 'N/A'}`);
+    if (!teacher) {
+        alert('Teacher not found');
+        return;
     }
+
+    currentTeacherId = id;
+
+    // Load teacher's schedules
+    try {
+        const res = await fetch('/schedules');
+        if (res.ok) {
+            const allSchedules = await res.json();
+            currentTeacherSchedules = allSchedules.filter(s => 
+                (s.teacher._id || s.teacher) === id
+            );
+        }
+    } catch (error) {
+        console.error('Error loading schedules:', error);
+        currentTeacherSchedules = [];
+    }
+
+    openTeacherDetailsModal(teacher);
 };
 
 window.viewSchedule = async function(teacherId) {
@@ -297,6 +323,136 @@ window.viewSchedule = async function(teacherId) {
     } catch (error) {
         console.error('Error loading schedule:', error);
         alert('Error loading schedule');
+    }
+};
+
+// ==================== TEACHER DETAILS MODAL ====================
+
+function openTeacherDetailsModal(teacher) {
+    const modal = document.getElementById('teacherDetailsModal');
+    if (!modal) return;
+
+    // Set teacher basic info
+    document.getElementById('detailsTeacherName').textContent = teacher.fullname;
+    document.getElementById('detailsTeacherId').textContent = teacher.ctuid;
+    document.getElementById('detailsTeacherAvatar').src = teacher.profilePicture || '/img/default_admin_avatar.png';
+
+    // Set personal information
+    document.getElementById('detailsFullName').textContent = teacher.fullname;
+    document.getElementById('detailsEmail').textContent = teacher.email;
+    document.getElementById('detailsPhone').textContent = teacher.phone || 'Not provided';
+    document.getElementById('detailsDepartment').textContent = teacher.department || 'Not assigned';
+
+    // Set teaching information
+    const advisorySection = teacher.advisorySection || teacher.section || 'No advisory section';
+    document.getElementById('detailsAdvisorySection').textContent = advisorySection;
+
+    // Calculate teaching stats
+    const uniqueSubjects = new Set();
+    let totalHours = 0;
+
+    currentTeacherSchedules.forEach(schedule => {
+        if (schedule.subject) {
+            const subjectId = schedule.subject._id || schedule.subject;
+            uniqueSubjects.add(subjectId);
+        }
+        
+        if (schedule.startTime && schedule.endTime) {
+            const duration = calculateDuration(
+                schedule.startTime, 
+                schedule.startPeriod, 
+                schedule.endTime, 
+                schedule.endPeriod
+            );
+            totalHours += duration;
+        }
+    });
+
+    document.getElementById('detailsTotalSubjects').textContent = uniqueSubjects.size;
+    document.getElementById('detailsTeachingHours').textContent = `${Math.round(totalHours)} hrs`;
+
+    // Set status
+    const statusElement = document.getElementById('detailsStatus');
+    const hasSchedules = currentTeacherSchedules.length > 0;
+    statusElement.innerHTML = hasSchedules 
+        ? '<span class="status-badge">Active</span>' 
+        : '<span class="status-badge inactive">Inactive</span>';
+
+    // Display assigned subjects
+    displayTeacherSubjects();
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function displayTeacherSubjects() {
+    const container = document.getElementById('detailsSubjectsList');
+    if (!container) return;
+
+    if (currentTeacherSchedules.length === 0) {
+        container.innerHTML = '<p class="details-empty">No subjects assigned</p>';
+        return;
+    }
+
+    // Group schedules by subject
+    const subjectMap = new Map();
+    currentTeacherSchedules.forEach(schedule => {
+        if (schedule.subject) {
+            const subjectId = schedule.subject._id || schedule.subject;
+            if (!subjectMap.has(subjectId)) {
+                subjectMap.set(subjectId, {
+                    subject: schedule.subject,
+                    sections: new Set(),
+                    schedules: []
+                });
+            }
+            const subjectData = subjectMap.get(subjectId);
+            if (schedule.section) {
+                subjectData.sections.add(schedule.section.sectionName || 'N/A');
+            }
+            subjectData.schedules.push(schedule);
+        }
+    });
+
+    container.innerHTML = '';
+    subjectMap.forEach((data, subjectId) => {
+        const subject = data.subject;
+        const card = document.createElement('div');
+        card.className = 'details-subject-card';
+        
+        const sectionsArray = Array.from(data.sections);
+        const totalHours = data.schedules.reduce((sum, s) => {
+            return sum + calculateDuration(s.startTime, s.startPeriod, s.endTime, s.endPeriod);
+        }, 0);
+
+        card.innerHTML = `
+            <div class="details-subject-code">${subject.courseCode || 'N/A'}</div>
+            <div class="details-subject-title">${subject.courseTitle || ''}</div>
+            <div class="details-subject-meta">
+                <span><i class="bi bi-layers"></i> ${sectionsArray.length} section(s)</span>
+                <span><i class="bi bi-clock"></i> ${Math.round(totalHours)} hrs/week</span>
+                <span><i class="bi bi-calendar-week"></i> ${data.schedules.length} schedule(s)</span>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function closeTeacherDetailsModal() {
+    const modal = document.getElementById('teacherDetailsModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+window.viewScheduleFromDetails = function() {
+    closeTeacherDetailsModal();
+    const teacher = allTeachers.find(t => t._id === currentTeacherId);
+    if (teacher && currentTeacherSchedules.length > 0) {
+        openScheduleModal(teacher);
+    } else {
+        alert('No schedules available for this teacher');
     }
 };
 

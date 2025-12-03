@@ -21,6 +21,24 @@ class DashboardPDFExporter {
             textLight: [85, 85, 85],
             background: [244, 247, 249]
         };
+        
+        // Add triangle helper to jsPDF
+        this.initializeHelpers();
+    }
+    
+    /**
+     * Initialize custom PDF helpers
+     */
+    initializeHelpers() {
+        if (typeof window.jspdf !== 'undefined') {
+            const { jsPDF } = window.jspdf;
+            
+            // Add triangle drawing method
+            jsPDF.API.triangle = function(x1, y1, x2, y2, x3, y3, style) {
+                this.lines([[x2 - x1, y2 - y1], [x3 - x2, y3 - y2], [x1 - x3, y1 - y3]], x1, y1, [1, 1], style || 'F');
+                return this;
+            };
+        }
     }
 
     /**
@@ -156,31 +174,10 @@ class DashboardPDFExporter {
         // Cover Page
         this.addCoverPage(doc, 'Complete Dashboard Report');
         doc.addPage();
+        
+        // Executive Summary - REDESIGNED FIRST PAGE
+        this.addExecutiveSummaryPage(doc, data);
         yPos = 20;
-
-        // Executive Summary
-        this.addSectionHeader(doc, 'Executive Summary', yPos);
-        yPos += 15;
-
-        const summary = [
-            ['Total Students', data.students.length.toString()],
-            ['Total Teachers', data.teachers.length.toString()],
-            ['Total Rooms', data.rooms.length.toString()],
-            ['Active Schedules', data.schedules.length.toString()],
-            ['Available Rooms', data.rooms.filter(r => r.status === 'Available').length.toString()]
-        ];
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Metric', 'Value']],
-            body: summary,
-            theme: 'grid',
-            headStyles: { fillColor: this.colors.primary, textColor: 255 },
-            styles: { fontSize: 11 },
-            margin: { left: 20, right: 20 }
-        });
-
-        yPos = doc.lastAutoTable.finalY + 15;
 
         // Students Overview
         if (yPos > 250) {
@@ -558,40 +555,390 @@ class DashboardPDFExporter {
     }
 
     /**
-     * Add cover page
+     * Add stunning Executive Summary page with modern design
+     */
+    addExecutiveSummaryPage(doc, data) {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        
+        // Modern gradient background
+        doc.setFillColor(248, 250, 252);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+        
+        // Top accent bar with gradient effect
+        doc.setFillColor(0, 45, 98);
+        doc.rect(0, 0, pageWidth, 35, 'F');
+        
+        // Decorative geometric elements
+        doc.setFillColor(62, 142, 222, 0.2);
+        doc.circle(pageWidth - 30, 20, 25, 'F');
+        doc.setFillColor(242, 210, 131, 0.3);
+        doc.circle(30, 20, 20, 'F');
+        
+        // Page title with icon
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text('📊 EXECUTIVE SUMMARY', 20, 22);
+        
+        // Subtitle
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(242, 210, 131);
+        const currentDate = new Date().toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        doc.text(`Report Generated: ${currentDate}`, 20, 30);
+        
+        // Calculate metrics
+        const totalStudents = data.students.length;
+        const totalTeachers = data.teachers.length;
+        const totalRooms = data.rooms.length;
+        const availableRooms = data.rooms.filter(r => r.status === 'Available').length;
+        const occupiedRooms = data.rooms.filter(r => r.status === 'Occupied').length;
+        const activeSchedules = data.schedules.length;
+        
+        // Key Metrics Cards - Modern Card Design
+        let yPos = 50;
+        const cardWidth = 85;
+        const cardHeight = 45;
+        const cardSpacing = 10;
+        const cardsPerRow = 2;
+        
+        const metrics = [
+            { 
+                icon: '👨‍🎓', 
+                label: 'Total Students', 
+                value: totalStudents, 
+                color: [62, 142, 222],
+                subtext: 'Enrolled'
+            },
+            { 
+                icon: '👨‍🏫', 
+                label: 'Total Teachers', 
+                value: totalTeachers, 
+                color: [255, 104, 53],
+                subtext: 'Faculty Members'
+            },
+            { 
+                icon: '🏫', 
+                label: 'Total Rooms', 
+                value: totalRooms, 
+                color: [75, 181, 67],
+                subtext: `${availableRooms} Available`
+            },
+            { 
+                icon: '📅', 
+                label: 'Active Schedules', 
+                value: activeSchedules, 
+                color: [139, 92, 246],
+                subtext: 'Class Sessions'
+            }
+        ];
+        
+        metrics.forEach((metric, index) => {
+            const row = Math.floor(index / cardsPerRow);
+            const col = index % cardsPerRow;
+            const x = 20 + col * (cardWidth + cardSpacing);
+            const y = yPos + row * (cardHeight + cardSpacing);
+            
+            // Card shadow
+            doc.setFillColor(0, 0, 0, 0.05);
+            doc.roundedRect(x + 1, y + 1, cardWidth, cardHeight, 5, 5, 'F');
+            
+            // Card background
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(x, y, cardWidth, cardHeight, 5, 5, 'F');
+            
+            // Card border with accent color
+            doc.setDrawColor(...metric.color);
+            doc.setLineWidth(0.5);
+            doc.roundedRect(x, y, cardWidth, cardHeight, 5, 5, 'S');
+            
+            // Colored accent bar at top
+            doc.setFillColor(...metric.color);
+            doc.roundedRect(x, y, cardWidth, 3, 5, 5, 'F');
+            
+            // Icon circle background
+            doc.setFillColor(...metric.color, 0.1);
+            doc.circle(x + 15, y + 15, 8, 'F');
+            
+            // Icon
+            doc.setFontSize(16);
+            doc.text(metric.icon, x + 15, y + 18, { align: 'center' });
+            
+            // Value
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...metric.color);
+            doc.text(metric.value.toString(), x + cardWidth - 10, y + 18, { align: 'right' });
+            
+            // Label
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(60, 60, 60);
+            doc.text(metric.label, x + 8, y + 30);
+            
+            // Subtext
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(120, 120, 120);
+            doc.text(metric.subtext, x + 8, y + 37);
+        });
+        
+        yPos += (Math.ceil(metrics.length / cardsPerRow) * (cardHeight + cardSpacing)) + 15;
+        
+        // Quick Insights Section
+        doc.setFillColor(0, 45, 98, 0.05);
+        doc.roundedRect(20, yPos, pageWidth - 40, 50, 5, 5, 'F');
+        
+        // Section title
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 45, 98);
+        doc.text('📈 Quick Insights', 28, yPos + 10);
+        
+        // Insights content
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60, 60, 60);
+        
+        const roomUtilization = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : 0;
+        const avgSchedulesPerTeacher = totalTeachers > 0 ? (activeSchedules / totalTeachers).toFixed(1) : 0;
+        const studentTeacherRatio = totalTeachers > 0 ? (totalStudents / totalTeachers).toFixed(1) : 0;
+        
+        const insights = [
+            `• Room Utilization: ${roomUtilization}% (${occupiedRooms} of ${totalRooms} rooms occupied)`,
+            `• Average Teaching Load: ${avgSchedulesPerTeacher} classes per teacher`,
+            `• Student-Teacher Ratio: ${studentTeacherRatio}:1`,
+            `• Available Capacity: ${availableRooms} rooms ready for scheduling`
+        ];
+        
+        insights.forEach((insight, index) => {
+            doc.text(insight, 28, yPos + 22 + (index * 8));
+        });
+        
+        yPos += 65;
+        
+        // Detailed Statistics Table
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 45, 98);
+        doc.text('📋 Detailed Statistics', 20, yPos);
+        
+        yPos += 8;
+        
+        // Year level breakdown
+        const yearLevels = {};
+        data.students.forEach(student => {
+            const section = data.sections.find(s => s._id === student.section);
+            if (section) {
+                const year = section.yearLevel || 'Unknown';
+                yearLevels[year] = (yearLevels[year] || 0) + 1;
+            }
+        });
+        
+        // Room status breakdown
+        const roomStatus = {
+            'Available': availableRooms,
+            'Occupied': occupiedRooms,
+            'Maintenance': data.rooms.filter(r => r.status === 'Maintenance').length
+        };
+        
+        // Create detailed table
+        const tableData = [
+            ['Category', 'Metric', 'Count', 'Percentage'],
+            ['Students', 'Year 1', yearLevels['1'] || 0, `${((yearLevels['1'] || 0) / totalStudents * 100).toFixed(1)}%`],
+            ['Students', 'Year 2', yearLevels['2'] || 0, `${((yearLevels['2'] || 0) / totalStudents * 100).toFixed(1)}%`],
+            ['Students', 'Year 3', yearLevels['3'] || 0, `${((yearLevels['3'] || 0) / totalStudents * 100).toFixed(1)}%`],
+            ['Students', 'Year 4', yearLevels['4'] || 0, `${((yearLevels['4'] || 0) / totalStudents * 100).toFixed(1)}%`],
+            ['Rooms', 'Available', roomStatus.Available, `${(roomStatus.Available / totalRooms * 100).toFixed(1)}%`],
+            ['Rooms', 'Occupied', roomStatus.Occupied, `${(roomStatus.Occupied / totalRooms * 100).toFixed(1)}%`],
+            ['Rooms', 'Maintenance', roomStatus.Maintenance, `${(roomStatus.Maintenance / totalRooms * 100).toFixed(1)}%`]
+        ];
+        
+        doc.autoTable({
+            startY: yPos,
+            head: [tableData[0]],
+            body: tableData.slice(1),
+            theme: 'striped',
+            headStyles: { 
+                fillColor: [0, 45, 98],
+                textColor: 255,
+                fontSize: 9,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            bodyStyles: {
+                fontSize: 8,
+                textColor: [60, 60, 60]
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            columnStyles: {
+                0: { fontStyle: 'bold', fillColor: [242, 210, 131, 0.2] },
+                2: { halign: 'center', fontStyle: 'bold' },
+                3: { halign: 'center' }
+            },
+            margin: { left: 20, right: 20 }
+        });
+        
+        // Footer note
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFillColor(62, 142, 222, 0.1);
+        doc.roundedRect(20, finalY, pageWidth - 40, 15, 3, 3, 'F');
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(60, 60, 60);
+        doc.text('💡 This summary provides a comprehensive overview of the current academic status.', 25, finalY + 6);
+        doc.text('For detailed breakdowns, please refer to the following sections.', 25, finalY + 11);
+    }
+    
+    /**
+     * Add cover page with creative CHRONIX branding
      */
     addCoverPage(doc, title) {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
 
-        // Background gradient effect
-        doc.setFillColor(...this.colors.primary);
-        doc.rect(0, 0, pageWidth, pageHeight / 2, 'F');
+        // Modern gradient background with geometric shapes
+        // Deep blue top section
+        doc.setFillColor(0, 45, 98);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
         
-        doc.setFillColor(...this.colors.secondary);
-        doc.rect(0, pageHeight / 2, pageWidth, pageHeight / 2, 'F');
-
-        // Logo placeholder (you can add actual logo here)
-        doc.setFillColor(255, 255, 255);
-        doc.circle(pageWidth / 2, 60, 20, 'F');
+        // Accent geometric shapes for visual interest
+        doc.setFillColor(62, 142, 222, 0.3);
+        doc.circle(pageWidth * 0.15, pageHeight * 0.2, 40, 'F');
+        doc.circle(pageWidth * 0.85, pageHeight * 0.7, 50, 'F');
         
-        // Title
+        // Diagonal accent stripe
+        doc.setFillColor(242, 210, 131, 0.15);
+        doc.triangle(0, pageHeight * 0.6, pageWidth, pageHeight * 0.4, pageWidth, pageHeight * 0.7, 'F');
+        
+        // Gold accent bar at bottom
+        doc.setFillColor(242, 210, 131);
+        doc.rect(0, pageHeight - 25, pageWidth, 25, 'F');
+        
+        // Decorative top border
+        doc.setFillColor(62, 142, 222);
+        doc.rect(0, 0, pageWidth, 8, 'F');
+        
+        // Add CHRONIX logo (centered at top)
+        try {
+            const logoImg = new Image();
+            logoImg.src = '/img/img/CHRONIX_LOGO.png';
+            // Logo will be added if image loads, otherwise continue with text
+            doc.addImage(logoImg, 'PNG', pageWidth / 2 - 30, 35, 60, 60);
+        } catch (error) {
+            console.log('Logo not loaded, using text fallback');
+            // Fallback: Modern circular logo design
+            doc.setFillColor(255, 255, 255);
+            doc.circle(pageWidth / 2, 60, 25, 'F');
+            doc.setFillColor(0, 45, 98);
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('CX', pageWidth / 2, 65, { align: 'center' });
+        }
+        
+        // Main title with modern typography
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(32);
+        doc.setFontSize(48);
         doc.setFont('helvetica', 'bold');
-        doc.text('CHRONIX', pageWidth / 2, 100, { align: 'center' });
+        doc.text('CHRONIX', pageWidth / 2, 120, { align: 'center' });
         
-        doc.setFontSize(20);
+        // Subtitle line
+        doc.setDrawColor(242, 210, 131);
+        doc.setLineWidth(2);
+        doc.line(pageWidth / 2 - 40, 128, pageWidth / 2 + 40, 128);
+        
+        // Report title with elegant styling
+        doc.setFontSize(24);
         doc.setFont('helvetica', 'normal');
-        doc.text(title, pageWidth / 2, 115, { align: 'center' });
-
-        // Date and info
-        doc.setTextColor(...this.colors.primary);
+        doc.setTextColor(242, 210, 131);
+        doc.text(title, pageWidth / 2, 145, { align: 'center' });
+        
+        // Decorative elements
+        doc.setFillColor(62, 142, 222);
+        doc.circle(pageWidth / 2 - 50, 145, 2, 'F');
+        doc.circle(pageWidth / 2 + 50, 145, 2, 'F');
+        
+        // Academic year / semester info box
+        doc.setFillColor(255, 255, 255, 0.1);
+        doc.roundedRect(pageWidth / 2 - 60, 160, 120, 30, 5, 5, 'F');
         doc.setFontSize(12);
-        doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, pageHeight - 40, { align: 'center' });
-        doc.text('Cebu Technological University', pageWidth / 2, pageHeight - 30, { align: 'center' });
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'normal');
+        const currentDate = new Date();
+        const academicYear = `A.Y. ${currentDate.getFullYear()}-${currentDate.getFullYear() + 1}`;
+        doc.text(academicYear, pageWidth / 2, 172, { align: 'center' });
         doc.setFontSize(10);
-        doc.text('Academic Management System', pageWidth / 2, pageHeight - 22, { align: 'center' });
+        doc.text('Academic Management System', pageWidth / 2, 182, { align: 'center' });
+        
+        // Key metrics preview (mini dashboard)
+        const metricsY = 210;
+        doc.setFontSize(9);
+        doc.setTextColor(242, 210, 131);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DASHBOARD OVERVIEW', pageWidth / 2, metricsY, { align: 'center' });
+        
+        // Metric boxes
+        const boxWidth = 35;
+        const boxHeight = 25;
+        const spacing = 10;
+        const startX = pageWidth / 2 - (boxWidth * 2 + spacing * 1.5);
+        
+        const metrics = [
+            { icon: '👨‍🎓', label: 'Students', value: '---' },
+            { icon: '👨‍🏫', label: 'Teachers', value: '---' },
+            { icon: '🏫', label: 'Rooms', value: '---' },
+            { icon: '📅', label: 'Schedules', value: '---' }
+        ];
+        
+        metrics.forEach((metric, index) => {
+            const x = startX + (boxWidth + spacing) * index;
+            const y = metricsY + 8;
+            
+            // Box background
+            doc.setFillColor(255, 255, 255, 0.1);
+            doc.roundedRect(x, y, boxWidth, boxHeight, 3, 3, 'F');
+            
+            // Icon (using text as fallback)
+            doc.setFontSize(14);
+            doc.setTextColor(242, 210, 131);
+            doc.text(metric.icon, x + boxWidth / 2, y + 10, { align: 'center' });
+            
+            // Label
+            doc.setFontSize(7);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'normal');
+            doc.text(metric.label, x + boxWidth / 2, y + 20, { align: 'center' });
+        });
+        
+        // Footer section with generation info
+        doc.setFontSize(10);
+        doc.setTextColor(0, 45, 98);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Cebu Technological University', pageWidth / 2, pageHeight - 15, { align: 'center' });
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        const generatedText = `Generated: ${currentDate.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })}`;
+        doc.text(generatedText, pageWidth / 2, pageHeight - 9, { align: 'center' });
+        
+        // Decorative corner elements
+        doc.setFillColor(62, 142, 222);
+        doc.triangle(0, 0, 15, 0, 0, 15, 'F');
+        doc.triangle(pageWidth, 0, pageWidth - 15, 0, pageWidth, 15, 'F');
     }
 
     /**

@@ -698,5 +698,40 @@
             });
         });
     </script>
+
+    <!-- Desktop detection and redirection -->
+    <script>
+        function shouldRedirectToDesktop() {
+            return window.innerWidth > 768 && window.location.pathname.includes('-mobile');
+        }
+
+        let lastRedirectTime = 0;
+        const REDIRECT_COOLDOWN = 1000;
+
+        // Initial redirect check
+        if (shouldRedirectToDesktop()) {
+            lastRedirectTime = Date.now();
+            console.log('Redirecting to desktop version...');
+            window.location.href = '/auth.html';
+        }
+
+        // Handle resize events
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                const now = Date.now();
+                if (now - lastRedirectTime < REDIRECT_COOLDOWN) {
+                    return;
+                }
+                
+                if (shouldRedirectToDesktop()) {
+                    lastRedirectTime = Date.now();
+                    console.log('Screen resized - redirecting to desktop version...');
+                    window.location.href = '/auth.html';
+                }
+            }, 250);
+        });
+    </script>
 </body>
 </html>

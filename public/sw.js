@@ -1,5 +1,5 @@
 // public/sw.js - Service Worker with Network-First Strategy for Development
-const CACHE_NAME = 'chronix-dashboard-v1.0.3'; // Increment version to force update
+const CACHE_NAME = 'chronix-dashboard-v1.0.4'; // Increment version to force update
 const urlsToCache = [
     '/',
     '/css/admin-dashboard.css',

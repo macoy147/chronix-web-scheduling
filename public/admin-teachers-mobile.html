@@ -960,9 +960,211 @@
             opacity: 0.5;
         }
         
+        /* Teacher Details Modal Styles */
+        .teacher-details-content {
+            padding: 0;
+        }
+        
+        .teacher-details-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--ctu-deep-blue) 0%, var(--ctu-light-blue) 100%);
+            color: white;
+        }
+        
+        .details-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--ctu-soft-gold);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .details-header-info {
+            flex: 1;
+        }
+        
+        .details-header-info h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0 0 4px 0;
+            color: white;
+        }
+        
+        .details-id {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin: 0;
+            color: var(--ctu-soft-gold);
+            font-weight: 600;
+        }
+        
+        .teacher-details-section {
+            padding: 20px;
+            border-bottom: 1px solid #e5e8eb;
+        }
+        
+        .teacher-details-section:last-of-type {
+            border-bottom: none;
+        }
+        
+        .details-section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .details-section-title i {
+            font-size: 1.1rem;
+            color: var(--ctu-light-blue);
+        }
+        
+        .details-info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+        
+        .details-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .details-label {
+            font-size: 0.75rem;
+            color: var(--ctu-text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .details-value {
+            font-size: 0.95rem;
+            color: var(--ctu-text-primary);
+            font-weight: 500;
+            word-break: break-word;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .status-badge.inactive {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .details-subjects-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .details-subject-card {
+            background: var(--ctu-lightest-gray);
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 3px solid var(--ctu-light-blue);
+        }
+        
+        .details-subject-code {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            margin-bottom: 4px;
+        }
+        
+        .details-subject-title {
+            font-size: 0.85rem;
+            color: var(--ctu-text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .details-subject-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.75rem;
+            color: var(--ctu-text-secondary);
+        }
+        
+        .details-subject-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .details-empty {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--ctu-text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .teacher-details-actions {
+            display: flex;
+            gap: 10px;
+            padding: 20px;
+            background: var(--ctu-lightest-gray);
+        }
+        
+        .details-action-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .details-action-btn.primary {
+            background: var(--ctu-light-blue);
+            color: white;
+        }
+        
+        .details-action-btn.primary:active {
+            background: var(--ctu-deep-blue);
+            transform: scale(0.98);
+        }
+        
+        .details-action-btn.secondary {
+            background: white;
+            color: var(--ctu-text-primary);
+            border: 2px solid #e5e8eb;
+        }
+        
+        .details-action-btn.secondary:active {
+            background: #f5f5f5;
+            transform: scale(0.98);
+        }
+        
         @media (max-width: 360px) {
             .weekly-schedule-grid {
                 grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .teacher-details-actions {
+                flex-direction: column;
             }
         }
         
@@ -1088,17 +1290,6 @@
             <i class="bi bi-search"></i>
             <input type="text" id="mobileTeacherSearch" placeholder="Search teachers...">
         </div>
-        
-        <!-- Filter Controls -->
-        <div class="mobile-filter-controls">
-            <select id="mobileDepartmentFilter" class="mobile-filter-dropdown">
-                <option value="">All Departments</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Information Technology">Information Technology</option>
-                <option value="Engineering">Engineering</option>
-                <option value="Education">Education</option>
-            </select>
-        </div>
 
         <!-- Teachers List -->
         <div class="mobile-teachers-list" id="mobileTeachersList">
@@ -1144,6 +1335,96 @@
     </nav>
 
     <script type="module" src="/js/admin-teachers-mobile.js"></script>
+
+    <!-- Teacher Details Modal -->
+    <div id="teacherDetailsModal" class="mobile-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="teacherDetailsTitle" aria-hidden="true">
+        <div class="mobile-modal-content">
+            <div class="mobile-modal-header">
+                <h2 id="teacherDetailsTitle">Teacher Details</h2>
+                <button class="mobile-modal-close" id="closeTeacherDetailsModal" aria-label="Close modal">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+            
+            <div class="teacher-details-content">
+                <div class="teacher-details-header">
+                    <img id="detailsTeacherAvatar" src="/img/default_admin_avatar.png" alt="Teacher avatar" class="details-avatar">
+                    <div class="details-header-info">
+                        <h3 id="detailsTeacherName">Teacher Name</h3>
+                        <p id="detailsTeacherId" class="details-id">CTU-ID</p>
+                    </div>
+                </div>
+
+                <div class="teacher-details-section">
+                    <h4 class="details-section-title">
+                        <i class="bi bi-person-circle"></i> Personal Information
+                    </h4>
+                    <div class="details-info-grid">
+                        <div class="details-info-item">
+                            <span class="details-label">Full Name</span>
+                            <span class="details-value" id="detailsFullName">-</span>
+                        </div>
+                        <div class="details-info-item">
+                            <span class="details-label">Email</span>
+                            <span class="details-value" id="detailsEmail">-</span>
+                        </div>
+                        <div class="details-info-item">
+                            <span class="details-label">Phone</span>
+                            <span class="details-value" id="detailsPhone">-</span>
+                        </div>
+                        <div class="details-info-item">
+                            <span class="details-label">Department</span>
+                            <span class="details-value" id="detailsDepartment">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teacher-details-section">
+                    <h4 class="details-section-title">
+                        <i class="bi bi-briefcase"></i> Teaching Information
+                    </h4>
+                    <div class="details-info-grid">
+                        <div class="details-info-item">
+                            <span class="details-label">Advisory Section</span>
+                            <span class="details-value" id="detailsAdvisorySection">-</span>
+                        </div>
+                        <div class="details-info-item">
+                            <span class="details-label">Total Subjects</span>
+                            <span class="details-value" id="detailsTotalSubjects">0</span>
+                        </div>
+                        <div class="details-info-item">
+                            <span class="details-label">Teaching Hours</span>
+                            <span class="details-value" id="detailsTeachingHours">0 hrs</span>
+                        </div>
+                        <div class="details-info-item">
+                            <span class="details-label">Status</span>
+                            <span class="details-value" id="detailsStatus">
+                                <span class="status-badge">Active</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teacher-details-section">
+                    <h4 class="details-section-title">
+                        <i class="bi bi-calendar-check"></i> Assigned Subjects
+                    </h4>
+                    <div id="detailsSubjectsList" class="details-subjects-list">
+                        <p class="details-empty">No subjects assigned</p>
+                    </div>
+                </div>
+
+                <div class="teacher-details-actions">
+                    <button class="details-action-btn primary" onclick="viewScheduleFromDetails()">
+                        <i class="bi bi-calendar-event"></i> View Schedule
+                    </button>
+                    <button class="details-action-btn secondary" onclick="closeTeacherDetailsModal()">
+                        <i class="bi bi-x-circle"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Schedule Modal -->
     <div id="scheduleModal" class="mobile-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="scheduleTitle" aria-hidden="true">
