@@ -1,5 +1,5 @@
 // public/sw.js - Service Worker with Network-First Strategy for Development
-const CACHE_NAME = 'chronix-dashboard-v1.0.5'; // Increment version to force update
+const CACHE_NAME = 'chronix-dashboard-v1.0.7'; // Increment version to force update - 12hr time format
 const urlsToCache = [
     '/',
     '/css/admin-dashboard.css',
@@ -51,6 +51,7 @@ self.addEventListener('fetch', function(event) {
     }
     
     // Network-first strategy for HTML, CSS, and JS files (always get fresh content)
+    // DO NOT CACHE during development to see changes immediately
     if (url.pathname.endsWith('.html') || 
         url.pathname.endsWith('.css') || 
         url.pathname.endsWith('.js') ||
@@ -58,19 +59,13 @@ self.addEventListener('fetch', function(event) {
         url.pathname.includes('/css/')) {
         
         event.respondWith(
-            fetch(event.request)
-                .then(function(response) {
-                    // Clone the response before caching
-                    const responseToCache = response.clone();
-                    caches.open(CACHE_NAME).then(function(cache) {
-                        cache.put(event.request, responseToCache);
-                    });
-                    return response;
-                })
-                .catch(function() {
-                    // If network fails, try cache
-                    return caches.match(event.request);
-                })
+            fetch(event.request, {
+                cache: 'no-store'
+            })
+            .catch(function() {
+                // If network fails, try cache as fallback
+                return caches.match(event.request);
+            })
         );
     } else {
         // Cache-first strategy for images and other static assets

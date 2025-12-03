@@ -382,8 +382,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <strong>${i + 1}. ${c.type.toUpperCase()} CONFLICT</strong>
                 <p style="margin: 4px 0;">${c.message}</p>
                 <small style="color: #666;">
-                    ${c.schedule1.startTime} - ${c.schedule1.endTime} vs 
-                    ${c.schedule2.startTime} - ${c.schedule2.endTime}
+                    ${formatScheduleTimeRange(c.schedule1)} vs 
+                    ${formatScheduleTimeRange(c.schedule2)}
                 </small>
             </div>
         `).join('');
@@ -1184,6 +1184,36 @@ document.addEventListener('DOMContentLoaded', function() {
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
         return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    }
+    
+    // Format time to 12-hour format with AM/PM
+    function formatTo12Hour(time, period) {
+        if (!time) return 'N/A';
+        const [hours, minutes] = time.split(':').map(Number);
+        
+        // If period is provided, use it directly
+        if (period) {
+            return `${hours}:${String(minutes).padStart(2, '0')} ${period}`;
+        }
+        
+        // Convert 24-hour to 12-hour format
+        let period12 = 'AM';
+        let hours12 = hours;
+        
+        if (hours >= 12) {
+            period12 = 'PM';
+            if (hours > 12) hours12 = hours - 12;
+        }
+        if (hours === 0) hours12 = 12;
+        
+        return `${hours12}:${String(minutes).padStart(2, '0')} ${period12}`;
+    }
+    
+    // Format schedule time range in 12-hour format
+    function formatScheduleTimeRange(schedule) {
+        const startFormatted = formatTo12Hour(schedule.startTime, schedule.startPeriod);
+        const endFormatted = formatTo12Hour(schedule.endTime, schedule.endPeriod);
+        return `${startFormatted} - ${endFormatted}`;
     }
     
     // Convert schedule time to 24-hour format for comparison

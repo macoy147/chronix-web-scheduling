@@ -10,18 +10,18 @@ class ScheduleExporter {
             autoTable: false
         };
         
-        // Time slots configuration (matching your sample)
+        // Time slots configuration (matching your sample) - Using 24hr internally, display in 12hr
         this.timeSlots = [
-            { start: '7:00', end: '8:00', rowSpan: 1 },
-            { start: '8:00', end: '9:00', rowSpan: 1 },
-            { start: '9:00', end: '10:00', rowSpan: 1 },
-            { start: '10:00', end: '11:00', rowSpan: 1 },
-            { start: '11:00', end: '12:00', rowSpan: 1 },
-            { start: '12:00', end: '13:00', rowSpan: 1, label: 'LUNCH' },
-            { start: '13:00', end: '14:00', rowSpan: 1 },
-            { start: '14:00', end: '15:00', rowSpan: 1 },
-            { start: '15:00', end: '16:00', rowSpan: 1 },
-            { start: '16:00', end: '17:00', rowSpan: 1 }
+            { start: '7:00', end: '8:00', rowSpan: 1, display: '7:00 AM - 8:00 AM' },
+            { start: '8:00', end: '9:00', rowSpan: 1, display: '8:00 AM - 9:00 AM' },
+            { start: '9:00', end: '10:00', rowSpan: 1, display: '9:00 AM - 10:00 AM' },
+            { start: '10:00', end: '11:00', rowSpan: 1, display: '10:00 AM - 11:00 AM' },
+            { start: '11:00', end: '12:00', rowSpan: 1, display: '11:00 AM - 12:00 PM' },
+            { start: '12:00', end: '13:00', rowSpan: 1, label: 'LUNCH', display: '12:00 PM - 1:00 PM' },
+            { start: '13:00', end: '14:00', rowSpan: 1, display: '1:00 PM - 2:00 PM' },
+            { start: '14:00', end: '15:00', rowSpan: 1, display: '2:00 PM - 3:00 PM' },
+            { start: '15:00', end: '16:00', rowSpan: 1, display: '3:00 PM - 4:00 PM' },
+            { start: '16:00', end: '17:00', rowSpan: 1, display: '4:00 PM - 5:00 PM' }
         ];
         
         this.days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
@@ -180,7 +180,7 @@ class ScheduleExporter {
         
         this.timeSlots.forEach((timeSlot, timeIndex) => {
             const row = {
-                time: timeSlot.label || `${timeSlot.start} - ${timeSlot.end}`,
+                time: timeSlot.label || timeSlot.display || `${timeSlot.start} - ${timeSlot.end}`,
                 days: {}
             };
             
@@ -288,24 +288,21 @@ class ScheduleExporter {
 
     /**
      * Format time in 12-hour format with AM/PM
+     * Converts 24-hour format (13:00) to 12-hour format (1:00 PM)
      */
     formatTime12Hour(startTime, startPeriod, endTime, endPeriod) {
-        // If the times already have AM/PM indicators, use them directly
-        if (startPeriod && endPeriod) {
-            return `${startTime} ${startPeriod} - ${endTime} ${endPeriod}`;
-        }
-        
-        // Otherwise, convert from 24-hour format if needed
         const formatTimePart = (time, period) => {
             if (!time) return 'TBA';
             
-            // If time already has AM/PM, return as is
-            if (period) {
-                return `${time} ${period}`;
+            // Parse the time string
+            const [hours, minutes] = time.split(':').map(Number);
+            
+            // If period is provided and hours are already in 12-hour format (1-12), use it directly
+            if (period && hours >= 1 && hours <= 12) {
+                return `${hours}:${String(minutes).padStart(2, '0')} ${period}`;
             }
             
             // Convert 24-hour format to 12-hour format
-            const [hours, minutes] = time.split(':').map(Number);
             let period12 = 'AM';
             let hours12 = hours;
             
