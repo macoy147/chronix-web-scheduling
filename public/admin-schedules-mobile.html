@@ -343,17 +343,194 @@
             margin-bottom: 16px;
         }
         
-        /* Mobile Filters */
+        /* Mobile Filters - Redesigned 2-Column Layout */
         .mobile-filters {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
             margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
         }
         
-        .mobile-filter-row {
+        .mobile-filters-header {
             display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--ctu-light-blue);
+        }
+        
+        .mobile-filters-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+            display: flex;
+            align-items: center;
             gap: 8px;
+        }
+        
+        .mobile-filters-title i {
+            color: var(--ctu-light-blue);
+        }
+        
+        .mobile-filters-count {
+            font-size: 0.75rem;
+            background: var(--ctu-light-blue);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        /* Year Level Tabs */
+        .mobile-year-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        
+        .mobile-year-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .mobile-year-tab {
+            flex-shrink: 0;
+            padding: 8px 16px;
+            border: 2px solid #e5e8eb;
+            background: #fff;
+            color: var(--ctu-text-secondary);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .mobile-year-tab.active {
+            background: var(--ctu-deep-blue);
+            border-color: var(--ctu-deep-blue);
+            color: white;
+        }
+        
+        .mobile-year-tab:active {
+            transform: scale(0.95);
+        }
+        
+        /* 2-Column Section Grid */
+        .mobile-sections-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        
+        .mobile-sections-grid::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .mobile-sections-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+        
+        .mobile-sections-grid::-webkit-scrollbar-thumb {
+            background: var(--ctu-light-blue);
+            border-radius: 2px;
+        }
+        
+        .mobile-section-chip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #f8f9fb;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .mobile-section-chip:hover {
+            background: #f0f4f8;
+        }
+        
+        .mobile-section-chip.selected {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: var(--ctu-light-blue);
+        }
+        
+        .mobile-section-chip:active {
+            transform: scale(0.98);
+        }
+        
+        .mobile-section-chip-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .mobile-section-chip-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--ctu-deep-blue);
+        }
+        
+        .mobile-section-chip-shift {
+            font-size: 0.7rem;
+            color: var(--ctu-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .mobile-section-chip-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            background: #e5e8eb;
+            color: var(--ctu-text-secondary);
+        }
+        
+        .mobile-section-chip.selected .mobile-section-chip-icon {
+            background: var(--ctu-light-blue);
+            color: white;
+        }
+        
+        .mobile-section-chip.day-shift {
+            border-left: 3px solid #f9a825;
+        }
+        
+        .mobile-section-chip.night-shift {
+            border-left: 3px solid #5c6bc0;
+        }
+        
+        /* Empty state */
+        .mobile-sections-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 0.85rem;
+        }
+        
+        .mobile-sections-empty i {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        /* Legacy dropdown (hidden but kept for compatibility) */
+        .mobile-filter-row {
+            display: none;
         }
         
         .mobile-filter-select {
@@ -787,12 +964,37 @@
                 </div>
             </div>
             
-            <!-- Filters -->
+            <!-- Filters - Redesigned 2-Column Section Selector -->
             <div class="mobile-filters">
-                <div class="mobile-filter-row">
+                <div class="mobile-filters-header">
+                    <div class="mobile-filters-title">
+                        <i class="bi bi-funnel"></i>
+                        Select Section
+                    </div>
+                    <span class="mobile-filters-count" id="mobileSectionsCount">0 sections</span>
+                </div>
+                
+                <!-- Year Level Tabs -->
+                <div class="mobile-year-tabs" id="mobileYearTabs">
+                    <button class="mobile-year-tab active" data-year="all">All Years</button>
+                    <button class="mobile-year-tab" data-year="1">Year 1</button>
+                    <button class="mobile-year-tab" data-year="2">Year 2</button>
+                    <button class="mobile-year-tab" data-year="3">Year 3</button>
+                    <button class="mobile-year-tab" data-year="4">Year 4</button>
+                </div>
+                
+                <!-- 2-Column Section Grid -->
+                <div class="mobile-sections-grid" id="mobileSectionsGrid">
+                    <div class="mobile-sections-empty">
+                        <i class="bi bi-hourglass-split"></i>
+                        Loading sections...
+                    </div>
+                </div>
+                
+                <!-- Hidden select for compatibility -->
+                <div class="mobile-filter-row" style="display: none;">
                     <select id="mobileSectionFilterSelect" class="mobile-filter-select">
                         <option value="">Select Year and Section *</option>
-                        <!-- Populated by JS with all sections -->
                     </select>
                 </div>
             </div>
@@ -1114,21 +1316,47 @@
         let currentSection = '';
         let allSections = [];
         
-        // Load sections
-        async function loadSections() {
+        // Load sections with cache-busting
+        async function loadSections(forceRefresh = false) {
             try {
-                const res = await fetch('/sections');
+                console.log('🔄 Loading sections...');
+                
+                // Use cache-busting URL and headers
+                const timestamp = Date.now();
+                const sectionsUrl = forceRefresh ? `/sections?_t=${timestamp}` : `/sections?_=${timestamp}`;
+                
+                const res = await fetch(sectionsUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    cache: 'no-store',
+                    credentials: 'same-origin'
+                });
+                
                 if (res.ok) {
                     allSections = await res.json();
+                    console.log(`✅ Loaded ${allSections.length} sections`);
                     populateMobileSectionFilter();
+                } else {
+                    console.warn('Failed to load sections:', res.status);
+                    allSections = [];
                 }
             } catch (error) {
                 console.error('Error loading sections:', error);
+                allSections = [];
             }
         }
         
-        // Populate section filter with ALL sections grouped by year
+        // Current year filter for the grid
+        let currentYearFilter = 'all';
+        
+        // Populate section filter with ALL sections in 2-column grid
         function populateMobileSectionFilter() {
+            // Also populate the hidden dropdown for compatibility
             mobileSectionFilterSelect.innerHTML = '<option value="">Select Year and Section *</option>';
             
             // Group sections by year level
@@ -1144,16 +1372,13 @@
             // Sort years
             const years = Object.keys(sectionsByYear).sort((a, b) => parseInt(a) - parseInt(b));
             
-            // Create optgroups for each year
+            // Populate hidden dropdown (for compatibility)
             years.forEach(year => {
                 const optgroup = document.createElement('optgroup');
-                optgroup.label = `━━━ Year ${year} ━━━`;
+                optgroup.label = `Year ${year}`;
                 
-                // Sort sections within year by shift, then name
                 const yearSections = sectionsByYear[year].sort((a, b) => {
-                    if (a.shift !== b.shift) {
-                        return a.shift.localeCompare(b.shift);
-                    }
+                    if (a.shift !== b.shift) return a.shift.localeCompare(b.shift);
                     return a.sectionName.localeCompare(b.sectionName);
                 });
                 
@@ -1166,11 +1391,140 @@
                 
                 mobileSectionFilterSelect.appendChild(optgroup);
             });
+            
+            // Update sections count
+            const countEl = document.getElementById('mobileSectionsCount');
+            if (countEl) {
+                countEl.textContent = `${allSections.length} sections`;
+            }
+            
+            // Populate the 2-column grid
+            renderSectionsGrid();
+            
+            // Setup year tabs
+            setupYearTabs();
         }
         
-        mobileSectionFilterSelect.addEventListener('change', () => {
-            currentSection = mobileSectionFilterSelect.value;
+        // Render sections in 2-column grid
+        function renderSectionsGrid(yearFilter = 'all') {
+            const grid = document.getElementById('mobileSectionsGrid');
+            if (!grid) return;
             
+            // Filter sections by year
+            let filteredSections = allSections;
+            if (yearFilter !== 'all') {
+                filteredSections = allSections.filter(s => s.yearLevel === parseInt(yearFilter));
+            }
+            
+            // Sort sections
+            filteredSections.sort((a, b) => {
+                if (a.yearLevel !== b.yearLevel) return a.yearLevel - b.yearLevel;
+                if (a.shift !== b.shift) return a.shift.localeCompare(b.shift);
+                return a.sectionName.localeCompare(b.sectionName);
+            });
+            
+            if (filteredSections.length === 0) {
+                grid.innerHTML = `
+                    <div class="mobile-sections-empty">
+                        <i class="bi bi-inbox"></i>
+                        No sections found
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = filteredSections.map(section => {
+                const isSelected = currentSection === section._id;
+                const shiftClass = section.shift?.toLowerCase() === 'day' ? 'day-shift' : 'night-shift';
+                
+                return `
+                    <div class="mobile-section-chip ${shiftClass} ${isSelected ? 'selected' : ''}" 
+                         data-id="${section._id}" 
+                         data-year="${section.yearLevel}"
+                         data-shift="${section.shift}">
+                        <div class="mobile-section-chip-info">
+                            <span class="mobile-section-chip-name">${section.sectionName}</span>
+                            <span class="mobile-section-chip-shift">${section.shift || 'Day'} Shift</span>
+                        </div>
+                        <div class="mobile-section-chip-icon">
+                            ${isSelected ? '<i class="bi bi-check"></i>' : '<i class="bi bi-chevron-right"></i>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Attach click handlers
+            grid.querySelectorAll('.mobile-section-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const sectionId = chip.dataset.id;
+                    selectSection(sectionId);
+                });
+            });
+        }
+        
+        // Select a section
+        function selectSection(sectionId) {
+            currentSection = sectionId;
+            
+            // Update hidden dropdown
+            mobileSectionFilterSelect.value = sectionId;
+            
+            // Update visual selection
+            document.querySelectorAll('.mobile-section-chip').forEach(chip => {
+                const isSelected = chip.dataset.id === sectionId;
+                chip.classList.toggle('selected', isSelected);
+                
+                const icon = chip.querySelector('.mobile-section-chip-icon');
+                if (icon) {
+                    icon.innerHTML = isSelected 
+                        ? '<i class="bi bi-check"></i>' 
+                        : '<i class="bi bi-chevron-right"></i>';
+                }
+            });
+            
+            // Auto-set year level based on selected section
+            if (sectionId) {
+                const selectedSection = allSections.find(s => s._id === sectionId);
+                if (selectedSection) {
+                    currentYearLevel = selectedSection.yearLevel.toString();
+                    showBubbleMessage(`Selected: ${selectedSection.sectionName}`, 'success');
+                }
+                loadMobileSchedules();
+            }
+        }
+        
+        // Setup year tabs
+        function setupYearTabs() {
+            const tabsContainer = document.getElementById('mobileYearTabs');
+            if (!tabsContainer) return;
+            
+            tabsContainer.querySelectorAll('.mobile-year-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Update active state
+                    tabsContainer.querySelectorAll('.mobile-year-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Filter sections
+                    currentYearFilter = tab.dataset.year;
+                    renderSectionsGrid(currentYearFilter);
+                });
+            });
+        }
+        
+        // Hidden dropdown change handler (for compatibility)
+        mobileSectionFilterSelect.addEventListener('change', () => {
+            const sectionId = mobileSectionFilterSelect.value;
+            if (sectionId && sectionId !== currentSection) {
+                selectSection(sectionId);
+            } else if (!sectionId) {
+                currentSection = '';
+                currentYearLevel = '';
+                renderSectionsGrid(currentYearFilter);
+            }
+        });
+        
+        // Legacy handler kept for reference
+        function handleSectionChange() {
             // Auto-set year level based on selected section
             if (currentSection) {
                 const selectedSection = allSections.find(s => s._id === currentSection);
@@ -1190,10 +1544,11 @@
                     `;
                 }
             }
-        });
+        }
         
-        // Initialize sections
-        loadSections();
+        // Initialize sections - force refresh on page load
+        const forceInitialSectionsRefresh = sessionStorage.getItem('forceRefreshSchedulesMobile') === 'true';
+        loadSections(forceInitialSectionsRefresh || true); // Always force refresh sections
         
         // Mobile data storage
         let allMobileSchedules = [];
@@ -1684,6 +2039,183 @@
                     exportScheduleBtn.click();
                 }
             });
+        }
+        
+        // ============================================
+        // SMART FORM LOGIC: Section ↔ Room ↔ Subject
+        // ============================================
+        
+        // Wait for data to load, then setup smart form handlers
+        setTimeout(() => {
+            setupSmartFormLogic();
+        }, 1500);
+        
+        function setupSmartFormLogic() {
+            const sectionSelect = document.getElementById('sectionSelect');
+            const roomSelect = document.getElementById('roomSelect');
+            const subjectSelect = document.getElementById('subjectSelect');
+            
+            if (!sectionSelect || !roomSelect || !subjectSelect) {
+                console.log('Form elements not ready, retrying...');
+                setTimeout(setupSmartFormLogic, 500);
+                return;
+            }
+            
+            console.log('✅ Setting up smart form logic for Section ↔ Room ↔ Subject');
+            
+            // SECTION CHANGE: Auto-fill Room + Filter Subjects by Year
+            sectionSelect.addEventListener('change', function() {
+                const sectionId = this.value;
+                if (!sectionId) return;
+                
+                const section = allSections.find(s => s._id === sectionId);
+                if (!section) return;
+                
+                console.log('Section selected:', section.sectionName, 'Year:', section.yearLevel);
+                
+                // 1. Extract year level from section name (e.g., "2A" → 2)
+                const yearFromName = extractYearFromSectionName(section.sectionName);
+                const yearLevel = yearFromName || section.yearLevel;
+                
+                console.log('Year level determined:', yearLevel);
+                
+                // 2. Auto-fill Room based on section assignment
+                autoFillRoomForSection(section);
+                
+                // 3. Filter subjects by year level
+                filterSubjectsByYear(yearLevel);
+            });
+            
+            // ROOM CHANGE: Auto-fill Section (reverse lookup)
+            roomSelect.addEventListener('change', function() {
+                const roomId = this.value;
+                if (!roomId) return;
+                
+                const room = allMobileRooms.find(r => r._id === roomId);
+                if (!room) return;
+                
+                console.log('Room selected:', room.roomName);
+                
+                // Find section assigned to this room
+                autoFillSectionForRoom(room);
+            });
+        }
+        
+        // Extract year level from section name (e.g., "2A", "3B-Day" → 2, 3)
+        function extractYearFromSectionName(sectionName) {
+            if (!sectionName) return null;
+            
+            // Match first digit in section name
+            const match = sectionName.match(/^(\d)/);
+            if (match) {
+                const year = parseInt(match[1]);
+                if (year >= 1 && year <= 4) {
+                    return year;
+                }
+            }
+            return null;
+        }
+        
+        // Auto-fill room based on section's assigned room
+        function autoFillRoomForSection(section) {
+            const roomSelect = document.getElementById('roomSelect');
+            if (!roomSelect || !section) return;
+            
+            // Find room assigned to this section based on shift
+            const assignedRoom = allMobileRooms.find(room => {
+                if (section.shift && section.shift.toLowerCase() === 'day') {
+                    return room.daySection === section.sectionName;
+                } else if (section.shift && section.shift.toLowerCase() === 'night') {
+                    return room.nightSection === section.sectionName;
+                }
+                return false;
+            });
+            
+            if (assignedRoom) {
+                roomSelect.value = assignedRoom._id;
+                console.log('✅ Auto-filled room:', assignedRoom.roomName, 'for section:', section.sectionName);
+                showBubbleMessage(`Room auto-selected: ${assignedRoom.roomName}`, 'success');
+            } else {
+                console.log('No assigned room found for section:', section.sectionName);
+            }
+        }
+        
+        // Auto-fill section based on room's assigned section
+        function autoFillSectionForRoom(room) {
+            const sectionSelect = document.getElementById('sectionSelect');
+            if (!sectionSelect || !room) return;
+            
+            // Check if room has assigned sections
+            let assignedSectionName = null;
+            
+            // Try day section first, then night section
+            if (room.daySection) {
+                assignedSectionName = room.daySection;
+            } else if (room.nightSection) {
+                assignedSectionName = room.nightSection;
+            }
+            
+            if (assignedSectionName) {
+                // Find the section by name
+                const assignedSection = allSections.find(s => s.sectionName === assignedSectionName);
+                
+                if (assignedSection) {
+                    sectionSelect.value = assignedSection._id;
+                    console.log('✅ Auto-filled section:', assignedSection.sectionName, 'for room:', room.roomName);
+                    showBubbleMessage(`Section auto-selected: ${assignedSection.sectionName}`, 'success');
+                    
+                    // Also filter subjects by year level
+                    const yearLevel = extractYearFromSectionName(assignedSection.sectionName) || assignedSection.yearLevel;
+                    filterSubjectsByYear(yearLevel);
+                }
+            }
+        }
+        
+        // Filter subjects dropdown by year level
+        function filterSubjectsByYear(yearLevel) {
+            const subjectSelect = document.getElementById('subjectSelect');
+            if (!subjectSelect || !yearLevel) return;
+            
+            const currentValue = subjectSelect.value;
+            
+            // Clear and repopulate with filtered subjects
+            subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+            
+            const filteredSubjects = allMobileSubjects.filter(subject => {
+                return subject.yearLevel === parseInt(yearLevel);
+            });
+            
+            console.log(`Filtering subjects for Year ${yearLevel}:`, filteredSubjects.length, 'subjects found');
+            
+            if (filteredSubjects.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = `No subjects for Year ${yearLevel}`;
+                option.disabled = true;
+                subjectSelect.appendChild(option);
+                return;
+            }
+            
+            filteredSubjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject._id;
+                const displayText = subject.descriptiveTitle && subject.descriptiveTitle.length > 35
+                    ? `${subject.courseCode} - ${subject.descriptiveTitle.substring(0, 32)}...`
+                    : `${subject.courseCode} - ${subject.descriptiveTitle || 'No title'}`;
+                option.textContent = displayText;
+                option.title = `${subject.courseCode} - ${subject.descriptiveTitle}`;
+                subjectSelect.appendChild(option);
+            });
+            
+            // Restore previous value if still valid
+            if (currentValue) {
+                const stillValid = filteredSubjects.some(s => s._id === currentValue);
+                if (stillValid) {
+                    subjectSelect.value = currentValue;
+                }
+            }
+            
+            showBubbleMessage(`Showing ${filteredSubjects.length} subjects for Year ${yearLevel}`, 'success');
         }
         
 

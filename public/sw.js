@@ -1,5 +1,5 @@
 // public/sw.js - Service Worker with Network-First Strategy for Development
-const CACHE_NAME = 'chronix-dashboard-v1.0.4'; // Increment version to force update
+const CACHE_NAME = 'chronix-dashboard-v1.0.5'; // Increment version to force update
 const urlsToCache = [
     '/',
     '/css/admin-dashboard.css',
@@ -31,6 +31,24 @@ self.addEventListener('install', function(event) {
 
 self.addEventListener('fetch', function(event) {
     const url = new URL(event.request.url);
+    
+    // NEVER cache API calls - always fetch fresh data
+    if (url.pathname.startsWith('/sections') ||
+        url.pathname.startsWith('/schedules') ||
+        url.pathname.startsWith('/subjects') ||
+        url.pathname.startsWith('/rooms') ||
+        url.pathname.startsWith('/teachers') ||
+        url.pathname.startsWith('/students') ||
+        url.pathname.startsWith('/users') ||
+        url.pathname.startsWith('/api/')) {
+        
+        event.respondWith(
+            fetch(event.request, {
+                cache: 'no-store'
+            })
+        );
+        return;
+    }
     
     // Network-first strategy for HTML, CSS, and JS files (always get fresh content)
     if (url.pathname.endsWith('.html') || 

@@ -572,23 +572,72 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function populateSectionDropdown(yearLevel = null) {
+    function populateSectionDropdown(yearLevel = null, filterShift = null) {
         const select = document.getElementById('sectionSelect');
         if (!select) return;
         
         select.innerHTML = '<option value="">Select Section</option>';
-        sections.filter(section => !yearLevel || section.yearLevel === parseInt(yearLevel))
-            .forEach(section => {
+        
+        // Group sections by year level for better organization
+        const sectionsByYear = {};
+        sections.forEach(section => {
+            // Apply year filter if specified
+            if (yearLevel && section.yearLevel !== parseInt(yearLevel)) return;
+            // Apply shift filter if specified
+            if (filterShift && section.shift && section.shift.toLowerCase() !== filterShift.toLowerCase()) return;
+            
+            const year = section.yearLevel;
+            if (!sectionsByYear[year]) {
+                sectionsByYear[year] = [];
+            }
+            sectionsByYear[year].push(section);
+        });
+        
+        // Sort years
+        const years = Object.keys(sectionsByYear).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        // If only one year level, don't use optgroups
+        if (years.length === 1) {
+            const yearSections = sectionsByYear[years[0]].sort((a, b) => {
+                if (a.shift !== b.shift) return a.shift.localeCompare(b.shift);
+                return a.sectionName.localeCompare(b.sectionName);
+            });
+            
+            yearSections.forEach(section => {
                 const option = document.createElement('option');
                 option.value = section._id;
-                const displayText = section.sectionName.length > 30 
-                    ? `${section.sectionName.substring(0, 27)}...`
-                    : section.sectionName;
+                const displayText = `${section.sectionName} (${section.shift})`;
                 option.textContent = displayText;
-                option.title = section.sectionName;
-                option.dataset.shift = section.shift; // Add shift data if needed
+                option.title = `${section.sectionName} - ${section.shift} Shift`;
+                option.dataset.shift = section.shift;
+                option.dataset.yearLevel = section.yearLevel;
                 select.appendChild(option);
-        });
+            });
+        } else {
+            // Use optgroups for multiple year levels
+            years.forEach(year => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = `Year ${year}`;
+                
+                const yearSections = sectionsByYear[year].sort((a, b) => {
+                    if (a.shift !== b.shift) return a.shift.localeCompare(b.shift);
+                    return a.sectionName.localeCompare(b.sectionName);
+                });
+                
+                yearSections.forEach(section => {
+                    const option = document.createElement('option');
+                    option.value = section._id;
+                    const displayText = `${section.sectionName} (${section.shift})`;
+                    option.textContent = displayText;
+                    option.title = `${section.sectionName} - ${section.shift} Shift`;
+                    option.dataset.shift = section.shift;
+                    option.dataset.yearLevel = section.yearLevel;
+                    optgroup.appendChild(option);
+                });
+                
+                select.appendChild(optgroup);
+            });
+        }
     }
 
     function populateRoomDropdown() {
@@ -963,6 +1012,15 @@ document.addEventListener('DOMContentLoaded', function() {
         sectionSelect.addEventListener('change', () => {
             updateHoursInfo();
             autoSelectRoomForSection();
+            filterSubjectsBySelectedSection();
+        });
+    }
+    
+    // Room change: auto-select section (reverse lookup)
+    const roomSelectEl = document.getElementById('roomSelect');
+    if (roomSelectEl) {
+        roomSelectEl.addEventListener('change', () => {
+            autoSelectSectionForRoom();
         });
     }
     
@@ -978,9 +1036,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Find room assigned to this section based on shift
         const assignedRoom = rooms.find(room => {
-            if (section.shift.toLowerCase() === 'day') {
+            if (section.shift && section.shift.toLowerCase() === 'day') {
                 return room.daySection === section.sectionName;
-            } else if (section.shift.toLowerCase() === 'night') {
+            } else if (section.shift && section.shift.toLowerCase() === 'night') {
                 return room.nightSection === section.sectionName;
             }
             return false;
@@ -989,6 +1047,95 @@ document.addEventListener('DOMContentLoaded', function() {
         if (assignedRoom) {
             roomSelect.value = assignedRoom._id;
             console.log(`Auto-selected room: ${assignedRoom.roomName} for section: ${section.sectionName}`);
+        }
+    }
+    
+    // Filter subjects based on selected section's year level
+    function filterSubjectsBySelectedSection() {
+        const sectionId = sectionSelect?.value;
+        const subjectSelectEl = document.getElementById('subjectSelect');
+        
+        if (!sectionId || !subjectSelectEl) return;
+        
+        const section = sections.find(s => s._id === sectionId);
+        if (!section) return;
+        
+        // Extract year level from section name (e.g., "2A" → 2) or use yearLevel property
+        let yearLevel = section.yearLevel;
+        const nameMatch = section.sectionName.match(/^(\d)/);
+        if (nameMatch) {
+            const yearFromName = parseInt(nameMatch[1]);
+            if (yearFromName >= 1 && yearFromName <= 4) {
+                yearLevel = yearFromName;
+            }
+        }
+        
+        console.log(`Filtering subjects for Year ${yearLevel} based on section: ${section.sectionName}`);
+        
+        // Save current selection
+        const currentValue = subjectSelectEl.value;
+        
+        // Repopulate with filtered subjects
+        subjectSelectEl.innerHTML = '<option value="">Select Subject</option>';
+        
+        const filteredSubjects = subjects.filter(s => s.yearLevel === parseInt(yearLevel));
+        
+        if (filteredSubjects.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = `No subjects for Year ${yearLevel}`;
+            option.disabled = true;
+            subjectSelectEl.appendChild(option);
+            return;
+        }
+        
+        filteredSubjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject._id;
+            const displayText = subject.descriptiveTitle && subject.descriptiveTitle.length > 40 
+                ? `${subject.courseCode} - ${subject.descriptiveTitle.substring(0, 37)}...`
+                : `${subject.courseCode} - ${subject.descriptiveTitle || 'No title'}`;
+            option.textContent = displayText;
+            option.title = `${subject.courseCode} - ${subject.descriptiveTitle}`;
+            option.dataset.lecHours = subject.lecHours || 0;
+            option.dataset.labHours = subject.labHours || 0;
+            subjectSelectEl.appendChild(option);
+        });
+        
+        // Restore previous value if still valid
+        if (currentValue) {
+            const stillValid = filteredSubjects.some(s => s._id === currentValue);
+            if (stillValid) {
+                subjectSelectEl.value = currentValue;
+            }
+        }
+        
+        console.log(`Showing ${filteredSubjects.length} subjects for Year ${yearLevel}`);
+    }
+    
+    // Auto-select section based on room (reverse lookup)
+    function autoSelectSectionForRoom() {
+        const roomId = document.getElementById('roomSelect')?.value;
+        const sectionSelectEl = document.getElementById('sectionSelect');
+        
+        if (!roomId || !sectionSelectEl) return;
+        
+        const room = rooms.find(r => r._id === roomId);
+        if (!room) return;
+        
+        // Check if room has assigned sections
+        let assignedSectionName = room.daySection || room.nightSection;
+        
+        if (assignedSectionName) {
+            const assignedSection = sections.find(s => s.sectionName === assignedSectionName);
+            
+            if (assignedSection) {
+                sectionSelectEl.value = assignedSection._id;
+                console.log(`Auto-selected section: ${assignedSection.sectionName} for room: ${room.roomName}`);
+                
+                // Also filter subjects by year level
+                filterSubjectsBySelectedSection();
+            }
         }
     }
 
