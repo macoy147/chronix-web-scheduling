@@ -428,15 +428,49 @@ document.addEventListener('DOMContentLoaded', function() {
         if (editBirthdate) editBirthdate.value = safeDisplay(teacher.birthdate, '');
         if (editGender) editGender.value = safeDisplay(teacher.gender, '');
 
-        // Populate Section dropdown
+        // Populate Section dropdown - only show sections without advisers (or current teacher's section)
         if (editSection) {
             editSection.innerHTML = '<option value="">No Advisory Section</option>';
+            
+            // Get the current teacher's advisory section
+            const currentTeacherSection = teacher.advisorySection || teacher.section;
+            
+            console.log('📋 Filtering sections for edit modal:');
+            console.log('   Current teacher ID:', teacher._id);
+            console.log('   Current teacher section:', currentTeacherSection);
+            console.log('   Total sections:', sections.length);
+            console.log('   Total teachers:', teachers.length);
+            
+            let availableSections = 0;
+            
+            // Filter sections to only show those without advisers or the current teacher's section
             sections.forEach(section => {
-                const option = document.createElement('option');
-                option.value = section.sectionName;
-                option.textContent = `${section.sectionName} (Year ${section.yearLevel} - ${section.shift})`;
-                editSection.appendChild(option);
+                // Check if this section already has an adviser using multiple methods:
+                // 1. Check section's adviserTeacher field (if it has a teacher ID assigned)
+                // 2. Check if any other teacher has this section as their advisorySection
+                const sectionHasAdviserField = section.adviserTeacher && section.adviserTeacher !== '' && section.adviserTeacher !== teacher._id;
+                const hasAdviserFromTeachers = teachers.some(t => 
+                    t._id !== teacher._id && // Exclude current teacher
+                    (t.advisorySection === section.sectionName || t.section === section.sectionName)
+                );
+                
+                const hasAdviser = sectionHasAdviserField || hasAdviserFromTeachers;
+                
+                // Only show section if it has no adviser OR it's the current teacher's section
+                if (!hasAdviser || section.sectionName === currentTeacherSection) {
+                    const option = document.createElement('option');
+                    option.value = section.sectionName;
+                    option.textContent = `${section.sectionName} (Year ${section.yearLevel} - ${section.shift})`;
+                    editSection.appendChild(option);
+                    availableSections++;
+                    console.log(`   ✅ Available: ${section.sectionName}`);
+                } else {
+                    console.log(`   ❌ Taken: ${section.sectionName} (adviserField: ${sectionHasAdviserField}, teacherHas: ${hasAdviserFromTeachers})`);
+                }
             });
+            
+            console.log(`📊 Total available sections: ${availableSections}`);
+            
             // Use advisorySection first, fallback to section for backward compatibility
             editSection.value = safeDisplay(teacher.advisorySection || teacher.section, '');
         }
@@ -658,11 +692,26 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!select) return;
         
         select.innerHTML = '<option value="">No Advisory Section</option>';
+        
+        // Filter sections to only show those without advisers
         sections.forEach(section => {
-            const option = document.createElement('option');
-            option.value = section.sectionName;
-            option.textContent = `${section.sectionName} (${section.shift})`;
-            select.appendChild(option);
+            // Check if this section already has an adviser using multiple methods:
+            // 1. Check section's adviserTeacher field
+            // 2. Check if any teacher has this section as their advisorySection
+            const sectionHasAdviserField = section.adviserTeacher && section.adviserTeacher !== '';
+            const hasAdviserFromTeachers = teachers.some(t => 
+                t.advisorySection === section.sectionName || t.section === section.sectionName
+            );
+            
+            const hasAdviser = sectionHasAdviserField || hasAdviserFromTeachers;
+            
+            // Only show section if it has no adviser
+            if (!hasAdviser) {
+                const option = document.createElement('option');
+                option.value = section.sectionName;
+                option.textContent = `${section.sectionName} (${section.shift})`;
+                select.appendChild(option);
+            }
         });
     }
     

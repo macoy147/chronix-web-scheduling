@@ -291,7 +291,7 @@ body {
 
 /* Hero Content Styling (Centered and White) */
 .hero-logo {
-    max-width: 80px; /* Reduced logo size */
+    max-width: 80px;
     height: auto;
     filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
     transition: transform 0.3s ease;
@@ -427,7 +427,7 @@ body {
 
 .features-section .container {
     display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 30px; 
 }
 
@@ -498,32 +498,75 @@ body {
     border-left: 5px solid var(--ctu-red-accent); 
 }
 
+.card-green {
+    background-color: #F0FFF4; 
+    border-left: 5px solid #38A169; 
+}
+
 /* 5. Testimonials Section */
 .testimonials-section {
-    padding: 80px 0;
-    background: rgba(0, 45, 98, 0.3);
+    padding: 100px 0;
+    background: rgba(0, 30, 60, 0.92);
     position: relative;
     z-index: 2;
 }
 
 .section-title {
     text-align: center;
-    font-size: 2.5em;
-    color: var(--ctu-white);
-    margin-bottom: 50px;
+    font-size: 3.5em;
+    font-weight: 800;
+    color: var(--ctu-soft-gold);
+    margin-bottom: 70px;
     position: relative;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    text-shadow: 3px 3px 15px rgba(0, 0, 0, 0.8);
+}
+
+.section-title::before {
+    content: '★';
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.5em;
+    color: var(--ctu-soft-gold);
+    animation: starPulse 2s ease-in-out infinite;
 }
 
 .section-title::after {
     content: '';
     position: absolute;
-    bottom: -15px;
+    bottom: -25px;
     left: 50%;
     transform: translateX(-50%);
-    width: 80px;
-    height: 4px;
-    background: var(--ctu-soft-gold);
-    border-radius: 2px;
+    width: 150px;
+    height: 5px;
+    background: linear-gradient(90deg, transparent, var(--ctu-soft-gold), var(--ctu-light-blue), var(--ctu-soft-gold), transparent);
+    border-radius: 3px;
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes starPulse {
+    0%, 100% { 
+        opacity: 1; 
+        transform: translateX(-50%) scale(1);
+    }
+    50% { 
+        opacity: 0.6; 
+        transform: translateX(-50%) scale(1.3);
+    }
+}
+
+@keyframes shimmer {
+    0%, 100% { 
+        opacity: 0.7;
+        width: 150px;
+    }
+    50% { 
+        opacity: 1;
+        width: 200px;
+    }
 }
 
 .testimonials-container {
@@ -533,11 +576,11 @@ body {
 }
 
 .testimonial-card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    padding: 30px;
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 40px 35px;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(242, 210, 131, 0.4);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -569,41 +612,43 @@ body {
 
 .testimonial-content {
     font-style: italic;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
     color: var(--ctu-white);
-    font-size: 1.1em;
-    line-height: 1.6;
+    font-size: 1.2em;
+    line-height: 1.7;
     position: relative;
+    padding-left: 20px;
 }
 
 .testimonial-content::before,
 .testimonial-content::after {
     content: '"';
-    font-size: 3em;
+    font-size: 4em;
     color: var(--ctu-soft-gold);
     line-height: 0;
     position: absolute;
 }
 
 .testimonial-content::before {
-    top: 10px;
-    left: -10px;
+    top: 15px;
+    left: -15px;
 }
 
 .testimonial-content::after {
-    bottom: -20px;
+    bottom: -25px;
     right: 0;
 }
 
 .author-info h4 {
     color: var(--ctu-soft-gold);
     margin-bottom: 5px;
-    font-size: 1.2em;
+    font-size: 1.4em;
+    font-weight: 700;
 }
 
 .author-info p {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1em;
 }
 
 /* 6. Footer Styling (Solid base) */

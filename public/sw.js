@@ -1,12 +1,15 @@
 // public/sw.js - Service Worker with Network-First Strategy for Development
-const CACHE_NAME = 'chronix-dashboard-v1.0.7'; // Increment version to force update - 12hr time format
+const CACHE_NAME = 'chronix-dashboard-v1.1.4'; // Increment version to force update - multi-section CSV export
 const urlsToCache = [
     '/',
+    '/index.html',
+    '/css/style.css',
     '/css/admin-dashboard.css',
     '/js/admin-dashboard.js',
     '/js/api-config.js',
     '/js/error-handler.js',
     '/js/auth-guard.js',
+    '/js/script.js',
     '/img/default_admin_avatar.png',
     '/img/img/CTU_new_logo-removebg-preview.png',
     '/img/img/CHRONIX_LOGO.png',

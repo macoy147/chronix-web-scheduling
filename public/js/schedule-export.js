@@ -1027,12 +1027,18 @@ class ScheduleExporter {
     /**
      * Export to CSV format with timetable structure similar to PDF
      */
-    async exportToCSV(schedules, filename = 'timetable', userInfo = {}) {
+    async exportToCSV(schedules, filename = 'timetable', userInfo = {}, isMultiSection = false) {
         try {
             if (!schedules || schedules.length === 0) {
                 throw new Error('No schedules to export');
             }
 
+            // If multi-section export, create separate tables for each section
+            if (isMultiSection) {
+                return await this.exportMultiSectionCSV(schedules, filename, userInfo);
+            }
+
+            // Single section export - original behavior
             // Convert to timetable format with enhanced display
             const timetable = this.convertToTimetableFormat(schedules);
 
@@ -1123,6 +1129,155 @@ class ScheduleExporter {
             return true;
         } catch (error) {
             console.error('❌ Error exporting to CSV:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Export multiple sections to CSV - each section as a separate table
+     */
+    async exportMultiSectionCSV(schedules, filename = 'all_schedules', userInfo = {}) {
+        try {
+            // Group schedules by section
+            const schedulesBySection = new Map();
+            
+            schedules.forEach(schedule => {
+                const sectionId = schedule.section?._id || schedule.section;
+                const sectionName = schedule.section?.sectionName || 'Unknown Section';
+                const sectionShift = schedule.section?.shift || 'N/A';
+                const sectionYearLevel = schedule.section?.yearLevel || 'N/A';
+                const adviserTeacher = schedule.section?.adviserTeacher || null;
+                
+                if (!schedulesBySection.has(sectionId)) {
+                    schedulesBySection.set(sectionId, {
+                        sectionName,
+                        sectionShift,
+                        yearLevel: sectionYearLevel,
+                        adviserTeacher,
+                        schedules: []
+                    });
+                }
+                
+                schedulesBySection.get(sectionId).schedules.push(schedule);
+            });
+
+            // Sort sections by year level, then by name
+            const sortedSections = Array.from(schedulesBySection.entries()).sort((a, b) => {
+                const yearA = parseInt(a[1].yearLevel) || 0;
+                const yearB = parseInt(b[1].yearLevel) || 0;
+                
+                if (yearA !== yearB) {
+                    return yearA - yearB;
+                }
+                
+                return a[1].sectionName.localeCompare(b[1].sectionName);
+            });
+
+            console.log(`📊 Exporting ${sortedSections.length} sections to multi-section CSV`);
+
+            // Create CSV content
+            let csvContent = '';
+            
+            // Add main header
+            csvContent += 'Republic of the Philippines\n';
+            csvContent += 'CEBU TECHNOLOGICAL UNIVERSITY\n';
+            csvContent += 'Daanbantayan Campus: Aguho, Daanbantayan, Cebu\n\n';
+            csvContent += 'CHRONIX - Class Timetables (Multiple Sections)\n';
+            csvContent += `Export Date:,${new Date().toLocaleDateString()}\n`;
+            csvContent += `Total Sections:,${sortedSections.length}\n`;
+            csvContent += `Total Schedules:,${schedules.length}\n`;
+            if (userInfo.name) {
+                csvContent += `Exported By:,${userInfo.name}\n`;
+            }
+            csvContent += '\n';
+            csvContent += '='.repeat(80) + '\n\n';
+
+            // Process each section
+            sortedSections.forEach(([sectionId, sectionData], index) => {
+                const { sectionName, sectionShift, yearLevel, schedules: sectionSchedules } = sectionData;
+                
+                // Add section separator (except for first section)
+                if (index > 0) {
+                    csvContent += '\n\n';
+                    csvContent += '='.repeat(80) + '\n\n';
+                }
+                
+                // Add section header
+                csvContent += `SECTION: ${sectionName}\n`;
+                csvContent += `Year Level:,${yearLevel}\n`;
+                csvContent += `Shift:,${sectionShift}\n`;
+                csvContent += `Total Classes:,${sectionSchedules.length}\n`;
+                
+                // Get adviser name from schedules
+                const sectionDetails = this.getSectionDetails(sectionSchedules);
+                if (sectionDetails.adviser && sectionDetails.adviser !== 'N/A') {
+                    csvContent += `Adviser:,${sectionDetails.adviser}\n`;
+                }
+                csvContent += '\n';
+                
+                // Convert section schedules to timetable format
+                const timetable = this.convertToTimetableFormat(sectionSchedules);
+                
+                // Create timetable header
+                const headerRow = ['TIME', ...this.days];
+                csvContent += headerRow.join(',') + '\n';
+                
+                // Add timetable data
+                timetable.forEach(row => {
+                    const timeRow = [row.time];
+                    
+                    this.days.forEach(day => {
+                        const cell = row.days[day];
+                        if (cell.rowSpan === 0) {
+                            timeRow.push('');
+                        } else if (cell.content) {
+                            const cellContent = cell.content.replace(/\n/g, '; ');
+                            timeRow.push(`"${cellContent}"`);
+                        } else {
+                            timeRow.push('');
+                        }
+                    });
+                    
+                    csvContent += timeRow.join(',') + '\n';
+                });
+                
+                // Add subjects summary for this section
+                const subjectsSummary = this.extractSubjectsSummary(sectionSchedules);
+                if (subjectsSummary.length > 0) {
+                    csvContent += '\nSUMMARY OF COURSES\n';
+                    csvContent += 'UNITS,SUBJECT CODE,DESCRIPTIVE TITLE\n';
+                    
+                    subjectsSummary.forEach(subject => {
+                        csvContent += `${subject.units},"${subject.courseCode}","${subject.descriptiveTitle}"\n`;
+                    });
+                }
+            });
+            
+            // Add footer
+            csvContent += '\n\n';
+            csvContent += '='.repeat(80) + '\n';
+            csvContent += 'Generated by CHRONIX - CTU Class Scheduling System\n';
+            csvContent += `Export completed: ${new Date().toLocaleString()}`;
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+
+            console.log(`✅ Multi-section CSV export successful (${sortedSections.length} sections)`);
+            return true;
+        } catch (error) {
+            console.error('❌ Error exporting multi-section CSV:', error);
             throw error;
         }
     }
@@ -1635,7 +1790,7 @@ class ScheduleExporter {
                 try {
                     csvBtn.disabled = true;
                     csvBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting Timetable...';
-                    await this.exportToCSV(schedules, filename, userInfo);
+                    await this.exportToCSV(schedules, filename, userInfo, isMultiSection);
                     document.body.removeChild(overlay);
                     resolve('csv');
                 } catch (error) {
