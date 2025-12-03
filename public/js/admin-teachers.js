@@ -344,7 +344,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const teacherName = row.cells[0]?.textContent.toLowerCase() || '';
             const email = row.cells[1]?.textContent.toLowerCase() || '';
             const ctuid = row.cells[2]?.textContent.toLowerCase() || '';
-            const statusBadge = row.cells[4]?.querySelector('.status-badge');
+            // cells[0]=name, cells[1]=email, cells[2]=ctuid, cells[3]=section, cells[4]=schedules, cells[5]=status
+            const statusBadge = row.cells[5]?.querySelector('.status-badge');
             const teacherStatus = statusBadge ? statusBadge.textContent.toLowerCase() : '';
 
             const matchesSearch = teacherName.includes(searchTerm) || 

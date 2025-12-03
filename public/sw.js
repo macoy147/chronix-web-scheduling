@@ -1,5 +1,5 @@
 // public/sw.js - Service Worker with Network-First Strategy for Development
-const CACHE_NAME = 'chronix-dashboard-v1.1.4'; // Increment version to force update - multi-section CSV export
+const CACHE_NAME = 'chronix-dashboard-v1.1.5'; // Increment version to force update - fix status filter
 const urlsToCache = [
     '/',
     '/index.html',
