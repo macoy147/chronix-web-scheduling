@@ -1076,9 +1076,11 @@
             // Get teachers without advisory (excluding current section if editing)
             const availableTeachers = allTeachers.filter(teacher => {
                 const hasAdvisory = allMobileSections.some(section => {
-                    // Skip the section being edited
                     if (editMode && section._id === editingSectionId) return false;
-                    return teacher.section === section.sectionName;
+                    return (
+                        teacher.section === section.sectionName ||
+                        teacher.advisorySection === section.sectionName
+                    );
                 });
                 return !hasAdvisory;
             });
@@ -1191,13 +1193,15 @@
                 btn.onclick = async () => {
                     const id = btn.getAttribute('data-id');
                     const section = allMobileSections.find(s => s._id === id);
-                    
                     if (!section) return;
-                    
+
                     // Set edit mode
                     editMode = true;
                     editingSectionId = id;
-                    
+
+                    // Ensure adviser dropdown reflects edit mode filtering
+                    populateAdviserDropdown();
+
                     // Populate form
                     if (sectionForm) {
                         sectionForm.sectionName.value = section.sectionName || '';
@@ -1208,23 +1212,36 @@
                         sectionForm.academicYear.value = section.academicYear || '';
                         sectionForm.semester.value = section.semester || '';
                         sectionForm.status.value = section.status || 'Active';
-                        
-                        // Find and set adviser
-                        const adviser = allTeachers.find(t => t.section === section.sectionName);
-                        sectionForm.adviserTeacher.value = adviser ? adviser._id : '';
-                        
-                        // Set edit mode
+
+                        // Set edit metadata
                         sectionForm.dataset.editMode = 'true';
                         sectionForm.dataset.editingId = id;
+
+                        // Find and set adviser after dropdown is populated
+                        const adviser = allTeachers.find(t => (
+                            t.advisorySection === section.sectionName ||
+                            t.section === section.sectionName
+                        ));
+                        sectionForm.adviserTeacher.value = adviser ? adviser._id : '';
+
+                        console.log('Mobile edit section modal data', {
+                            sectionId: id,
+                            sectionName: sectionForm.sectionName.value,
+                            programID: sectionForm.programID.value,
+                            yearLevel: sectionForm.yearLevel.value,
+                            shift: sectionForm.shift.value,
+                            adviserTeacher: sectionForm.adviserTeacher.value,
+                            totalEnrolled: sectionForm.totalEnrolled.value,
+                            academicYear: sectionForm.academicYear.value,
+                            semester: sectionForm.semester.value,
+                            status: sectionForm.status.value
+                        });
                     }
-                    
+
                     if (sectionModalTitle) sectionModalTitle.textContent = 'Edit Section';
                     if (submitSectionBtn) submitSectionBtn.textContent = 'Save Changes';
                     if (sectionModal) sectionModal.style.display = 'flex';
-                    
-                    // Repopulate adviser dropdown for edit mode
-                    populateAdviserDropdown();
-                    
+
                     // Setup auto-detection for edit mode too
                     setTimeout(() => setupMobileYearLevelAutoDetection(), 100);
                 };
@@ -1537,49 +1554,49 @@
                 try {
                     let url = '/sections';
                     let method = 'POST';
-                    
-                    const editMode = sectionForm.dataset.editMode === 'true';
+
+                    const isEditMode = sectionForm.dataset.editMode === 'true';
                     const editingId = sectionForm.dataset.editingId;
-                    
-                    if (editMode && editingId) {
+
+                    if (isEditMode && editingId) {
                         url += `/${editingId}`;
                         method = 'PUT';
                     }
-                    
+
                     const res = await fetch(url, {
                         method,
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify(formData)
                     });
-                    
+
                     if (res.ok) {
                         // If adviser was assigned, sync with teacher
                         if (formData.adviserTeacher) {
                             await syncAdviserWithTeacher(formData.adviserTeacher, formData.sectionName);
                         }
-                        
+
                         showBubbleMessage(
-                            editMode ? 'Section updated successfully!' : 'Section created successfully!', 
+                            isEditMode ? 'Section updated successfully!' : 'Section created successfully!',
                             'success'
                         );
-                        
-                        // Reset edit mode
+
+                        // Reset global edit state
                         editMode = false;
                         editingSectionId = null;
-                        
+
                         if (sectionModal) sectionModal.style.display = 'none';
                         if (sectionForm) sectionForm.reset();
-                        
+
                         console.log('🔄 Forcing mobile data refresh after section creation/update...');
-                        
+
                         // Wait for database to sync
                         await new Promise(resolve => setTimeout(resolve, 500));
-                        
+
                         // Force reload with aggressive cache busting
                         await loadMobileSections(true);
-                        
+
                         console.log('✅ Mobile data refresh complete. Total sections now:', allMobileSections.length);
                     } else {
                         const error = await res.json();

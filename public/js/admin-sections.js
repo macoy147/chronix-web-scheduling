@@ -167,6 +167,9 @@ document.addEventListener('DOMContentLoaded', function() {
             setupSearchFunctionality();
             setupFilterDropdown();
             setupExportButton();
+            
+            // Reapply any active filters after data refresh
+            applyAllFilters();
         } catch (error) {
             console.error('Error loading data:', error);
             showBubbleMessage('Error loading section data', 'error');
@@ -368,9 +371,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get teachers without advisory (excluding current section if editing)
         const availableTeachers = teachers.filter(teacher => {
             const hasAdvisory = sections.some(section => {
-                // Skip the section being edited
                 if (editMode && section._id === editingSectionId) return false;
-                return teacher.section === section.sectionName;
+                return (
+                    teacher.section === section.sectionName ||
+                    teacher.advisorySection === section.sectionName
+                );
             });
             return !hasAdvisory;
         });
@@ -1012,26 +1017,41 @@ document.addEventListener('DOMContentLoaded', function() {
         editMode = true;
         editingSectionId = sectionId;
 
-        // Populate form with section data
+        populateAdviserDropdown();
+
         const form = document.getElementById('sectionForm');
         if (form) {
-            form.sectionName.value = section.sectionName;
-            form.programID.value = section.programID;
-            form.yearLevel.value = section.yearLevel;
-            form.shift.value = section.shift;
-            
-            // Find and set adviser
-            const adviser = teachers.find(t => t.section === section.sectionName);
+            form.sectionName.value = section.sectionName || '';
+            form.programID.value = section.programID || '';
+            form.yearLevel.value = section.yearLevel || '';
+            form.shift.value = section.shift || '';
+            form.totalEnrolled.value = section.totalEnrolled || '';
+            form.academicYear.value = section.academicYear || '';
+            form.semester.value = section.semester || '';
+            form.status.value = section.status || 'Active';
+
+            const adviser = teachers.find(t => (
+                t.advisorySection === section.sectionName ||
+                t.section === section.sectionName
+            ));
             form.adviserTeacher.value = adviser ? adviser._id : '';
-            
-            form.totalEnrolled.value = section.totalEnrolled;
-            form.academicYear.value = section.academicYear;
-            form.semester.value = section.semester;
-            form.status.value = section.status;
+
+            form.dataset.editMode = 'true';
+            form.dataset.editingId = sectionId;
+
+            console.log('Editing section modal data', {
+                sectionId,
+                sectionName: form.sectionName.value,
+                programID: form.programID.value,
+                yearLevel: form.yearLevel.value,
+                shift: form.shift.value,
+                adviserTeacher: form.adviserTeacher.value,
+                totalEnrolled: form.totalEnrolled.value,
+                academicYear: form.academicYear.value,
+                semester: form.semester.value,
+                status: form.status.value
+            });
         }
-        
-        // Repopulate adviser dropdown for edit mode
-        populateAdviserDropdown();
 
         const modalTitle = document.querySelector('#sectionModal h3');
         if (modalTitle) modalTitle.textContent = 'Edit Section';

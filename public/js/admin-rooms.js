@@ -167,6 +167,9 @@ document.addEventListener('DOMContentLoaded', function() {
             setupSearchFunctionality();
             setupFilterDropdown();
             setupExportButton();
+            
+            // Reapply any active filters after data refresh
+            applyAllFilters();
         } catch (error) {
             console.error('Error loading data:', error);
             showBubbleMessage('Error loading room data', 'error');

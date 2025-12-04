@@ -275,12 +275,14 @@ const modal = document.getElementById('subjectFormModal');
             console.log('📋 Rendering', allSubjects.length, 'subjects to table...');
             
             if (allSubjects.length > 0) {
-                renderSubjectsTable(allSubjects);
                 setupFilterDropdown();
                 setupExportButton();
                 
                 // Update prerequisite dropdown with fresh data
                 populateCoPrerequisiteDropdown();
+                
+                // Ensure previously active filters/search are reapplied after refresh
+                applyFilters();
                 
                 console.log('✅ Table rendered successfully');
             } else {
@@ -778,15 +780,29 @@ const modal = document.getElementById('subjectFormModal');
         
         if (!filterBtn || !filterDropdown || !filterValuesDropdown) return;
         
+        // Remove existing event listeners by cloning and replacing elements
+        const newFilterBtn = filterBtn.cloneNode(true);
+        filterBtn.parentNode.replaceChild(newFilterBtn, filterBtn);
+        
+        const newFilterDropdown = filterDropdown.cloneNode(true);
+        filterDropdown.parentNode.replaceChild(newFilterDropdown, filterDropdown);
+        
+        // Get references to the new elements
+        const freshFilterBtn = document.getElementById('filterBtn');
+        const freshFilterDropdown = document.getElementById('filterDropdown');
+        const freshFilterValuesDropdown = document.getElementById('filterValuesDropdown');
+        
+        if (!freshFilterBtn || !freshFilterDropdown || !freshFilterValuesDropdown) return;
+        
         // Toggle main filter dropdown
-        filterBtn.addEventListener('click', function(e) {
+        freshFilterBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            filterDropdown.classList.toggle('show');
-            filterValuesDropdown.classList.remove('show');
+            freshFilterDropdown.classList.toggle('show');
+            freshFilterValuesDropdown.classList.remove('show');
         });
         
         // Handle filter option selection
-        filterDropdown.querySelectorAll('.filter-option').forEach(option => {
+        freshFilterDropdown.querySelectorAll('.filter-option').forEach(option => {
             option.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const filterType = this.getAttribute('data-filter');
@@ -796,13 +812,16 @@ const modal = document.getElementById('subjectFormModal');
         
         // Close dropdowns when clicking outside
         document.addEventListener('click', function() {
-            filterDropdown.classList.remove('show');
-            filterValuesDropdown.classList.remove('show');
+            freshFilterDropdown.classList.remove('show');
+            freshFilterValuesDropdown.classList.remove('show');
         });
         
         function showFilterValues(filterType) {
-            filterValuesDropdown.innerHTML = '';
-            filterValuesDropdown.classList.add('show');
+            const freshFilterValuesDropdown = document.getElementById('filterValuesDropdown');
+            if (!freshFilterValuesDropdown) return;
+            
+            freshFilterValuesDropdown.innerHTML = '';
+            freshFilterValuesDropdown.classList.add('show');
             
             let options = [];
             
@@ -843,10 +862,12 @@ const modal = document.getElementById('subjectFormModal');
                 div.addEventListener('click', function(e) {
                     e.stopPropagation();
                     applyFilter(filterType, opt.value, opt.label);
-                    filterDropdown.classList.remove('show');
-                    filterValuesDropdown.classList.remove('show');
+                    const freshFilterDropdown = document.getElementById('filterDropdown');
+                    const freshFilterValuesDropdown = document.getElementById('filterValuesDropdown');
+                    if (freshFilterDropdown) freshFilterDropdown.classList.remove('show');
+                    if (freshFilterValuesDropdown) freshFilterValuesDropdown.classList.remove('show');
                 });
-                filterValuesDropdown.appendChild(div);
+                freshFilterValuesDropdown.appendChild(div);
             });
         }
         
@@ -856,7 +877,10 @@ const modal = document.getElementById('subjectFormModal');
             applyFilters();
             
             // Update filter button to show active state
-            filterBtn.classList.add('active');
+            const freshFilterBtn = document.getElementById('filterBtn');
+            if (freshFilterBtn) {
+                freshFilterBtn.classList.add('active');
+            }
             const filterBtnText = document.getElementById('filterBtnText');
             if (filterBtnText) {
                 const activeCount = Object.values(activeFilters).filter(v => v !== null).length;
@@ -928,8 +952,9 @@ const modal = document.getElementById('subjectFormModal');
             if (filterBtnText) {
                 filterBtnText.textContent = activeCount > 0 ? `Filters (${activeCount})` : 'Filter By';
             }
-            if (activeCount === 0) {
-                filterBtn.classList.remove('active');
+            const freshFilterBtn = document.getElementById('filterBtn');
+            if (activeCount === 0 && freshFilterBtn) {
+                freshFilterBtn.classList.remove('active');
             }
         }
         
@@ -942,7 +967,10 @@ const modal = document.getElementById('subjectFormModal');
             };
             updateActiveFiltersDisplay();
             applyFilters();
-            filterBtn.classList.remove('active');
+            const freshFilterBtn = document.getElementById('filterBtn');
+            if (freshFilterBtn) {
+                freshFilterBtn.classList.remove('active');
+            }
             const filterBtnText = document.getElementById('filterBtnText');
             if (filterBtnText) {
                 filterBtnText.textContent = 'Filter By';

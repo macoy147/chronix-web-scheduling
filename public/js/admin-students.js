@@ -790,20 +790,32 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('editBirthdate').value = student.birthdate || '';
         document.getElementById('editGender').value = student.gender || '';
         
-        // Set year level first
+        const derivedYearLevel = student.yearLevel || extractYearLevelFromSection(student.section);
+        populateAddStudentSections(derivedYearLevel);
         const editYearLevel = document.getElementById('editYearLevel');
         if (editYearLevel) {
-            editYearLevel.value = student.yearLevel || '';
+            editYearLevel.value = derivedYearLevel ? String(derivedYearLevel) : '';
         }
-
-        // Populate Section dropdown (filter by year level if available)
-        const studentYearLevel = student.yearLevel || extractYearLevelFromSection(student.section);
-        populateAddStudentSections(studentYearLevel);
         
         // Set section value after populating
         const editSection = document.getElementById('editSection');
-        if (editSection && student.section) {
-            editSection.value = student.section;
+        if (editSection) {
+            const targetSection = (student.section || '').trim();
+            if (targetSection) {
+                let exists = Array.from(editSection.options).some(o => (o.value || '').trim().toLowerCase() === targetSection.toLowerCase());
+                if (!exists) {
+                    populateAddStudentSections();
+                    exists = Array.from(editSection.options).some(o => (o.value || '').trim().toLowerCase() === targetSection.toLowerCase());
+                    if (!exists) {
+                        const opt = document.createElement('option');
+                        opt.value = targetSection;
+                        opt.textContent = targetSection;
+                        editSection.appendChild(opt);
+                    }
+                }
+                editSection.value = targetSection;
+                editSection.dispatchEvent(new Event('change'));
+            }
         }
 
         // Populate Room dropdown
@@ -816,7 +828,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 option.textContent = `${room.roomName} (${room.building})`;
                 editRoom.appendChild(option);
             });
-            editRoom.value = student.room || '';
+            const targetRoom = (student.room || '').trim();
+            if (targetRoom && !Array.from(editRoom.options).some(o => (o.value || '').trim().toLowerCase() === targetRoom.toLowerCase())) {
+                const fallback = document.createElement('option');
+                fallback.value = targetRoom;
+                fallback.textContent = targetRoom;
+                editRoom.appendChild(fallback);
+            }
+            if (targetRoom) {
+                editRoom.value = targetRoom;
+            } else if (student.section) {
+                const assignedRoom = rooms.find(room => room.daySection === student.section || room.nightSection === student.section);
+                if (assignedRoom) {
+                    editRoom.value = assignedRoom.roomName;
+                }
+            }
         }
 
         document.getElementById('editStudentModalTitle').textContent = `Edit ${safeDisplay(student.fullname)}`;
@@ -880,6 +906,48 @@ document.addEventListener('DOMContentLoaded', function() {
         // Setup smart auto-fill listeners for Edit Student form (includes room auto-fill)
         setupSectionYearLevelSync('editSection', 'editYearLevel', 'editRoom');
 
+        // Reacquire selects after cloning in setupSectionYearLevelSync and enforce selected values
+        const editSectionAfter = document.getElementById('editSection');
+        const editYearLevelAfter = document.getElementById('editYearLevel');
+        const editRoomAfter = document.getElementById('editRoom');
+
+        if (editYearLevelAfter) {
+            editYearLevelAfter.value = derivedYearLevel ? String(derivedYearLevel) : '';
+        }
+
+        if (editSectionAfter) {
+            const targetSection = (student.section || '').trim();
+            if (targetSection) {
+                let exists = Array.from(editSectionAfter.options).some(o => (o.value || '').trim().toLowerCase() === targetSection.toLowerCase());
+                if (!exists) {
+                    const opt = document.createElement('option');
+                    opt.value = targetSection;
+                    opt.textContent = targetSection;
+                    editSectionAfter.appendChild(opt);
+                }
+                editSectionAfter.value = targetSection;
+                editSectionAfter.dispatchEvent(new Event('change'));
+            }
+        }
+
+        if (editRoomAfter) {
+            const targetRoom = (student.room || '').trim();
+            if (targetRoom && !Array.from(editRoomAfter.options).some(o => (o.value || '').trim().toLowerCase() === targetRoom.toLowerCase())) {
+                const fallback = document.createElement('option');
+                fallback.value = targetRoom;
+                fallback.textContent = targetRoom;
+                editRoomAfter.appendChild(fallback);
+            }
+            if (targetRoom) {
+                editRoomAfter.value = targetRoom;
+            } else if (student.section) {
+                const assignedRoom = rooms.find(room => room.daySection === student.section || room.nightSection === student.section);
+                if (assignedRoom) {
+                    editRoomAfter.value = assignedRoom.roomName;
+                }
+            }
+        }
+
         const modal = document.getElementById('editStudentModal');
         if (modal) modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -888,9 +956,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Edit Student Modal Opened:', {
             studentId: studentId,
             name: student.fullname,
-            yearLevel: editYearLevel?.value,
-            section: editSection?.value,
-            room: editRoom?.value
+            yearLevel: editYearLevelAfter?.value,
+            section: editSectionAfter?.value,
+            room: editRoomAfter?.value
         });
     };
 

@@ -1009,6 +1009,48 @@ body {
     font-weight: 600;
 }
 
+/* Student Info Display */
+.student-info-display {
+    background: var(--ctu-white);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin: 12px 0 20px 0;
+    padding: 16px;
+}
+.student-info-display .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+.student-info-display .info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e5e8eb;
+    border-radius: 10px;
+    padding: 12px;
+}
+.student-info-display .info-item i {
+    color: var(--ctu-light-blue);
+    font-size: 1.1em;
+}
+.student-info-display .info-label {
+    font-size: 0.82em;
+    color: var(--ctu-text-secondary);
+    font-weight: 600;
+}
+.student-info-display .info-value {
+    display: inline-block;
+    margin-top: 2px;
+    font-weight: 700;
+    color: var(--ctu-deep-blue);
+    background: #eef6ff;
+    border: 1px solid #d7e9ff;
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
 /* Schedule Statistics */
 .schedule-stats {
     display: grid;

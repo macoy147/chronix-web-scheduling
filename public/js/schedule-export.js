@@ -457,9 +457,6 @@ class ScheduleExporter {
             
             if (adviserSchedule && adviserSchedule.teacher?.fullname) {
                 adviserName = adviserSchedule.teacher.fullname;
-            } else {
-                // If not found in schedules, keep the ID as fallback (will show ID)
-                adviserName = section.adviserTeacher;
             }
         } else if (section?.adviser) {
             // Fallback to adviser field if it exists
@@ -471,6 +468,35 @@ class ScheduleExporter {
             adviser: adviserName,
             shift: section?.shift || 'N/A'
         };
+    }
+
+    async resolveAdviserNameFromSchedules(schedules) {
+        if (!schedules || schedules.length === 0) return 'N/A';
+        const section = schedules[0]?.section;
+        if (!section) return 'N/A';
+        if (section.adviserTeacher) {
+            const id = section.adviserTeacher?._id || section.adviserTeacher;
+            const match = schedules.find(s => s.teacher && ((s.teacher._id || s.teacher) === id || s.teacher._id?.toString() === id?.toString()));
+            if (match && match.teacher && match.teacher.fullname) return match.teacher.fullname;
+            try {
+                const res = await fetch(`/user/${id}`);
+                if (res.ok) {
+                    const user = await res.json();
+                    if (user && user.fullname) return user.fullname;
+                }
+            } catch (e) {}
+            try {
+                const res2 = await fetch('/teachers');
+                if (res2.ok) {
+                    const teachers = await res2.json();
+                    const t = teachers.find(t => (t._id === id || t._id?.toString() === id?.toString()));
+                    if (t && t.fullname) return t.fullname;
+                }
+            } catch (e) {}
+            return 'N/A';
+        }
+        if (section.adviser) return section.adviser;
+        return 'N/A';
     }
 
     /**
@@ -525,8 +551,9 @@ class ScheduleExporter {
             // Extract subjects for summary
             const subjectsSummary = this.extractSubjectsSummary(schedules);
 
-            // Get section details
             const sectionDetails = this.getSectionDetails(schedules);
+            const resolvedAdviser = await this.resolveAdviserNameFromSchedules(schedules);
+            sectionDetails.adviser = resolvedAdviser;
 
             // Create PDF - PORTRAIT ORIENTATION 8x13 inches
             // Convert inches to mm: 8in = 203.2mm, 13in = 330.2mm
@@ -1045,8 +1072,9 @@ class ScheduleExporter {
             // Extract subjects for summary
             const subjectsSummary = this.extractSubjectsSummary(schedules);
 
-            // Get section details
             const sectionDetails = this.getSectionDetails(schedules);
+            const resolvedAdviserCSV = await this.resolveAdviserNameFromSchedules(schedules);
+            sectionDetails.adviser = resolvedAdviserCSV;
 
             // Create CSV content with timetable structure
             let csvContent = '';
@@ -1192,8 +1220,8 @@ class ScheduleExporter {
             csvContent += '\n';
             csvContent += '='.repeat(80) + '\n\n';
 
-            // Process each section
-            sortedSections.forEach(([sectionId, sectionData], index) => {
+            for (let index = 0; index < sortedSections.length; index++) {
+                const [sectionId, sectionData] = sortedSections[index];
                 const { sectionName, sectionShift, yearLevel, schedules: sectionSchedules } = sectionData;
                 
                 // Add section separator (except for first section)
@@ -1208,8 +1236,9 @@ class ScheduleExporter {
                 csvContent += `Shift:,${sectionShift}\n`;
                 csvContent += `Total Classes:,${sectionSchedules.length}\n`;
                 
-                // Get adviser name from schedules
                 const sectionDetails = this.getSectionDetails(sectionSchedules);
+                const resolvedAdviser = await this.resolveAdviserNameFromSchedules(sectionSchedules);
+                sectionDetails.adviser = resolvedAdviser;
                 if (sectionDetails.adviser && sectionDetails.adviser !== 'N/A') {
                     csvContent += `Adviser:,${sectionDetails.adviser}\n`;
                 }
@@ -1251,7 +1280,7 @@ class ScheduleExporter {
                         csvContent += `${subject.units},"${subject.courseCode}","${subject.descriptiveTitle}"\n`;
                     });
                 }
-            });
+            }
             
             // Add footer
             csvContent += '\n\n';
@@ -1368,19 +1397,20 @@ class ScheduleExporter {
             }
 
             // Generate a page for each section
-            sortedSections.forEach(([sectionId, sectionData], sectionIndex) => {
+            for (let sectionIndex = 0; sectionIndex < sortedSections.length; sectionIndex++) {
+                const [sectionId, sectionData] = sortedSections[sectionIndex];
                 if (sectionIndex > 0) {
                     doc.addPage();
                 }
 
                 console.log(`📄 Creating page ${sectionIndex + 1} for section: ${sectionData.sectionName}`);
 
-                // Convert to timetable format
                 const timetable = this.convertToTimetableFormat(sectionData.schedules);
                 const subjectsSummary = this.extractSubjectsSummary(sectionData.schedules);
                 const sectionDetails = this.getSectionDetails(sectionData.schedules);
+                const resolvedAdviser = await this.resolveAdviserNameFromSchedules(sectionData.schedules);
+                sectionDetails.adviser = resolvedAdviser;
 
-                // Render page content
                 this.renderSingleSectionPage(
                     doc,
                     timetable,
@@ -1394,7 +1424,7 @@ class ScheduleExporter {
                     bagongPilipinasLogo,
                     wuriFooter
                 );
-            });
+            }
 
             // Generate filename
             const exportFilename = `${filename}_${new Date().toISOString().split('T')[0]}.pdf`;
