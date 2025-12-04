@@ -2,6 +2,7 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
+import ProfilePictureManager from './profile-picture-manager.js';
 
 // Prevent browser caching for this page
 if (window.history.replaceState) {
@@ -28,6 +29,41 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTeacherId = null;
     let currentView = 'weekly';
     let currentShift = 'all';
+    let currentEditingTeacherId = null;
+    
+    // Initialize Profile Picture Manager
+    const profilePicManager = new ProfilePictureManager({
+        maxFileSize: 2 * 1024 * 1024, // 2MB
+        acceptedFormats: ['image/jpeg', 'image/png', 'image/jpg'],
+        onSuccess: (newPictureUrl, userId) => {
+            showNotification('Profile picture updated successfully!', 'success');
+            // Update the preview in edit modal
+            const editPic = document.getElementById('editTeacherProfilePic');
+            if (editPic) {
+                editPic.src = newPictureUrl || '/img/default_teacher_avatar.png';
+                // Add success indicator animation
+                editPic.style.border = '3px solid #4BB543';
+                setTimeout(() => {
+                    editPic.style.border = '';
+                }, 2000);
+            }
+            // Show/hide remove button
+            const removeBtn = document.getElementById('removeTeacherPhotoBtn');
+            if (removeBtn) {
+                removeBtn.style.display = newPictureUrl ? 'inline-flex' : 'none';
+            }
+            // Update background gradient
+            const profilePictureSection = document.querySelector('.profile-picture-section');
+            if (profilePictureSection && newPictureUrl) {
+                profilePictureSection.style.background = 'linear-gradient(135deg, #f8f9fb 0%, #e8f5e9 100%)';
+            }
+            // Reload teachers to update table
+            loadTeachers(true);
+        },
+        onError: (errorMessage) => {
+            showNotification(errorMessage, 'error');
+        }
+    });
     let currentDayIndex = 0;
     let teacherToDelete = null;
 
@@ -413,6 +449,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Store current editing teacher ID
+        currentEditingTeacherId = teacherId;
+
         // Populate form with teacher data
         const editFullName = document.getElementById('editFullName');
         const editEmail = document.getElementById('editEmail');
@@ -422,6 +461,47 @@ document.addEventListener('DOMContentLoaded', function() {
         const editSection = document.getElementById('editSection');
         const editRoom = document.getElementById('editRoom');
         const editTeacherModalTitle = document.getElementById('editTeacherModalTitle');
+        
+        // Populate profile picture with enhanced visibility
+        const editTeacherProfilePic = document.getElementById('editTeacherProfilePic');
+        const removeTeacherPhotoBtn = document.getElementById('removeTeacherPhotoBtn');
+        const profilePictureSection = document.querySelector('.profile-picture-section');
+        
+        if (editTeacherProfilePic) {
+            // Show loading state
+            editTeacherProfilePic.style.opacity = '0.5';
+            
+            // Set the image source
+            const imageUrl = teacher.profilePicture || '/img/default_teacher_avatar.png';
+            editTeacherProfilePic.src = imageUrl;
+            
+            // Handle image load success
+            editTeacherProfilePic.onload = function() {
+                this.style.opacity = '1';
+                this.style.transition = 'opacity 0.3s ease';
+                console.log('✅ Profile picture loaded successfully');
+            };
+            
+            // Handle image load error
+            editTeacherProfilePic.onerror = function() {
+                console.error('❌ Failed to load profile picture');
+                this.src = '/img/default_teacher_avatar.png';
+                this.style.opacity = '1';
+                showNotification('Profile picture failed to load. Showing default image.', 'warning');
+            };
+        }
+        
+        // Show/hide remove button based on whether teacher has a profile picture
+        if (removeTeacherPhotoBtn) {
+            removeTeacherPhotoBtn.style.display = teacher.profilePicture ? 'inline-flex' : 'none';
+        }
+        
+        // Add visual indicator if profile picture exists
+        if (profilePictureSection && teacher.profilePicture) {
+            profilePictureSection.style.background = 'linear-gradient(135deg, #f8f9fb 0%, #e8f5e9 100%)';
+        } else if (profilePictureSection) {
+            profilePictureSection.style.background = 'linear-gradient(135deg, #f8f9fb 0%, #ffffff 100%)';
+        }
         
         if (editFullName) editFullName.value = safeDisplay(teacher.fullname, '');
         if (editEmail) editEmail.value = safeDisplay(teacher.email, '');
@@ -936,6 +1016,94 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Profile Picture Button Event Listeners
+    const changeTeacherPhotoBtn = document.getElementById('changeTeacherPhotoBtn');
+    if (changeTeacherPhotoBtn) {
+        changeTeacherPhotoBtn.addEventListener('click', function() {
+            if (currentEditingTeacherId) {
+                const teacher = teachers.find(t => t._id === currentEditingTeacherId);
+                if (teacher) {
+                    profilePicManager.open(
+                        currentEditingTeacherId,
+                        teacher.profilePicture,
+                        'teacher'
+                    );
+                }
+            }
+        });
+    }
+
+    const editTeacherPicOverlay = document.getElementById('editTeacherPicOverlay');
+    if (editTeacherPicOverlay) {
+        editTeacherPicOverlay.addEventListener('click', function() {
+            if (currentEditingTeacherId) {
+                const teacher = teachers.find(t => t._id === currentEditingTeacherId);
+                if (teacher) {
+                    profilePicManager.open(
+                        currentEditingTeacherId,
+                        teacher.profilePicture,
+                        'teacher'
+                    );
+                }
+            }
+        });
+    }
+
+    const removeTeacherPhotoBtn = document.getElementById('removeTeacherPhotoBtn');
+    if (removeTeacherPhotoBtn) {
+        removeTeacherPhotoBtn.addEventListener('click', async function() {
+            if (!currentEditingTeacherId) return;
+            
+            if (confirm('Are you sure you want to remove this profile picture? The default avatar will be restored.')) {
+                try {
+                    // Show loading state
+                    const editPic = document.getElementById('editTeacherProfilePic');
+                    if (editPic) {
+                        editPic.style.opacity = '0.5';
+                    }
+                    
+                    const response = await fetch(`/delete-profile-picture/${currentEditingTeacherId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showNotification('Profile picture removed successfully!', 'success');
+                        // Update preview with animation
+                        if (editPic) {
+                            editPic.src = '/img/default_teacher_avatar.png';
+                            editPic.style.opacity = '1';
+                            editPic.style.border = '3px solid #4BB543';
+                            setTimeout(() => {
+                                editPic.style.border = '';
+                            }, 2000);
+                        }
+                        // Hide remove button
+                        removeTeacherPhotoBtn.style.display = 'none';
+                        // Update background
+                        const profilePictureSection = document.querySelector('.profile-picture-section');
+                        if (profilePictureSection) {
+                            profilePictureSection.style.background = 'linear-gradient(135deg, #f8f9fb 0%, #ffffff 100%)';
+                        }
+                        // Reload teachers
+                        loadTeachers(true);
+                    } else {
+                        throw new Error(result.error || 'Failed to remove profile picture');
+                    }
+                } catch (error) {
+                    console.error('Error removing profile picture:', error);
+                    showNotification(error.message || 'Failed to remove profile picture', 'error');
+                    // Reset opacity on error
+                    const editPic = document.getElementById('editTeacherProfilePic');
+                    if (editPic) {
+                        editPic.style.opacity = '1';
+                    }
+                }
+            }
+        });
+    }
+
     const closeEditTeacherModal = document.getElementById('closeEditTeacherModal');
     if (closeEditTeacherModal) {
         closeEditTeacherModal.addEventListener('click', function() {
@@ -944,6 +1112,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide teacher info display
             const infoDisplay = document.getElementById('teacherInfoDisplay');
             if (infoDisplay) infoDisplay.style.display = 'none';
+            currentEditingTeacherId = null;
             document.body.style.overflow = 'auto';
         });
     }
@@ -956,6 +1125,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide teacher info display
             const infoDisplay = document.getElementById('teacherInfoDisplay');
             if (infoDisplay) infoDisplay.style.display = 'none';
+            currentEditingTeacherId = null;
             document.body.style.overflow = 'auto';
         });
     }

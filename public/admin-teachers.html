@@ -250,6 +250,29 @@
                 </button>
             </div>
             
+            <!-- Profile Picture Section -->
+            <div class="profile-picture-section">
+                <div class="profile-picture-preview">
+                    <img id="editTeacherProfilePic" src="/img/default_teacher_avatar.png" alt="Teacher profile picture">
+                    <div class="profile-picture-overlay" id="editTeacherPicOverlay">
+                        <i class="bi bi-camera-fill"></i>
+                        <span>Change Photo</span>
+                    </div>
+                </div>
+                <div class="profile-picture-actions">
+                    <div class="profile-picture-info" id="profilePictureInfo">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>Click image or button to change photo (JPG/PNG, max 2MB)</span>
+                    </div>
+                    <button type="button" class="btn-change-photo" id="changeTeacherPhotoBtn">
+                        <i class="bi bi-camera"></i> Change Photo
+                    </button>
+                    <button type="button" class="btn-remove-photo" id="removeTeacherPhotoBtn" style="display:none;">
+                        <i class="bi bi-trash"></i> Remove Photo
+                    </button>
+                </div>
+            </div>
+            
             <!-- Teacher Info Display (shown when editing) -->
             <div id="teacherInfoDisplay" class="teacher-info-display" style="display:none;">
                 <div class="info-grid">
@@ -376,7 +399,166 @@
 <script type="module" src="/js/api-config.js"></script>
 <script type="module" src="/js/error-handler.js"></script>
 <script type="module" src="/js/auth-guard.js"></script>
+<script type="module" src="/js/profile-picture-manager.js"></script>
 <script type="module" src="/js/admin-teachers.js"></script>
+
+<style>
+/* Profile Picture Section in Edit Modal - Enhanced for Better Visibility */
+.profile-picture-section {
+    padding: 24px;
+    background: linear-gradient(135deg, #f8f9fb 0%, #ffffff 100%);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    border: 2px solid #e5e8eb;
+    transition: all 0.3s ease;
+}
+
+.profile-picture-section:hover {
+    border-color: #3E8EDE;
+    box-shadow: 0 4px 16px rgba(62, 142, 222, 0.1);
+}
+
+.profile-picture-preview {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+    cursor: pointer;
+    border: 4px solid white;
+    transition: all 0.3s ease;
+}
+
+.profile-picture-preview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.profile-picture-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+.profile-picture-preview img[src*="default"] {
+    opacity: 0.7;
+}
+
+.profile-picture-preview img:not([src*="default"]) {
+    opacity: 1;
+}
+
+.profile-picture-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.profile-picture-preview:hover .profile-picture-overlay {
+    opacity: 1;
+}
+
+.profile-picture-overlay i {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+}
+
+.profile-picture-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+}
+
+.profile-picture-info {
+    padding: 12px;
+    background: #EAF3FF;
+    border-radius: 8px;
+    border-left: 3px solid #3E8EDE;
+    font-size: 0.85rem;
+    color: #002D62;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-picture-info i {
+    font-size: 1.1rem;
+    color: #3E8EDE;
+}
+
+.btn-change-photo,
+.btn-remove-photo {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-change-photo {
+    background: #3E8EDE;
+    color: white;
+}
+
+.btn-change-photo:hover {
+    background: #2E7ECE;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(62, 142, 222, 0.3);
+}
+
+.btn-remove-photo {
+    background: #fff;
+    color: #d8000c;
+    border: 1px solid #d8000c;
+}
+
+.btn-remove-photo:hover {
+    background: #d8000c;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .profile-picture-section {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-picture-actions {
+        width: 100%;
+    }
+    
+    .btn-change-photo,
+    .btn-remove-photo {
+        width: 100%;
+    }
+}
+</style>
 
 <!-- Mobile detection and redirection -->
 <script>

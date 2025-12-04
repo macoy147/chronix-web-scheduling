@@ -7,6 +7,7 @@
 import API_BASE_URL from './api-config.js';
 import { handleApiError } from './error-handler.js';
 import AuthGuard from './auth-guard.js';
+import ProfilePictureManager from './profile-picture-manager.js';
 
 // Prevent browser caching for this page
 if (window.history.replaceState) {
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let sections = [];
     let rooms = [];
     let currentStudentId = null;
+    let currentEditingStudentId = null;
     let currentView = 'weekly';
     let currentShift = 'all';
     let currentDayIndex = 0;
@@ -39,6 +41,35 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
     const STUDENTS_PER_PAGE = 15;
     let filteredStudents = [];
+    
+    // Initialize Profile Picture Manager
+    const profilePicManager = new ProfilePictureManager({
+        maxFileSize: 2 * 1024 * 1024, // 2MB
+        acceptedFormats: ['image/jpeg', 'image/png', 'image/jpg'],
+        onSuccess: (newPictureUrl, userId) => {
+            showNotification('Profile picture updated successfully!', 'success');
+            // Update the preview in edit modal
+            const editPic = document.getElementById('editStudentProfilePic');
+            if (editPic) {
+                editPic.src = newPictureUrl || '/img/default_student_avatar.png';
+                // Add success indicator animation
+                editPic.style.border = '3px solid #4BB543';
+                setTimeout(() => {
+                    editPic.style.border = '';
+                }, 2000);
+            }
+            // Show/hide remove button
+            const removeBtn = document.getElementById('removeStudentPhotoBtn');
+            if (removeBtn) {
+                removeBtn.style.display = newPictureUrl ? 'inline-flex' : 'none';
+            }
+            // Reload students to update table
+            loadStudents(true);
+        },
+        onError: (errorMessage) => {
+            showNotification(errorMessage, 'error');
+        }
+    });
 
     // Profile dropdown
     const profileDropdown = document.querySelector('.admin-profile-dropdown');
@@ -782,7 +813,49 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         currentStudentId = studentId;
+        currentEditingStudentId = studentId;
         clearAllErrors('editStudentForm');
+
+        // Populate profile picture with enhanced visibility
+        const editStudentProfilePic = document.getElementById('editStudentProfilePic');
+        const removeStudentPhotoBtn = document.getElementById('removeStudentPhotoBtn');
+        const profilePictureSection = document.querySelector('.profile-picture-section');
+        
+        if (editStudentProfilePic) {
+            // Show loading state
+            editStudentProfilePic.style.opacity = '0.5';
+            
+            // Set the image source
+            const imageUrl = student.profilePicture || '/img/default_student_avatar.png';
+            editStudentProfilePic.src = imageUrl;
+            
+            // Handle image load success
+            editStudentProfilePic.onload = function() {
+                this.style.opacity = '1';
+                this.style.transition = 'opacity 0.3s ease';
+                console.log('✅ Profile picture loaded successfully');
+            };
+            
+            // Handle image load error
+            editStudentProfilePic.onerror = function() {
+                console.error('❌ Failed to load profile picture');
+                this.src = '/img/default_student_avatar.png';
+                this.style.opacity = '1';
+                showNotification('Profile picture failed to load. Showing default image.', 'warning');
+            };
+        }
+        
+        // Show/hide remove button based on whether student has a profile picture
+        if (removeStudentPhotoBtn) {
+            removeStudentPhotoBtn.style.display = student.profilePicture ? 'inline-flex' : 'none';
+        }
+        
+        // Add visual indicator if profile picture exists
+        if (profilePictureSection && student.profilePicture) {
+            profilePictureSection.style.background = 'linear-gradient(135deg, #f8f9fb 0%, #e8f5e9 100%)';
+        } else if (profilePictureSection) {
+            profilePictureSection.style.background = '#f8f9fb';
+        }
 
         document.getElementById('editFullName').value = student.fullname || '';
         document.getElementById('editEmail').value = student.email || '';
@@ -790,32 +863,20 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('editBirthdate').value = student.birthdate || '';
         document.getElementById('editGender').value = student.gender || '';
         
-        const derivedYearLevel = student.yearLevel || extractYearLevelFromSection(student.section);
-        populateAddStudentSections(derivedYearLevel);
+        // Set year level first
         const editYearLevel = document.getElementById('editYearLevel');
         if (editYearLevel) {
-            editYearLevel.value = derivedYearLevel ? String(derivedYearLevel) : '';
+            editYearLevel.value = student.yearLevel || '';
         }
+
+        // Populate Section dropdown (filter by year level if available)
+        const studentYearLevel = student.yearLevel || extractYearLevelFromSection(student.section);
+        populateAddStudentSections(studentYearLevel);
         
         // Set section value after populating
         const editSection = document.getElementById('editSection');
-        if (editSection) {
-            const targetSection = (student.section || '').trim();
-            if (targetSection) {
-                let exists = Array.from(editSection.options).some(o => (o.value || '').trim().toLowerCase() === targetSection.toLowerCase());
-                if (!exists) {
-                    populateAddStudentSections();
-                    exists = Array.from(editSection.options).some(o => (o.value || '').trim().toLowerCase() === targetSection.toLowerCase());
-                    if (!exists) {
-                        const opt = document.createElement('option');
-                        opt.value = targetSection;
-                        opt.textContent = targetSection;
-                        editSection.appendChild(opt);
-                    }
-                }
-                editSection.value = targetSection;
-                editSection.dispatchEvent(new Event('change'));
-            }
+        if (editSection && student.section) {
+            editSection.value = student.section;
         }
 
         // Populate Room dropdown
@@ -828,21 +889,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 option.textContent = `${room.roomName} (${room.building})`;
                 editRoom.appendChild(option);
             });
-            const targetRoom = (student.room || '').trim();
-            if (targetRoom && !Array.from(editRoom.options).some(o => (o.value || '').trim().toLowerCase() === targetRoom.toLowerCase())) {
-                const fallback = document.createElement('option');
-                fallback.value = targetRoom;
-                fallback.textContent = targetRoom;
-                editRoom.appendChild(fallback);
-            }
-            if (targetRoom) {
-                editRoom.value = targetRoom;
-            } else if (student.section) {
-                const assignedRoom = rooms.find(room => room.daySection === student.section || room.nightSection === student.section);
-                if (assignedRoom) {
-                    editRoom.value = assignedRoom.roomName;
-                }
-            }
+            editRoom.value = student.room || '';
         }
 
         document.getElementById('editStudentModalTitle').textContent = `Edit ${safeDisplay(student.fullname)}`;
@@ -906,48 +953,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Setup smart auto-fill listeners for Edit Student form (includes room auto-fill)
         setupSectionYearLevelSync('editSection', 'editYearLevel', 'editRoom');
 
-        // Reacquire selects after cloning in setupSectionYearLevelSync and enforce selected values
-        const editSectionAfter = document.getElementById('editSection');
-        const editYearLevelAfter = document.getElementById('editYearLevel');
-        const editRoomAfter = document.getElementById('editRoom');
-
-        if (editYearLevelAfter) {
-            editYearLevelAfter.value = derivedYearLevel ? String(derivedYearLevel) : '';
-        }
-
-        if (editSectionAfter) {
-            const targetSection = (student.section || '').trim();
-            if (targetSection) {
-                let exists = Array.from(editSectionAfter.options).some(o => (o.value || '').trim().toLowerCase() === targetSection.toLowerCase());
-                if (!exists) {
-                    const opt = document.createElement('option');
-                    opt.value = targetSection;
-                    opt.textContent = targetSection;
-                    editSectionAfter.appendChild(opt);
-                }
-                editSectionAfter.value = targetSection;
-                editSectionAfter.dispatchEvent(new Event('change'));
-            }
-        }
-
-        if (editRoomAfter) {
-            const targetRoom = (student.room || '').trim();
-            if (targetRoom && !Array.from(editRoomAfter.options).some(o => (o.value || '').trim().toLowerCase() === targetRoom.toLowerCase())) {
-                const fallback = document.createElement('option');
-                fallback.value = targetRoom;
-                fallback.textContent = targetRoom;
-                editRoomAfter.appendChild(fallback);
-            }
-            if (targetRoom) {
-                editRoomAfter.value = targetRoom;
-            } else if (student.section) {
-                const assignedRoom = rooms.find(room => room.daySection === student.section || room.nightSection === student.section);
-                if (assignedRoom) {
-                    editRoomAfter.value = assignedRoom.roomName;
-                }
-            }
-        }
-
         const modal = document.getElementById('editStudentModal');
         if (modal) modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -956,9 +961,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Edit Student Modal Opened:', {
             studentId: studentId,
             name: student.fullname,
-            yearLevel: editYearLevelAfter?.value,
-            section: editSectionAfter?.value,
-            room: editRoomAfter?.value
+            yearLevel: editYearLevel?.value,
+            section: editSection?.value,
+            room: editRoom?.value
         });
     };
 
@@ -1276,6 +1281,94 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ==================== MODAL CONTROLS ====================
 
+    // Profile Picture Button Event Listeners
+    const changeStudentPhotoBtn = document.getElementById('changeStudentPhotoBtn');
+    if (changeStudentPhotoBtn) {
+        changeStudentPhotoBtn.addEventListener('click', function() {
+            if (currentEditingStudentId) {
+                const student = students.find(s => s._id === currentEditingStudentId);
+                if (student) {
+                    profilePicManager.open(
+                        currentEditingStudentId,
+                        student.profilePicture,
+                        'student'
+                    );
+                }
+            }
+        });
+    }
+
+    const editStudentPicOverlay = document.getElementById('editStudentPicOverlay');
+    if (editStudentPicOverlay) {
+        editStudentPicOverlay.addEventListener('click', function() {
+            if (currentEditingStudentId) {
+                const student = students.find(s => s._id === currentEditingStudentId);
+                if (student) {
+                    profilePicManager.open(
+                        currentEditingStudentId,
+                        student.profilePicture,
+                        'student'
+                    );
+                }
+            }
+        });
+    }
+
+    const removeStudentPhotoBtn = document.getElementById('removeStudentPhotoBtn');
+    if (removeStudentPhotoBtn) {
+        removeStudentPhotoBtn.addEventListener('click', async function() {
+            if (!currentEditingStudentId) return;
+            
+            if (confirm('Are you sure you want to remove this profile picture? The default avatar will be restored.')) {
+                try {
+                    // Show loading state
+                    const editPic = document.getElementById('editStudentProfilePic');
+                    if (editPic) {
+                        editPic.style.opacity = '0.5';
+                    }
+                    
+                    const response = await fetch(`/delete-profile-picture/${currentEditingStudentId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        showNotification('Profile picture removed successfully!', 'success');
+                        // Update preview with animation
+                        if (editPic) {
+                            editPic.src = '/img/default_student_avatar.png';
+                            editPic.style.opacity = '1';
+                            editPic.style.border = '3px solid #4BB543';
+                            setTimeout(() => {
+                                editPic.style.border = '';
+                            }, 2000);
+                        }
+                        // Hide remove button
+                        removeStudentPhotoBtn.style.display = 'none';
+                        // Update background
+                        const profilePictureSection = document.querySelector('.profile-picture-section');
+                        if (profilePictureSection) {
+                            profilePictureSection.style.background = '#f8f9fb';
+                        }
+                        // Reload students
+                        loadStudents(true);
+                    } else {
+                        throw new Error(result.error || 'Failed to remove profile picture');
+                    }
+                } catch (error) {
+                    console.error('Error removing profile picture:', error);
+                    showNotification(error.message || 'Failed to remove profile picture', 'error');
+                    // Reset opacity on error
+                    const editPic = document.getElementById('editStudentProfilePic');
+                    if (editPic) {
+                        editPic.style.opacity = '1';
+                    }
+                }
+            }
+        });
+    }
+
     document.getElementById('closeStudentScheduleModal')?.addEventListener('click', () => {
         document.getElementById('studentScheduleModal').style.display = 'none';
         document.body.style.overflow = 'auto';
@@ -1283,11 +1376,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('closeEditStudentModal')?.addEventListener('click', () => {
         document.getElementById('editStudentModal').style.display = 'none';
+        currentEditingStudentId = null;
         document.body.style.overflow = 'auto';
     });
 
     document.getElementById('cancelEditStudent')?.addEventListener('click', () => {
         document.getElementById('editStudentModal').style.display = 'none';
+        currentEditingStudentId = null;
         document.body.style.overflow = 'auto';
     });
 
