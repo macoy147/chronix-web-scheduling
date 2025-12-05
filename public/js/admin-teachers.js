@@ -441,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Open edit teacher modal
-    window.openEditTeacher = function(teacherId) {
+    window.openEditTeacher = async function(teacherId) {
         const teacher = teachers.find(t => t._id === teacherId);
         
         if (!teacher) {
@@ -509,51 +509,104 @@ document.addEventListener('DOMContentLoaded', function() {
         if (editBirthdate) editBirthdate.value = safeDisplay(teacher.birthdate, '');
         if (editGender) editGender.value = safeDisplay(teacher.gender, '');
 
-        // Populate Section dropdown - only show sections without advisers (or current teacher's section)
+        // Populate Section dropdown - fetch available sections from server
         if (editSection) {
-            editSection.innerHTML = '<option value="">No Advisory Section</option>';
+            editSection.innerHTML = '<option value="">Loading sections...</option>';
+            editSection.disabled = true;
             
             // Get the current teacher's advisory section
             const currentTeacherSection = teacher.advisorySection || teacher.section;
             
-            console.log('📋 Filtering sections for edit modal:');
+            console.log('📋 Fetching available sections for edit modal:');
             console.log('   Current teacher ID:', teacher._id);
             console.log('   Current teacher section:', currentTeacherSection);
-            console.log('   Total sections:', sections.length);
-            console.log('   Total teachers:', teachers.length);
             
-            let availableSections = 0;
-            
-            // Filter sections to only show those without advisers or the current teacher's section
-            sections.forEach(section => {
-                // Check if this section already has an adviser using multiple methods:
-                // 1. Check section's adviserTeacher field (if it has a teacher ID assigned)
-                // 2. Check if any other teacher has this section as their advisorySection
-                const sectionHasAdviserField = section.adviserTeacher && section.adviserTeacher !== '' && section.adviserTeacher !== teacher._id;
-                const hasAdviserFromTeachers = teachers.some(t => 
-                    t._id !== teacher._id && // Exclude current teacher
-                    (t.advisorySection === section.sectionName || t.section === section.sectionName)
-                );
+            try {
+                // Fetch available sections from the new API endpoint
+                const response = await fetch(`/sections/available-for-advisory?teacherId=${teacher._id}&_t=${Date.now()}`, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    cache: 'no-store'
+                });
                 
-                const hasAdviser = sectionHasAdviserField || hasAdviserFromTeachers;
-                
-                // Only show section if it has no adviser OR it's the current teacher's section
-                if (!hasAdviser || section.sectionName === currentTeacherSection) {
-                    const option = document.createElement('option');
-                    option.value = section.sectionName;
-                    option.textContent = `${section.sectionName} (Year ${section.yearLevel} - ${section.shift})`;
-                    editSection.appendChild(option);
-                    availableSections++;
-                    console.log(`   ✅ Available: ${section.sectionName}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const availableSections = data.availableSections || [];
+                    
+                    console.log(`✅ Received ${availableSections.length} available sections from server`);
+                    console.log(`   Total sections: ${data.totalSections}`);
+                    console.log(`   Assigned sections: ${data.assignedSections}`);
+                    console.log(`   Current teacher section: ${data.currentTeacherSection || 'none'}`);
+                    
+                    // Clear and repopulate dropdown
+                    editSection.innerHTML = '<option value="">No Advisory Section</option>';
+                    
+                    if (availableSections.length === 0) {
+                        // No sections available
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No sections available for assignment';
+                        option.disabled = true;
+                        editSection.appendChild(option);
+                        
+                        // Show info message if teacher doesn't have a current section
+                        if (!currentTeacherSection) {
+                            showBubbleMessage('All sections currently have assigned advisers', 'info');
+                        }
+                    } else {
+                        // Add info option at the top
+                        const infoOption = document.createElement('option');
+                        infoOption.value = '';
+                        infoOption.textContent = `--- ${availableSections.length} Available Section${availableSections.length !== 1 ? 's' : ''} ---`;
+                        infoOption.disabled = true;
+                        infoOption.style.fontWeight = 'bold';
+                        infoOption.style.color = '#3E8EDE';
+                        editSection.appendChild(infoOption);
+                        
+                        // Populate with available sections
+                        availableSections.forEach(section => {
+                            const option = document.createElement('option');
+                            option.value = section.sectionName;
+                            
+                            // Add indicator if this is the current teacher's section
+                            const isCurrentSection = section.sectionName === currentTeacherSection;
+                            const currentIndicator = isCurrentSection ? ' ✓ Current' : '';
+                            const availableIndicator = !isCurrentSection ? ' ✓ Available' : '';
+                            
+                            option.textContent = `${section.sectionName} (Year ${section.yearLevel} - ${section.shift})${currentIndicator}${availableIndicator}`;
+                            
+                            // Style current section differently
+                            if (isCurrentSection) {
+                                option.style.fontWeight = 'bold';
+                                option.style.backgroundColor = '#e8f5e9';
+                            }
+                            
+                            editSection.appendChild(option);
+                            
+                            console.log(`   ✅ Available: ${section.sectionName}${currentIndicator}`);
+                        });
+                    }
+                    
+                    // Set the current value
+                    editSection.value = safeDisplay(currentTeacherSection, '');
+                    editSection.disabled = false;
+                    
                 } else {
-                    console.log(`   ❌ Taken: ${section.sectionName} (adviserField: ${sectionHasAdviserField}, teacherHas: ${hasAdviserFromTeachers})`);
+                    console.error('❌ Failed to fetch available sections');
+                    editSection.innerHTML = '<option value="">Error loading sections</option>';
+                    editSection.disabled = false;
+                    showBubbleMessage('Failed to load available sections', 'error');
                 }
-            });
-            
-            console.log(`📊 Total available sections: ${availableSections}`);
-            
-            // Use advisorySection first, fallback to section for backward compatibility
-            editSection.value = safeDisplay(teacher.advisorySection || teacher.section, '');
+            } catch (error) {
+                console.error('❌ Error fetching available sections:', error);
+                editSection.innerHTML = '<option value="">Error loading sections</option>';
+                editSection.disabled = false;
+                showBubbleMessage('Error loading sections. Please try again.', 'error');
+            }
         }
 
         // Populate Room dropdown
@@ -629,12 +682,46 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Add event listeners for auto-sync between Section and Room
+        // Add event listeners for auto-sync between Section and Room with validation
         if (editSection && editRoom) {
-            // When section changes, auto-fill corresponding room
-            editSection.addEventListener('change', function() {
+            // When section changes, auto-fill corresponding room and validate
+            editSection.addEventListener('change', async function() {
                 const selectedSection = this.value;
+                
+                // Remove any previous validation styling
+                this.style.borderColor = '';
+                
                 if (selectedSection) {
+                    // Validate that this section is still available (real-time check)
+                    try {
+                        const response = await fetch(`/sections/available-for-advisory?teacherId=${teacher._id}&_t=${Date.now()}`, {
+                            method: 'GET',
+                            headers: {
+                                'Cache-Control': 'no-cache',
+                                'Pragma': 'no-cache'
+                            },
+                            cache: 'no-store'
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            const isAvailable = data.availableSections.some(s => s.sectionName === selectedSection);
+                            
+                            if (!isAvailable && selectedSection !== (teacher.advisorySection || teacher.section)) {
+                                // Section is no longer available
+                                this.style.borderColor = '#d8000c';
+                                showBubbleMessage(`Warning: Section ${selectedSection} may have been assigned to another teacher`, 'warning');
+                            } else {
+                                this.style.borderColor = '#4BB543';
+                                setTimeout(() => {
+                                    this.style.borderColor = '';
+                                }, 2000);
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('Could not validate section availability:', error);
+                    }
+                    
                     // Find room where this section is assigned
                     const assignedRoom = rooms.find(room => 
                         room.daySection === selectedSection || room.nightSection === selectedSection

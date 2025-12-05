@@ -633,16 +633,37 @@ app.put('/user/:id', upload.single('profilePicture'), async (req, res) => {
         if (section !== undefined && section !== currentUser.section) {
             // Check for duplicate advisory section (teachers only)
             if (currentUser.userrole === 'teacher' && section) {
+                // Check both advisorySection and section fields for conflicts
                 const existingAdvisor = await User.findOne({ 
-                    userrole: 'teacher', 
-                    section: section,
-                    _id: { $ne: req.params.id } // Exclude current user
+                    userrole: 'teacher',
+                    _id: { $ne: req.params.id }, // Exclude current user
+                    $or: [
+                        { advisorySection: section },
+                        { section: section }
+                    ]
                 });
+                
                 if (existingAdvisor) {
+                    logger.warn(`⚠️ Advisory conflict detected: Section ${section} already assigned to ${existingAdvisor.fullname}`);
                     return res.status(400).json({ 
                         error: `Section ${section} already has an advisor (${existingAdvisor.fullname}). Each section can only have one advisory teacher.` 
                     });
                 }
+                
+                // Also check if the section exists and is active
+                const sectionExists = await Section.findOne({ 
+                    sectionName: section,
+                    status: 'Active'
+                });
+                
+                if (!sectionExists && section !== '') {
+                    logger.warn(`⚠️ Section ${section} not found or not active`);
+                    return res.status(400).json({ 
+                        error: `Section ${section} does not exist or is not active.` 
+                    });
+                }
+                
+                logger.info(`✅ Advisory section validation passed for ${section}`);
             }
             updateFields.section = section;
             updateFields.advisorySection = section; // Also update advisorySection for consistency
@@ -1438,6 +1459,70 @@ app.get('/teachers/:id/advisory', async (req, res) => {
     } catch (error) {
         logger.error('Error fetching teacher advisory:', error);
         res.status(500).json({ error: 'Failed to fetch teacher advisory information' });
+    }
+});
+
+// NEW: Get available sections for advisory assignment
+app.get('/sections/available-for-advisory', async (req, res) => {
+    try {
+        const { teacherId } = req.query;
+        
+        logger.info(`📋 Fetching available sections for advisory assignment (teacherId: ${teacherId || 'none'})`);
+        
+        // Get all active sections
+        const allSections = await Section.find({ status: 'Active' }).sort({ yearLevel: 1, sectionName: 1 });
+        
+        // Get all teachers with advisory sections
+        const teachersWithAdvisory = await User.find({ 
+            userrole: 'teacher',
+            $or: [
+                { advisorySection: { $ne: '', $exists: true } },
+                { section: { $ne: '', $exists: true } }
+            ]
+        }).select('_id advisorySection section');
+        
+        // Create a map of section names to teacher IDs
+        const sectionToTeacherMap = {};
+        teachersWithAdvisory.forEach(teacher => {
+            const advisorySection = teacher.advisorySection || teacher.section;
+            if (advisorySection) {
+                sectionToTeacherMap[advisorySection] = teacher._id.toString();
+            }
+        });
+        
+        // Get current teacher's advisory section if editing
+        let currentTeacherSection = null;
+        if (teacherId) {
+            const currentTeacher = await User.findById(teacherId);
+            if (currentTeacher) {
+                currentTeacherSection = currentTeacher.advisorySection || currentTeacher.section;
+            }
+        }
+        
+        // Filter sections to only include:
+        // 1. Sections without any adviser
+        // 2. The current teacher's section (if editing)
+        const availableSections = allSections.filter(section => {
+            const hasAdviser = sectionToTeacherMap[section.sectionName];
+            const isCurrentTeacherSection = currentTeacherSection && section.sectionName === currentTeacherSection;
+            
+            // Include if no adviser OR it's the current teacher's section
+            return !hasAdviser || isCurrentTeacherSection;
+        });
+        
+        logger.info(`✅ Found ${availableSections.length} available sections out of ${allSections.length} total sections`);
+        logger.info(`   Current teacher section: ${currentTeacherSection || 'none'}`);
+        logger.info(`   Sections with advisers: ${Object.keys(sectionToTeacherMap).length}`);
+        
+        res.json({
+            availableSections,
+            currentTeacherSection,
+            totalSections: allSections.length,
+            assignedSections: Object.keys(sectionToTeacherMap).length
+        });
+    } catch (error) {
+        logger.error('❌ Error fetching available sections:', error);
+        res.status(500).json({ error: 'Failed to fetch available sections for advisory' });
     }
 });
 

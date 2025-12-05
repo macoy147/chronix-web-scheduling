@@ -340,11 +340,19 @@
                     </div>
                     
                     <div class="form-row">
-                        <label for="editSection">Advisory Section</label>
+                        <label for="editSection">
+                            Advisory Section
+                            <span class="field-info" title="Only sections without assigned advisers are shown">
+                                <i class="bi bi-info-circle"></i>
+                            </span>
+                        </label>
                         <select id="editSection" name="section">
                             <option value="">No Advisory Section</option>
                             <!-- Sections will be populated by JavaScript -->
                         </select>
+                        <small class="field-hint">
+                            <i class="bi bi-lightbulb"></i> Only unassigned sections are available for selection
+                        </small>
                     </div>
                     
                     <div class="form-row">

@@ -1618,3 +1618,69 @@ body {
         transform: none;
     }
 }
+
+/* Field Info and Hints for Advisory Section */
+.field-info {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    color: var(--ctu-light-blue);
+    cursor: help;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+}
+
+.field-info:hover {
+    color: #2E7ECE;
+}
+
+.field-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: #666;
+    font-style: italic;
+    padding: 4px 8px;
+    background: #f8f9fb;
+    border-radius: 4px;
+    border-left: 3px solid var(--ctu-soft-gold);
+}
+
+.field-hint i {
+    color: var(--ctu-soft-gold);
+    margin-right: 4px;
+}
+
+/* Enhanced Select Styling for Advisory Section */
+#editSection {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#editSection:focus {
+    border-color: var(--ctu-light-blue);
+    box-shadow: 0 0 0 3px rgba(62, 142, 222, 0.1);
+    outline: none;
+}
+
+#editSection:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#editSection option[disabled] {
+    color: #999;
+    font-style: italic;
+}
+
+#editSection option[style*="bold"] {
+    font-weight: 600;
+}
+
+/* Loading state for section dropdown */
+#editSection.loading {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 50 50'%3E%3Cpath fill='%233E8EDE' d='M25,5A20.14,20.14,0,0,1,45,22.88a2.51,2.51,0,0,0,2.49,2.26h0A2.52,2.52,0,0,0,50,22.33a25.14,25.14,0,0,0-50,0,2.52,2.52,0,0,0,2.5,2.81h0A2.51,2.51,0,0,0,5,22.88,20.14,20.14,0,0,1,25,5Z'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 25 25' to='360 25 25' dur='0.6s' repeatCount='indefinite'/%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+}
